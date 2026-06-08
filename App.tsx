@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
+import PAMMScreen from './src/screens/PAMMScreen';
+
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -68,6 +70,7 @@ export default function App() {
           >
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Tabs" component={TabNavigator} />
+            <Stack.Screen name="PAMM" component={PAMMScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </View>

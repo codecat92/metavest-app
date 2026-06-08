@@ -181,6 +181,7 @@ export default function HomeScreen({ navigation }: any) {
       traders:   'Traders',
       portfolio: 'Portfolio',
       profile:   'Profile',
+      pamm: 'PAMM',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };
