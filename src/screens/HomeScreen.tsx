@@ -174,6 +174,103 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   );
 }
 
+
+function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const newsItems = [
+    { title: "Fed holds rates steady — dollar weakens as traders price in June cut", time: "2h ago", tag: "Macro" },
+    { title: "EUR/USD breaks key resistance at 1.0850 — bulls target 1.0920 next", time: "4h ago", tag: "EUR/USD" },
+    { title: "Gold surges past $2,340 on safe-haven demand amid geopolitical tensions", time: "6h ago", tag: "XAU/USD" },
+    { title: "Bank of England holds rate at 5.25% — GBP/USD spikes 40 pips on release", time: "8h ago", tag: "GBP/USD" },
+    { title: "US Non-Farm Payrolls beat expectations — dollar index climbs to 3-week high", time: "10h ago", tag: "Macro" },
+    { title: "USD/JPY approaches 158.00 as BOJ maintains ultra-loose policy stance", time: "12h ago", tag: "USD/JPY" },
+    { title: "Oil prices drop 2.3% on surprise inventory build — CAD weakens against dollar", time: "14h ago", tag: "USD/CAD" },
+    { title: "ECB signals possible rate cut in September — EUR slides across the board", time: "16h ago", tag: "EUR/USD" },
+    { title: "Silver breaks above $29.50 — momentum traders eye $31 target next week", time: "18h ago", tag: "XAG/USD" },
+    { title: "AUD/USD falls to 3-month low as RBA flags growth concerns in minutes", time: "20h ago", tag: "AUD/USD" },
+  ];
+
+  const tagColors: Record<string, string> = {
+    Macro: "#C9A84C", "EUR/USD": "#AB4BFF", "XAU/USD": "#C9A84C",
+    "GBP/USD": "#2FEFC4", "USD/JPY": "#AB4BFF", "USD/CAD": "#2FEFC4",
+    "XAG/USD": "#8899AA", "AUD/USD": "#2FEFC4",
+  };
+
+  const ITEM_HEIGHT = 80;
+  const totalHeight = newsItems.length * ITEM_HEIGHT;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.timing(translateY, {
+        toValue: -totalHeight,
+        duration: 28000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+
+  const doubled = [...newsItems, ...newsItems];
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+      <View style={{ height: 300, overflow: 'hidden', position: 'relative' }}>
+        {/* Top fade */}
+        <View style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 48, zIndex: 2,
+          backgroundColor: 'transparent',
+          // React Native doesn't support gradient overlays natively without expo-linear-gradient
+          // Use a semi-transparent overlay instead
+        }} pointerEvents="none" />
+        {/* Bottom fade */}
+        <View style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 48, zIndex: 2,
+        }} pointerEvents="none" />
+
+        <Animated.View style={{ transform: [{ translateY }] }}>
+          {doubled.map((item, i) => {
+            const tagColor = tagColors[item.tag] ?? "#8899AA";
+            return (
+              <View key={i} style={newsFeedStyles.item}>
+                <View style={[newsFeedStyles.tag, {
+                  backgroundColor: `${tagColor}18`,
+                  borderColor: `${tagColor}44`,
+                }]}>
+                  <Text style={[newsFeedStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={newsFeedStyles.title} numberOfLines={2}>{item.title}</Text>
+                  <Text style={newsFeedStyles.time}>{item.time}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </Animated.View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const newsFeedStyles = StyleSheet.create({
+  item: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    padding: 12, marginBottom: 8, borderRadius: 16,
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+    height: 80,
+  },
+  tag: {
+    width: 72, alignItems: 'center', paddingVertical: 4,
+    borderRadius: 8, borderWidth: 1, flexShrink: 0,
+  },
+  tagText: { fontSize: 10, fontWeight: '700' },
+  title: { fontSize: 12, fontWeight: '600', color: '#F0EEFF', lineHeight: 17 },
+  time: { fontSize: 11, color: '#8899AA', marginTop: 4 },
+});
+
 export default function HomeScreen({ navigation }: any) {
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
@@ -269,29 +366,16 @@ export default function HomeScreen({ navigation }: any) {
         </ScrollView>
 
         {/* Latest News */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Latest News</Text>
-          <ChevronRight size={18} color="#8899AA" />
-        </View>
-        <View style={styles.newsList}>
-          {news.map((n, i) => {
-            const tagColor = tagColors[n.tag] ?? "#8899AA";
-            return (
-              <View key={i} style={styles.newsCard}>
-                <View style={[styles.newsTag, {
-                  backgroundColor: `${tagColor}18`,
-                  borderColor: `${tagColor}44`,
-                }]}>
-                  <Text style={[styles.newsTagText, { color: tagColor }]}>{n.tag}</Text>
-                </View>
-                <View style={styles.newsContent}>
-                  <Text style={styles.newsTitle}>{n.title}</Text>
-                  <Text style={styles.newsTime}>{n.time}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
+        {/* Latest News */}
+<View style={styles.sectionHeader}>
+  <Text style={styles.sectionTitle}>Latest News</Text>
+  <TouchableOpacity onPress={() => navigation.navigate('News')}>
+    <ChevronRight size={18} color="#8899AA" />
+  </TouchableOpacity>
+</View>
+<View style={{ paddingHorizontal: 24 }}>
+  <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
+</View>
 
       </ScrollView>
     </View>
