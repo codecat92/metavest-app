@@ -2,7 +2,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import {View, StyleSheet, Platform} from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -18,13 +19,14 @@ const Stack = createNativeStackNavigator();
 function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
           backgroundColor: '#0E1439',
           borderTopColor: 'rgba(201,168,76,0.2)',
           height: 68,
           paddingBottom: 10,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: '#C9A84C',
         tabBarInactiveTintColor: '#8899AA',
@@ -32,7 +34,18 @@ function TabNavigator() {
           fontSize: 11,
           fontWeight: '600',
         },
-      }}
+        tabBarIcon: ({ color, size }) => {
+          const icons: Record<string, any> = {
+            Home: Home,
+            Signals: Zap,
+            Traders: Users,
+            Portfolio: BarChart2,
+            Profile: User,
+          };
+          const Icon = icons[route.name];
+          return Icon ? <Icon size={20} color={color} strokeWidth={1.8} /> : null;
+        },
+      })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Signals" component={SignalScreen} />
@@ -68,10 +81,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#060910',
     alignItems: 'center',
     justifyContent: 'center',
+    
   },
   phone: {
     width: 393,
-    height: 852,
+    height: '100%',
     overflow: 'hidden',
     borderRadius: 40,
     borderWidth: 1,
