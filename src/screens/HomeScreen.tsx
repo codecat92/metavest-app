@@ -5,6 +5,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { useAuth } from '../context/AuthContext';
 
 const sparkUp = [
   { x: 1, y: 40 }, { x: 2, y: 55 }, { x: 3, y: 48 },
@@ -272,6 +273,7 @@ const newsFeedStyles = StyleSheet.create({
 });
 
 export default function HomeScreen({ navigation }: any) {
+  const { user } = useAuth();
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
       signals:   'Signals',
@@ -293,7 +295,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good morning 👋</Text>
-            <Text style={styles.username}>Alex Mercer</Text>
+            <Text style={styles.username}>{user?.name ?? 'Alex Mercer'}</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={styles.mpBadge}>

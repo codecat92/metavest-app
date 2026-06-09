@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
+import { AuthProvider } from './src/context/AuthContext';
 
 
 
@@ -18,39 +19,40 @@ import PAMMScreen from './src/screens/PAMMScreen';
 import NewsScreen from './src/screens/NewsScreen';
 
 
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#0E1439',
-          borderTopColor: 'rgba(201,168,76,0.2)',
-          height: 68,
-          paddingBottom: 10,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: '#C9A84C',
-        tabBarInactiveTintColor: '#8899AA',
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-        tabBarIcon: ({ color, size }) => {
-          const icons: Record<string, any> = {
-            Home: Home,
-            Signals: Zap,
-            Traders: Users,
-            Portfolio: BarChart2,
-            Profile: User,
-          };
-          const Icon = icons[route.name];
-          return Icon ? <Icon size={20} color={color} strokeWidth={1.8} /> : null;
-        },
-      })}
+    screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarStyle: {
+        backgroundColor: '#0E1439',
+        borderTopColor: 'rgba(201,168,76,0.2)',
+        height: 68,
+        paddingBottom: 10,
+        paddingTop: 8,
+      },
+      tabBarActiveTintColor: '#C9A84C',
+      tabBarInactiveTintColor: '#8899AA',
+      tabBarLabelStyle: {
+        fontSize: 11,
+        fontWeight: '600',
+      },
+      tabBarIcon: ({ color }) => {
+        const icons: Record<string, any> = {
+          Home: Home,
+          Signals: Zap,
+          Traders: Users,
+          Portfolio: BarChart2,
+          Profile: User,
+        };
+        const Icon = icons[route.name];
+        return Icon ? <Icon size={20} color={color} strokeWidth={1.8} /> : null;
+      },
+    })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Signals" component={SignalScreen} />
@@ -65,11 +67,13 @@ export default function App() {
   return (
     <View style={styles.wrapper}>
       <View style={styles.phone}>
+        <AuthProvider>
         <NavigationContainer>
           <StatusBar style="light" />
           <Stack.Navigator
             initialRouteName="Login"
-            screenOptions={{ headerShown: false }}
+            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0E1439' }, 
+          }}
           >
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Tabs" component={TabNavigator} />
@@ -77,6 +81,7 @@ export default function App() {
             <Stack.Screen name="News" component={NewsScreen} />
           </Stack.Navigator>
         </NavigationContainer>
+      </AuthProvider>
       </View>
     </View>
   );

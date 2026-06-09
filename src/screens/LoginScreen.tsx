@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { authApi } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,30 +13,29 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
-    // Basic validation
     if (!email || !password) {
       Alert.alert('Error', 'Please enter your email and password.');
       return;
-    }
+  }
 
-    setLoading(true);
-    try {
-      await authApi.login(email, password);
-      // Login successful — navigate to main app
-      navigation.replace('Tabs');
-    } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid email or password.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        await login(email, password);
+        navigation.replace('Tabs');
+      } catch (error: any) {
+        Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+      } finally {
+        setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -110,6 +109,15 @@ export default function LoginScreen() {
           }
         </TouchableOpacity>
 
+
+        {/* DEV ONLY — remove before production */}
+        <TouchableOpacity
+          style={styles.devBypass}
+          onPress={() => navigation.replace('Tabs')}  
+            >
+          <Text style={styles.devBypassText}>Dev: Skip Login</Text>
+        </TouchableOpacity>
+
         {/* Divider */}
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
@@ -127,21 +135,21 @@ export default function LoginScreen() {
         </View>
 
         {/* Register */}
-        <View style={styles.registerRow}>
+        {/* Register */}
+        <View style={[styles.registerRow, { backgroundColor: '#0E1439' }]}>
           <Text style={styles.registerText}>Don't have an account? </Text>
           <TouchableOpacity>
             <Text style={styles.registerLink}>Sign up free</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
+container: { flex: 1, backgroundColor: '#0E1439' },
+scroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40, backgroundColor: '#0E1439' },
   glow: {
     position: 'absolute', top: -80, left: -60,
     width: 320, height: 320, borderRadius: 160,
@@ -186,4 +194,19 @@ const styles = StyleSheet.create({
   registerRow: { flexDirection: 'row', justifyContent: 'center' },
   registerText: { color: '#8899AA', fontSize: 14 },
   registerLink: { color: '#AB4BFF', fontSize: 14, fontWeight: '700' },
+
+
+
+  devBypass: {
+    marginTop: 12, paddingVertical: 10, alignItems: 'center',
+    borderRadius: 12, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  devBypassText: {
+    fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: '600',
+  },
 });
+
+
+

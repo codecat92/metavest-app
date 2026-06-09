@@ -48,7 +48,10 @@ const settingsGroups = [
   },
 ];
 
+import { useAuth } from '../context/AuthContext';
+
 export default function ProfileScreen({ navigation }: any) {
+  const { logout, user } = useAuth();
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -193,7 +196,10 @@ export default function ProfileScreen({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.logoutBtn}
-            onPress={() => navigation?.navigate('Login')}
+            onPress={() => {
+              logout();
+              navigation?.replace('Login');
+            }}
           >
             <LogOut size={16} color="#FF4B6E" />
             <Text style={styles.logoutText}>Sign Out</Text>
