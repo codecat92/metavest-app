@@ -157,7 +157,6 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
     { label: 'Signals', screen: 'signals', Icon: Zap },
     { label: 'Traders', screen: 'traders', Icon: Users },
     { label: 'Portfolio', screen: 'portfolio', Icon: BarChart2 },
-    { label: 'Academy', screen: 'academy', Icon: GraduationCap },
     { label: 'Forum', screen: 'forum', Icon: MessageCircle },
   ];
 
@@ -234,6 +233,27 @@ const tagColors: Record<string, string> = {
   Macro: '#C9A84C', 'EUR/USD': '#AB4BFF', 'XAU/USD': '#C9A84C',
   'GBP/USD': '#2FEFC4', Oil: '#F7C948', Market: '#AB4BFF',
 };
+
+function AcademyCard({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={acStyles.card}>
+      <View style={acStyles.inner}>
+        <View style={acStyles.iconWrap}>
+          <GraduationCap size={24} color="#C9A84C" strokeWidth={1.5} />
+        </View>
+        <View style={acStyles.textWrap}>
+          <Text style={acStyles.title}>Metavest Academy</Text>
+          <Text style={acStyles.desc}>
+            Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro — learn at your own pace.
+          </Text>
+        </View>
+        <View style={acStyles.cta}>
+          <Text style={acStyles.ctaText}>Explore</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const translateY = useRef(new Animated.Value(0)).current;
@@ -384,6 +404,9 @@ export default function HomeScreen({ navigation }: any) {
         {/* Feature Cards — CopyTrade & PAMM */}
         <FeatureCards onNavigate={onNavigate} />
 
+        {/* Academy Card */}
+        <AcademyCard onPress={() => navigation.navigate('Academy')} />
+
         {/* Latest News */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Latest News</Text>
@@ -488,4 +511,26 @@ const fcStyles = StyleSheet.create({
   },
   label: { fontSize: 14, fontWeight: '800', color: '#fff', marginBottom: 4 },
   desc: { fontSize: 11, color: '#8899AA', textAlign: 'center', lineHeight: 16 },
+});
+
+const acStyles = StyleSheet.create({
+  card: {
+    marginHorizontal: 24, marginBottom: 28, borderRadius: 24, overflow: 'hidden',
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderWidth: 1, borderColor: 'rgba(201,168,76,0.25)',
+  },
+  inner: { padding: 20 },
+  iconWrap: {
+    width: 48, height: 48, borderRadius: 16, marginBottom: 14,
+    backgroundColor: 'rgba(201,168,76,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  textWrap: { marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: '800', color: '#F7E8B0', marginBottom: 8 },
+  desc: { fontSize: 13, color: 'rgba(208,200,160,0.7)', lineHeight: 20 },
+  cta: {
+    alignSelf: 'flex-end', paddingHorizontal: 20, paddingVertical: 10,
+    borderRadius: 14, backgroundColor: '#C9A84C',
+  },
+  ctaText: { fontSize: 13, fontWeight: '700', color: '#0E1439' },
 });
