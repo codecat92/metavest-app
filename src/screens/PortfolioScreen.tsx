@@ -6,22 +6,26 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
 import { walletApi, Wallet, WalletHistoryItem } from '../api/wallet';
+import { followApi, UserTrader } from '../api/follow';
 import { getToken } from '../api/client';
 
 export default function PortfolioScreen() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [history, setHistory] = useState<WalletHistoryItem[]>([]);
+  const [followed, setFollowed] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const [walletRes, historyRes] = await Promise.all([
+      const [walletRes, historyRes, followRes] = await Promise.all([
         walletApi.getById(),
         walletApi.getHistory(1),
+        followApi.getFollowed(1),
       ]);
       setWallet(walletRes.data ?? null);
       setHistory(historyRes.data ?? []);
+      setFollowed(followRes.data ?? []);
     } catch (e) {
       console.log('Portfolio load failed:', e);
     } finally {
@@ -52,14 +56,13 @@ export default function PortfolioScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={styles.title}>Portfolio</Text>
-          <Text style={styles.subtitle}>Your wallet overview</Text>
+          <Text style={styles.subtitle}>Your wallet & follows</Text>
         </View>
 
         {loading ? (
           <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
         ) : (
           <>
-            {/* Balance Card */}
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>Wallet Balance</Text>
               <Text style={styles.balanceValue}>{formatBalance(balance)}</Text>
@@ -69,6 +72,40 @@ export default function PortfolioScreen() {
                   {wallet?.id_wallet?.substring(0, 12) ?? '-'}...
                 </Text>
               </View>
+            </View>
+
+            {/* Followed Traders */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Followed Traders</Text>
+              {followed.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>Not following anyone yet</Text>
+                </View>
+              ) : (
+                <View style={styles.list}>
+                  {followed.slice(0, 5).map((t, i) => {
+                    const initials = (t.name ?? 'TR').substring(0, 2).toUpperCase();
+                    const colors = ['#AB4BFF', '#F7C948', '#2FEFC4', '#FF4B6E', '#8855CC'];
+                    return (
+                      <View key={t.id} style={styles.followCard}>
+                        <View style={[styles.followAvatar, { backgroundColor: colors[i % colors.length] }]}>
+                          <Text style={styles.followAvatarText}>{initials}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.followName}>{t.name}</Text>
+                          {t.description ? (
+                            <Text style={styles.followDesc} numberOfLines={1}>{t.description}</Text>
+                          ) : null}
+                        </View>
+                        <View style={styles.followStatus}>
+                          <TrendingUp size={12} color="#2FEFC4" />
+                          <Text style={styles.followStatusText}>Following</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
             {/* Transaction History */}
@@ -159,4 +196,19 @@ const styles = StyleSheet.create({
   txType: { fontSize: 14, fontWeight: '700', color: '#fff' },
   txDate: { fontSize: 12, color: '#8899AA', marginTop: 2 },
   txAmount: { fontSize: 15, fontWeight: '800' },
+
+  followCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
+    borderRadius: 18, backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+  },
+  followAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  followAvatarText: { fontSize: 12, fontWeight: '800', color: '#fff' },
+  followName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  followDesc: { fontSize: 12, color: '#8899AA', marginTop: 2 },
+  followStatus: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  followStatusText: { fontSize: 12, fontWeight: '600', color: '#2FEFC4' },
 });
