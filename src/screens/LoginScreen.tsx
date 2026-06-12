@@ -1,11 +1,12 @@
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Image, KeyboardAvoidingView,
-  Platform, ScrollView, ActivityIndicator, Alert
+  Platform, ScrollView, ActivityIndicator
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useCustomAlert } from '../context/AlertContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -14,10 +15,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const { login } = useAuth();
+  const alert = useCustomAlert();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter your email and password.');
+      alert.showAlert({ title: 'Error', message: 'Please enter your email and password.', type: 'error' });
       return;
   }
 
@@ -26,7 +28,7 @@ export default function LoginScreen() {
         await login(email, password);
         navigation.replace('Tabs');
       } catch (error: any) {
-        Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+        alert.showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password.', type: 'error' });
       } finally {
         setLoading(false);
   }

@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Alert
+  TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '../api/signals';
 import { getToken } from '../api/client';
+import { useCustomAlert } from '../context/AlertContext';
 
 const currencyNames: Record<number, string> = {
   1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
@@ -34,12 +35,13 @@ export default function SignalScreen() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const alert = useCustomAlert();
 
   const loadSignals = useCallback(async () => {
     try {
       const tok = getToken();
       if (!tok) {
-        Alert.alert('Debug', 'Token is NULL — not logged in yet');
+        alert.showAlert({ title: 'Info', message: 'Token is NULL — not logged in yet', type: 'info' });
         setLoading(false);
         return;
       }
@@ -47,10 +49,10 @@ export default function SignalScreen() {
       const arr = response.data ?? [];
       setSignals(arr);
       if (arr.length === 0) {
-        Alert.alert('Debug', 'API returned: count=' + (response.data_count ?? '?') + ', data=' + JSON.stringify(arr));
+        alert.showAlert({ title: 'Info', message: 'API returned: count=' + (response.data_count ?? '?') + ', data=' + JSON.stringify(arr), type: 'info' });
       }
     } catch (e: any) {
-      Alert.alert('Debug', 'Error: ' + (e?.message ?? String(e)));
+      alert.showAlert({ title: 'Info', message: 'Error: ' + (e?.message ?? String(e)), type: 'info' });
     } finally {
       setLoading(false);
     }

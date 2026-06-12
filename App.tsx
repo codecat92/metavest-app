@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { AlertProvider } from './src/context/AlertContext';
 
 
 
@@ -95,12 +96,14 @@ export default function App() {
   return (
     <View style={styles.wrapper}>
       <View style={styles.phone}>
+        <AlertProvider>
         <AuthProvider>
           <NavigationContainer>
             <StatusBar style="light" />
             <RootNavigator />
           </NavigationContainer>
         </AuthProvider>
+        </AlertProvider>
       </View>
     </View>
   );

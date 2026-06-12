@@ -1,12 +1,13 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator, Alert
+  TouchableOpacity, TextInput, ActivityIndicator
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Search, Shield, Star, TrendingUp } from 'lucide-react-native';
 import { followApi, UserTrader } from '../api/follow';
 import { getToken } from '../api/client';
+import { useCustomAlert } from '../context/AlertContext';
 
 const avatarColors = ['#AB4BFF', '#F7C948', '#2FEFC4', '#FF4B6E', '#8855CC'];
 
@@ -15,6 +16,7 @@ export default function TradersScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
+  const alert = useCustomAlert();
 
   const loadTraders = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -41,9 +43,9 @@ export default function TradersScreen() {
     try {
       await followApi.follow(traderId);
       setFollowedSet(prev => { const n = new Set(prev); n.add(traderId); return n; });
-      Alert.alert('Success', 'You are now following this trader');
+      alert.showAlert({ title: 'Success', message: 'You are now following this trader', type: 'success' });
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to follow');
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed to follow', type: 'error' });
     }
   };
 

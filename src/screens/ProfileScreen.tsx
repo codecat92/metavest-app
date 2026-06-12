@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image, Alert
+  TouchableOpacity, Image
 } from 'react-native';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,6 +9,7 @@ import {
   Star, Award, Mail, Phone, Hash, Camera
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { useCustomAlert } from '../context/AlertContext';
 import { profileApi } from '../api/profile';
 import { getToken } from '../api/client';
 
@@ -19,6 +20,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
+  const alert = useCustomAlert();
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -28,13 +30,13 @@ export default function ProfileScreen({ navigation }: any) {
 
   const handlePickPhoto = async () => {
     if (!getToken()) {
-      Alert.alert('Error', 'Please login first');
+      alert.showAlert({ title: 'Error', message: 'Please login first', type: 'error' });
       return;
     }
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow access to photos in Settings.');
+      alert.showAlert({ title: 'Permission required', message: 'Allow access to photos in Settings.', type: 'error' });
       return;
     }
 
@@ -53,9 +55,9 @@ export default function ProfileScreen({ navigation }: any) {
           setProfileImage(response.data.profile_image_src);
           setCacheBuster(Date.now());
         }
-        Alert.alert('Success', 'Profile photo updated');
+        alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
       } catch (e: any) {
-        Alert.alert('Error', e.message || 'Upload failed');
+        alert.showAlert({ title: 'Error', message: e.message || 'Upload failed', type: 'error' });
       } finally {
         setUploading(false);
       }

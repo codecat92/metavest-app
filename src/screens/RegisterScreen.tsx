@@ -1,11 +1,12 @@
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, ActivityIndicator, Alert
+  Platform, ScrollView, ActivityIndicator
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useCustomAlert } from '../context/AlertContext';
 import { authApi } from '../api/auth';
 
 export default function RegisterScreen() {
@@ -17,14 +18,15 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const { login } = useAuth();
+  const alert = useCustomAlert();
 
   const handleRegister = async () => {
     if (!firstName || !email || !password) {
-      Alert.alert('Error', 'First name, email, and password are required.');
+      alert.showAlert({ title: 'Error', message: 'First name, email, and password are required.', type: 'error' });
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters.');
+      alert.showAlert({ title: 'Error', message: 'Password must be at least 8 characters.', type: 'error' });
       return;
     }
 
@@ -41,7 +43,7 @@ export default function RegisterScreen() {
       await login(email, password);
       navigation.replace('Tabs');
     } catch (e: any) {
-      Alert.alert('Registration Failed', e.message || 'Unable to register.');
+      alert.showAlert({ title: 'Registration Failed', message: e.message || 'Unable to register.', type: 'error' });
     } finally {
       setLoading(false);
     }

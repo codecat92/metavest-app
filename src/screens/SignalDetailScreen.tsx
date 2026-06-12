@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Alert
+  TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import {
   Share2, Zap, Clock, Shield, Target, Eye
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '../api/signals';
+import { useCustomAlert } from '../context/AlertContext';
 
 const currencyNames: Record<number, string> = {
   1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
@@ -24,6 +25,7 @@ const signalTypeNames: Record<number, string> = {
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const alert = useCustomAlert();
   const signalId: number = route.params?.signalId;
   const [signal, setSignal] = useState<Signal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function SignalDetailScreen() {
         // Track click
         signalsApi.click(signalId).catch(() => {});
       } catch (e: any) {
-        Alert.alert('Error', e.message || 'Failed to load signal');
+        alert.showAlert({ title: 'Error', message: e.message || 'Failed to load signal', type: 'error' });
       } finally {
         setLoading(false);
       }
@@ -61,7 +63,7 @@ export default function SignalDetailScreen() {
         setLocalLikes(prev => prev + 1);
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed');
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
   };
 
@@ -69,9 +71,9 @@ export default function SignalDetailScreen() {
     if (!signal) return;
     try {
       await signalsApi.share(signal.id);
-      Alert.alert('Shared', 'Signal shared successfully');
+      alert.showAlert({ title: 'Shared', message: 'Signal shared successfully', type: 'success' });
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed');
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
   };
 
@@ -80,9 +82,9 @@ export default function SignalDetailScreen() {
     setExecuting(true);
     try {
       await signalsApi.execute(signal.id);
-      Alert.alert('Executed', 'Signal copy trade initiated');
+      alert.showAlert({ title: 'Executed', message: 'Signal copy trade initiated', type: 'success' });
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Execution failed');
+      alert.showAlert({ title: 'Error', message: e.message || 'Execution failed', type: 'error' });
     } finally {
       setExecuting(false);
     }
