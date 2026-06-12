@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, ApiResponse } from './client';
 
 export interface Trader {
   id: number;
@@ -11,14 +11,15 @@ export interface Trader {
   status: number;
 }
 
-export interface TraderResponse {
+export interface TraderListResponse {
   data: Trader[];
-  current_page: number;
-  last_page: number;
-  total: number;
+  data_count: number;
 }
 
 export const tradersApi = {
-  getAll: (page = 1) => api.get<TraderResponse>(`/trader?page=${page}`),
-  getById: (id: number) => api.get<Trader>(`/trader/${id}`),
+  getAll: (page = 1) =>
+    api.get<TraderListResponse>(`/trader?page=${page}`),
+
+  getById: (id: number) =>
+    api.get<ApiResponse<Trader>>(`/trader/${id}`),
 };

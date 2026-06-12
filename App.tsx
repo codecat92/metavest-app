@@ -17,6 +17,7 @@ import PortfolioScreen from './src/screens/PortfolioScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import PAMMScreen from './src/screens/PAMMScreen';
 import NewsScreen from './src/screens/NewsScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 
 
 
@@ -76,6 +77,7 @@ export default function App() {
           }}
           >
             <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Tabs" component={TabNavigator} />
             <Stack.Screen name="PAMM" component={PAMMScreen} />
             <Stack.Screen name="News" component={NewsScreen} />

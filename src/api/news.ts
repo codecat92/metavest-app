@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, ApiResponse } from './client';
 
 export interface NewsItem {
   id: number;
@@ -10,14 +10,15 @@ export interface NewsItem {
   created_at: string;
 }
 
-export interface NewsResponse {
+export interface NewsListResponse {
   data: NewsItem[];
-  current_page: number;
-  last_page: number;
-  total: number;
+  data_count: number;
 }
 
 export const newsApi = {
-  getAll: () => api.get<NewsResponse>('/news'),
-  getByKeyword: (keyword: string) => api.get<NewsResponse>(`/news/${keyword}`),
+  getAll: () =>
+    api.get<NewsListResponse>('/news'),
+
+  getByKeyword: (keyword: string) =>
+    api.get<NewsListResponse>(`/news/${keyword}`),
 };

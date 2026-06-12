@@ -1,63 +1,100 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity
+  TouchableOpacity, ActivityIndicator, Alert
 } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
-  Clock, Shield, Users, Copy, Eye
+  Clock, Shield, Copy, Eye
 } from 'lucide-react-native';
+import { signalsApi, Signal } from '../api/signals';
+import { getToken } from '../api/client';
 
-const signals = [
-  {
-    id: 1, trader: "AlphaWave", avatar: "AW",
-    pair: "EUR/USD", type: "BUY", confidence: 87,
-    accuracy: "78%", risk: "Medium", timeAgo: "12 min ago",
-    entry: "1.0842", target: "1.0920", stopLoss: "1.0790",
-    followers: 1240, rr: "2.1",
-  },
-  {
-    id: 2, trader: "TradeMind", avatar: "TM",
-    pair: "GBP/USD", type: "BUY", confidence: 92,
-    accuracy: "71%", risk: "Low", timeAgo: "28 min ago",
-    entry: "1.2680", target: "1.2780", stopLoss: "1.2620",
-    followers: 876, rr: "2.4",
-  },
-  {
-    id: 3, trader: "FX Sentinel", avatar: "FS",
-    pair: "XAU/USD", type: "SELL", confidence: 74,
-    accuracy: "83%", risk: "High", timeAgo: "1h ago",
-    entry: "2,342.50", target: "2,290.00", stopLoss: "2,375.00",
-    followers: 2140, rr: "2.5",
-  },
-  {
-    id: 4, trader: "PipMaster", avatar: "PM",
-    pair: "USD/JPY", type: "BUY", confidence: 68,
-    accuracy: "65%", risk: "Medium", timeAgo: "2h ago",
-    entry: "157.20", target: "158.80", stopLoss: "156.40",
-    followers: 534, rr: "2.3",
-  },
-];
-
-const riskColor: Record<string, string> = {
-  Low: "#2FEFC4", Medium: "#F7C948", High: "#FF4B6E",
+const currencyNames: Record<number, string> = {
+  1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
+  5: 'AUD/USD', 6: 'USD/CAD', 7: 'XAG/USD', 8: 'GBP/JPY',
+  9: 'NZD/USD', 10: 'USD/CHF', 11: 'EUR/GBP',
 };
 
+const signalTypeNames: Record<number, string> = {
+  1: 'SELL LIMIT', 2: 'BUY LIMIT', 3: 'SELL ORDER',
+  4: 'BUY ORDER', 5: 'SELL STOP', 6: 'BUY STOP',
+};
+
+const riskColor: Record<string, string> = {
+  Low: '#2FEFC4', Medium: '#F7C948', High: '#FF4B6E',
+};
+
+type TabFilter = 'all' | 'buy' | 'sell';
+
 export default function SignalScreen() {
-  const [activeTab, setActiveTab] = useState<"all" | "buy" | "sell">("all");
+  const [signals, setSignals] = useState<Signal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  const loadSignals = useCallback(async () => {
+    try {
+      const tok = getToken();
+      if (!tok) {
+        Alert.alert('Debug', 'Token is NULL — not logged in yet');
+        setLoading(false);
+        return;
+      }
+      const response = await signalsApi.getAll(1);
+      const arr = response.data ?? [];
+      setSignals(arr);
+      if (arr.length === 0) {
+        Alert.alert('Debug', 'API returned: count=' + (response.data_count ?? '?') + ', data=' + JSON.stringify(arr));
+      }
+    } catch (e: any) {
+      Alert.alert('Debug', 'Error: ' + (e?.message ?? String(e)));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      loadSignals();
+    }, [loadSignals])
+  );
+
+  const riskFromSignal = (s: Signal): string => {
+    const r = parseFloat(s.risk_per_one_trade ?? '0');
+    if (r <= 0.5) return 'Low';
+    if (r <= 1) return 'Medium';
+    return 'High';
+  };
+
+  const isBuy = (s: Signal): boolean => {
+    const t = s.signal_type;
+    return t === 2 || t === 4 || t === 6; // BUY LIMIT, BUY ORDER, BUY STOP
+  };
+
   const filtered = signals.filter((s) => {
-    if (activeTab === "buy") return s.type === "BUY";
-    if (activeTab === "sell") return s.type === "SELL";
+    if (activeTab === 'buy') return isBuy(s);
+    if (activeTab === 'sell') return !isBuy(s);
     return true;
   });
+
+  if (!getToken()) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <Search size={40} color="#8899AA" />
+          <Text style={styles.emptyText}>Login to see signals</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Signals</Text>
@@ -73,7 +110,6 @@ export default function SignalScreen() {
           </View>
         </View>
 
-        {/* Tabs */}
         <View style={styles.tabContainer}>
           {(['all', 'buy', 'sell'] as const).map((tab) => (
             <TouchableOpacity
@@ -82,132 +118,117 @@ export default function SignalScreen() {
               style={[styles.tab, activeTab === tab && styles.tabActive]}
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === 'all' ? 'All Signals' : tab === 'buy' ? '🟢 Buy' : '🔴 Sell'}
+                {tab === 'all' ? 'All Signals' : tab === 'buy' ? 'Buy' : 'Sell'}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Signal Cards */}
-        <View style={styles.cardList}>
-          {filtered.map((signal) => {
-            const expanded = expandedId === signal.id;
-            const isBuy = signal.type === "BUY";
-            return (
-              <View
-                key={signal.id}
-                style={[styles.card, expanded && styles.cardExpanded]}
-              >
-                {/* Card Top */}
-                <View style={styles.cardInner}>
-
-                  {/* Trader row */}
-                  <View style={styles.traderRow}>
-                    <View style={styles.avatarCircle}>
-                      <Text style={styles.avatarText}>{signal.avatar}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.traderName}>{signal.trader}</Text>
-                      <Text style={styles.traderAccuracy}>Accuracy: {signal.accuracy}</Text>
-                    </View>
-                    <View style={[styles.typeBadge, {
-                      backgroundColor: isBuy ? "rgba(47,239,196,0.12)" : "rgba(255,75,110,0.12)",
-                      borderColor: isBuy ? "rgba(47,239,196,0.3)" : "rgba(255,75,110,0.3)",
-                    }]}>
-                      {isBuy
-                        ? <TrendingUp size={13} color="#2FEFC4" />
-                        : <TrendingDown size={13} color="#FF4B6E" />
-                      }
-                      <Text style={[styles.typeText, { color: isBuy ? "#2FEFC4" : "#FF4B6E" }]}>
-                        {signal.type}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Pair + Confidence */}
-                  <View style={styles.pairRow}>
-                    <View>
-                      <Text style={styles.pairLabel}>TRADING PAIR</Text>
-                      <Text style={styles.pairValue}>{signal.pair}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.pairLabel}>CONFIDENCE</Text>
-                      <Text style={styles.confidenceValue}>{signal.confidence}%</Text>
-                    </View>
-                  </View>
-
-                  {/* Confidence bar */}
-                  <View style={styles.barBg}>
-                    <View style={[styles.barFill, { width: `${signal.confidence}%` as any }]} />
-                  </View>
-
-                  {/* Meta row */}
-                  <View style={styles.metaRow}>
-                    <View style={styles.metaItem}>
-                      <Clock size={12} color="#8899AA" />
-                      <Text style={styles.metaText}>{signal.timeAgo}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Shield size={12} color={riskColor[signal.risk]} />
-                      <Text style={[styles.metaText, { color: riskColor[signal.risk], fontWeight: '600' }]}>
-                        {signal.risk} Risk
-                      </Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Users size={12} color="#8899AA" />
-                      <Text style={styles.metaText}>{signal.followers.toLocaleString()} following</Text>
-                    </View>
-                  </View>
-
-                  {/* Expanded */}
-                  {expanded && (
-                    <View style={styles.expandedSection}>
-                      <View style={styles.expandedStats}>
-                        {[
-                          { label: "Entry", value: signal.entry },
-                          { label: "Target", value: signal.target },
-                          { label: "Stop Loss", value: signal.stopLoss },
-                          { label: "R:R", value: `1:${signal.rr}` },
-                        ].map((item) => (
-                          <View key={item.label} style={{ alignItems: 'center' }}>
-                            <Text style={styles.expandedLabel}>{item.label}</Text>
-                            <Text style={styles.expandedValue}>{item.value}</Text>
-                          </View>
-                        ))}
+        {loading ? (
+          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+        ) : (
+          <View style={styles.cardList}>
+            {filtered.map((signal) => {
+              const expanded = expandedId === signal.id;
+              const buy = isBuy(signal);
+              const pairName = currencyNames[signal.currency] ?? `Pair #${signal.currency}`;
+              const typeName = signalTypeNames[signal.signal_type] ?? 'SIGNAL';
+              const risk = riskFromSignal(signal);
+              return (
+                <View key={signal.id} style={[styles.card, expanded && styles.cardExpanded]}>
+                  <View style={styles.cardInner}>
+                    <View style={styles.traderRow}>
+                      <View style={styles.avatarCircle}>
+                        <Text style={styles.avatarText}>
+                          {signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
+                        </Text>
                       </View>
-
-                      {/* Action buttons */}
-                      <View style={styles.actionRow}>
-                        <TouchableOpacity style={styles.actionBtnSecondary}>
-                          <Eye size={14} color="#8899AA" />
-                          <Text style={styles.actionBtnSecondaryText}>View</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionBtnSecondary}>
-                          <Users size={14} color="#8899AA" />
-                          <Text style={styles.actionBtnSecondaryText}>Follow</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionBtnPrimary}>
-                          <Copy size={14} color="#fff" />
-                          <Text style={styles.actionBtnPrimaryText}>Copy</Text>
-                        </TouchableOpacity>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.traderName}>{typeName}</Text>
+                        <Text style={styles.traderAccuracy}>{pairName}</Text>
+                      </View>
+                      <View style={[styles.typeBadge, {
+                        backgroundColor: buy ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
+                        borderColor: buy ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
+                      }]}>
+                        {buy
+                          ? <TrendingUp size={13} color="#2FEFC4" />
+                          : <TrendingDown size={13} color="#FF4B6E" />
+                        }
+                        <Text style={[styles.typeText, { color: buy ? '#2FEFC4' : '#FF4B6E' }]}>
+                          {buy ? 'BUY' : 'SELL'}
+                        </Text>
                       </View>
                     </View>
-                  )}
+
+                    <View style={styles.pairRow}>
+                      <View>
+                        <Text style={styles.pairLabel}>TRADING PAIR</Text>
+                        <Text style={styles.pairValue}>{pairName}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.pairLabel}>TYPE</Text>
+                        <Text style={styles.confidenceValue}>{typeName}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.metaRow}>
+                      <View style={styles.metaItem}>
+                        <Clock size={12} color="#8899AA" />
+                        <Text style={styles.metaText}>{signal.created_at ? new Date(signal.created_at).toLocaleDateString() : 'Recent'}</Text>
+                      </View>
+                      <View style={styles.metaItem}>
+                        <Shield size={12} color={riskColor[risk]} />
+                        <Text style={[styles.metaText, { color: riskColor[risk], fontWeight: '600' }]}>
+                          {risk} Risk
+                        </Text>
+                      </View>
+                      <View style={styles.metaItem}>
+                        <Copy size={12} color="#8899AA" />
+                        <Text style={styles.metaText}>{signal.signal_execution} copied</Text>
+                      </View>
+                    </View>
+
+                    {expanded && (
+                      <View style={styles.expandedSection}>
+                        <View style={styles.expandedStats}>
+                          {[
+                            { label: 'Entry', value: signal.open_price ?? '-' },
+                            { label: 'Take Profit', value: signal.take_profit ?? '-' },
+                            { label: 'Stop Loss', value: signal.stop_loss ?? '-' },
+                            { label: 'R:R', value: signal.potential_profit ? `1:${signal.potential_profit}` : '-' },
+                          ].map((item) => (
+                            <View key={item.label} style={{ alignItems: 'center' }}>
+                              <Text style={styles.expandedLabel}>{item.label}</Text>
+                              <Text style={styles.expandedValue}>{item.value}</Text>
+                            </View>
+                          ))}
+                        </View>
+                        {signal.notes ? (
+                          <Text style={styles.notes}>{signal.notes}</Text>
+                        ) : null}
+                      </View>
+                    )}
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setExpandedId(expanded ? null : signal.id)}
+                    style={styles.expandToggle}
+                  >
+                    <Text style={styles.expandToggleText}>
+                      {expanded ? 'Show less' : 'View details'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-
-                {/* Expand toggle */}
-                <TouchableOpacity
-                  onPress={() => setExpandedId(expanded ? null : signal.id)}
-                  style={styles.expandToggle}
-                >
-                  <Text style={styles.expandToggleText}>
-                    {expanded ? "Show less ▲" : "View details ▼"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </View>
+              );
+            })}
+            {filtered.length === 0 && !loading && (
+              <Text style={{ color: '#8899AA', textAlign: 'center', marginTop: 40 }}>
+                No signals found
+              </Text>
+            )}
+          </View>
+        )}
 
       </ScrollView>
     </View>
@@ -217,6 +238,8 @@ export default function SignalScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0E1439' },
   scroll: { paddingBottom: 100 },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 200 },
+  emptyText: { fontSize: 14, color: '#8899AA', marginTop: 12 },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -271,17 +294,7 @@ const styles = StyleSheet.create({
   pairRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
   pairLabel: { fontSize: 11, color: '#8899AA', fontWeight: '500' },
   pairValue: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  confidenceValue: { fontSize: 22, fontWeight: '800', color: '#AB4BFF' },
-
-  barBg: {
-    height: 6, borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 12,
-  },
-  barFill: {
-    height: '100%', borderRadius: 3,
-    backgroundColor: '#AB4BFF',
-  },
+  confidenceValue: { fontSize: 13, fontWeight: '800', color: '#AB4BFF', maxWidth: 120, textAlign: 'right' },
 
   metaRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -296,21 +309,11 @@ const styles = StyleSheet.create({
   },
   expandedLabel: { fontSize: 10, color: '#8899AA', fontWeight: '500' },
   expandedValue: { fontSize: 14, fontWeight: '700', color: '#fff', marginTop: 2 },
-
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  actionBtnSecondary: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12, borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+  notes: {
+    fontSize: 12, color: '#8899AA', marginTop: 8,
+    padding: 10, backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 10,
   },
-  actionBtnSecondaryText: { fontSize: 13, fontWeight: '600', color: '#8899AA' },
-  actionBtnPrimary: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12, borderRadius: 14,
-    backgroundColor: '#AB4BFF',
-  },
-  actionBtnPrimaryText: { fontSize: 13, fontWeight: '700', color: '#fff' },
 
   expandToggle: {
     paddingVertical: 10, alignItems: 'center',

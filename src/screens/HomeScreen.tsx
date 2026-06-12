@@ -2,52 +2,22 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, Image, Animated, Easing
 } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
-
-const sparkUp = [
-  { x: 1, y: 40 }, { x: 2, y: 55 }, { x: 3, y: 48 },
-  { x: 4, y: 70 }, { x: 5, y: 65 }, { x: 6, y: 80 },
-  { x: 7, y: 75 }, { x: 8, y: 90 },
-];
-const sparkDown = [
-  { x: 1, y: 80 }, { x: 2, y: 72 }, { x: 3, y: 78 },
-  { x: 4, y: 60 }, { x: 5, y: 65 }, { x: 6, y: 55 },
-  { x: 7, y: 50 }, { x: 8, y: 42 },
-];
-
-const markets = [
-  { pair: "EUR/USD",   price: "1.0842",    change: "+0.32%", up: true,  data: sparkUp },
-  { pair: "GBP/USD",   price: "1.2681",    change: "+0.18%", up: true,  data: sparkUp },
-  { pair: "XAU/USD",   price: "2,341.80",  change: "-0.45%", up: false, data: sparkDown },
-  { pair: "USD/JPY",   price: "157.24",    change: "+0.21%", up: true,  data: sparkUp },
-];
-
-const traders = [
-  { name: "AlphaWave",  handle: "@alphawave",  roi: "+142%", avatar_url: "https://picsum.photos/seed/alphawave/100/100" },
-  { name: "TradeMind",  handle: "@trademind",  roi: "+89%",  avatar_url: "https://picsum.photos/seed/trademind/100/100" },
-  { name: "FX Sentinel",handle: "@fxsentinel", roi: "+231%", avatar_url: "https://picsum.photos/seed/fxsentinel/100/100" },
-];
-
-const news = [
-  { title: "Fed holds rates steady — dollar weakens as traders price in June cut", time: "2h ago", tag: "Macro" },
-  { title: "Gold surges past $2,340 on safe-haven demand amid geopolitical tensions", time: "4h ago", tag: "XAU/USD" },
-  { title: "EUR/USD breaks key resistance at 1.0850 — bulls target 1.0920 next", time: "6h ago", tag: "EUR/USD" },
-];
-
-const tagColors: Record<string, string> = {
-  Macro:    "#C9A84C",
-  "EUR/USD": "#AB4BFF",
-  "XAU/USD": "#C9A84C",
-};
+import { forexApi, ForexCurrency } from '../api/forex';
 
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
 
 // Sparkline using react-native-svg
-function Sparkline({ data, color, id }: { data: { x: number; y: number }[]; color: string; id: string }) {
+function Sparkline({ up, id }: { up: boolean; id: string }) {
+  const data = up
+    ? [{ x: 1, y: 40 }, { x: 2, y: 55 }, { x: 3, y: 48 }, { x: 4, y: 70 }, { x: 5, y: 65 }, { x: 6, y: 80 }, { x: 7, y: 75 }, { x: 8, y: 90 }]
+    : [{ x: 1, y: 80 }, { x: 2, y: 72 }, { x: 3, y: 78 }, { x: 4, y: 60 }, { x: 5, y: 65 }, { x: 6, y: 55 }, { x: 7, y: 50 }, { x: 8, y: 42 }];
+  const color = up ? '#2FEFC4' : '#FF4B6E';
   const width = 122;
   const height = 36;
   const min = Math.min(...data.map(d => d.y));
@@ -62,7 +32,7 @@ function Sparkline({ data, color, id }: { data: { x: number; y: number }[]; colo
 
   const linePath = points.reduce((acc, p, i) =>
     i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}`
-            : `${acc} L${p.x.toFixed(1)},${p.y.toFixed(1)}`, '');
+      : `${acc} L${p.x.toFixed(1)},${p.y.toFixed(1)}`, '');
 
   const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
 
@@ -80,12 +50,34 @@ function Sparkline({ data, color, id }: { data: { x: number; y: number }[]; colo
   );
 }
 
-// Animated marquee for markets
+const majorPairs = ['USD/EUR', 'USD/GBP', 'USD/JPY', 'USD/AUD', 'USD/CAD', 'USD/CHF', 'USD/NZD'];
+
 function MarqueeMarkets() {
+  const [currencies, setCurrencies] = useState<ForexCurrency[]>([]);
   const translateX = useRef(new Animated.Value(0)).current;
-  const totalWidth = markets.length * (CARD_WIDTH + CARD_GAP);
+
+  const fetchForex = useCallback(async () => {
+    try {
+      const res = await forexApi.getCurrencies();
+      const filtered = (res.data ?? []).filter(c => majorPairs.includes(c.symbol));
+      setCurrencies(filtered);
+    } catch (e) {
+      console.log('Forex fetch failed:', e);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => { fetchForex(); }, [fetchForex])
+  );
+
+  const displayItems = currencies.length > 0
+    ? currencies.map(c => ({ pair: c.symbol, price: '-.--', change: '--', up: true }))
+    : majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true }));
+
+  const totalWidth = displayItems.length * (CARD_WIDTH + CARD_GAP);
 
   useEffect(() => {
+    if (displayItems.length === 0) return;
     const anim = Animated.loop(
       Animated.timing(translateX, {
         toValue: -totalWidth,
@@ -96,9 +88,9 @@ function MarqueeMarkets() {
     );
     anim.start();
     return () => anim.stop();
-  }, []);
+  }, [displayItems.length]);
 
-  const doubled = [...markets, ...markets];
+  const doubled = [...displayItems, ...displayItems];
 
   return (
     <View style={{ overflow: 'hidden', marginBottom: 24 }}>
@@ -116,15 +108,11 @@ function MarqueeMarkets() {
                 ? <TrendingUp size={12} color="#2FEFC4" />
                 : <TrendingDown size={12} color="#FF4B6E" />
               }
-              <Text style={[styles.marketChange, { color: m.up ? "#2FEFC4" : "#FF4B6E" }]}>
+              <Text style={[styles.marketChange, { color: m.up ? '#2FEFC4' : '#FF4B6E' }]}>
                 {m.change}
               </Text>
             </View>
-            <Sparkline
-              data={m.data}
-              color={m.up ? "#2FEFC4" : "#FF4B6E"}
-              id={`${m.pair.replace('/', '')}_${idx}`}
-            />
+            <Sparkline up={m.up} id={`${m.pair.replace('/', '')}_${idx}`} />
           </View>
         ))}
       </Animated.View>
@@ -132,7 +120,6 @@ function MarqueeMarkets() {
   );
 }
 
-// Quick actions with glow animation
 function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
 
@@ -144,10 +131,10 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   }, []);
 
   const actions = [
-    { label: "Signals",   screen: "signals",   Icon: Zap },
-    { label: "Traders",   screen: "traders",   Icon: Users },
-    { label: "Portfolio", screen: "portfolio", Icon: BarChart2 },
-    { label: "PAMM",      screen: "pamm",      Icon: Building2 },
+    { label: 'Signals', screen: 'signals', Icon: Zap },
+    { label: 'Traders', screen: 'traders', Icon: Users },
+    { label: 'Portfolio', screen: 'portfolio', Icon: BarChart2 },
+    { label: 'PAMM', screen: 'pamm', Icon: Building2 },
   ];
 
   return (
@@ -160,12 +147,8 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
             onPress={() => onNavigate(a.screen)}
             style={[styles.actionBtn, isGlowing && styles.actionBtnGlow]}
           >
-            <a.Icon
-              size={20}
-              color={isGlowing ? "#F7C948" : "#AB4BFF"}
-              strokeWidth={1.8}
-            />
-            <Text style={[styles.actionLabel, isGlowing && { color: "#F7C948" }]}>
+            <a.Icon size={20} color={isGlowing ? '#F7C948' : '#AB4BFF'} strokeWidth={1.8} />
+            <Text style={[styles.actionLabel, isGlowing && { color: '#F7C948' }]}>
               {a.label}
             </Text>
           </TouchableOpacity>
@@ -175,27 +158,15 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   );
 }
 
-
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const translateY = useRef(new Animated.Value(0)).current;
-
   const newsItems = [
     { title: "Fed holds rates steady — dollar weakens as traders price in June cut", time: "2h ago", tag: "Macro" },
     { title: "EUR/USD breaks key resistance at 1.0850 — bulls target 1.0920 next", time: "4h ago", tag: "EUR/USD" },
     { title: "Gold surges past $2,340 on safe-haven demand amid geopolitical tensions", time: "6h ago", tag: "XAU/USD" },
-    { title: "Bank of England holds rate at 5.25% — GBP/USD spikes 40 pips on release", time: "8h ago", tag: "GBP/USD" },
-    { title: "US Non-Farm Payrolls beat expectations — dollar index climbs to 3-week high", time: "10h ago", tag: "Macro" },
-    { title: "USD/JPY approaches 158.00 as BOJ maintains ultra-loose policy stance", time: "12h ago", tag: "USD/JPY" },
-    { title: "Oil prices drop 2.3% on surprise inventory build — CAD weakens against dollar", time: "14h ago", tag: "USD/CAD" },
-    { title: "ECB signals possible rate cut in September — EUR slides across the board", time: "16h ago", tag: "EUR/USD" },
-    { title: "Silver breaks above $29.50 — momentum traders eye $31 target next week", time: "18h ago", tag: "XAG/USD" },
-    { title: "AUD/USD falls to 3-month low as RBA flags growth concerns in minutes", time: "20h ago", tag: "AUD/USD" },
   ];
-
   const tagColors: Record<string, string> = {
-    Macro: "#C9A84C", "EUR/USD": "#AB4BFF", "XAU/USD": "#C9A84C",
-    "GBP/USD": "#2FEFC4", "USD/JPY": "#AB4BFF", "USD/CAD": "#2FEFC4",
-    "XAG/USD": "#8899AA", "AUD/USD": "#2FEFC4",
+    Macro: '#C9A84C', 'EUR/USD': '#AB4BFF', 'XAU/USD': '#C9A84C',
   };
 
   const ITEM_HEIGHT = 80;
@@ -219,32 +190,20 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
       <View style={{ height: 300, overflow: 'hidden', position: 'relative' }}>
-        {/* Top fade */}
-        <View style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 48, zIndex: 2,
-          backgroundColor: 'transparent',
-          // React Native doesn't support gradient overlays natively without expo-linear-gradient
-          // Use a semi-transparent overlay instead
-        }} pointerEvents="none" />
-        {/* Bottom fade */}
-        <View style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 48, zIndex: 2,
-        }} pointerEvents="none" />
-
         <Animated.View style={{ transform: [{ translateY }] }}>
           {doubled.map((item, i) => {
-            const tagColor = tagColors[item.tag] ?? "#8899AA";
+            const tagColor = tagColors[item.tag] ?? '#8899AA';
             return (
-              <View key={i} style={newsFeedStyles.item}>
-                <View style={[newsFeedStyles.tag, {
+              <View key={i} style={newsStyles.item}>
+                <View style={[newsStyles.tag, {
                   backgroundColor: `${tagColor}18`,
                   borderColor: `${tagColor}44`,
                 }]}>
-                  <Text style={[newsFeedStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
+                  <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={newsFeedStyles.title} numberOfLines={2}>{item.title}</Text>
-                  <Text style={newsFeedStyles.time}>{item.time}</Text>
+                  <Text style={newsStyles.title} numberOfLines={2}>{item.title}</Text>
+                  <Text style={newsStyles.time}>{item.time}</Text>
                 </View>
               </View>
             );
@@ -255,7 +214,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   );
 }
 
-const newsFeedStyles = StyleSheet.create({
+const newsStyles = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
     padding: 12, marginBottom: 8, borderRadius: 16,
@@ -276,31 +235,25 @@ export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
-      signals:   'Signals',
-      traders:   'Traders',
-      portfolio: 'Portfolio',
-      profile:   'Profile',
-      pamm: 'PAMM',
+      signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
+      profile: 'Profile', pamm: 'PAMM',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning 👋</Text>
-            <Text style={styles.username}>{user?.name ?? 'Alex Mercer'}</Text>
+            <Text style={styles.greeting}>Good morning</Text>
+            <Text style={styles.username}>{user?.name ?? 'Trader'}</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={styles.mpBadge}>
               <Zap size={13} color="#C9A84C" fill="#C9A84C" />
-              <Text style={styles.mpText}>4,820 MP</Text>
+              <Text style={styles.mpText}>0 MP</Text>
             </View>
             <TouchableOpacity style={styles.bellBtn}>
               <Bell size={18} color="#8899AA" />
@@ -311,17 +264,17 @@ export default function HomeScreen({ navigation }: any) {
         {/* Portfolio Card */}
         <View style={styles.portfolioCard}>
           <Text style={styles.portfolioLabel}>Total Portfolio</Text>
-          <Text style={styles.portfolioValue}>$24,810.50</Text>
+          <Text style={styles.portfolioValue}>$0.00</Text>
           <View style={styles.portfolioChangeRow}>
             <ArrowUpRight size={14} color="#2FEFC4" />
-            <Text style={styles.portfolioChange}>+$1,240.30</Text>
+            <Text style={styles.portfolioChange}>--</Text>
             <Text style={styles.portfolioChangeSub}>today</Text>
           </View>
           <View style={styles.portfolioStats}>
             {[
-              { label: "FOLLOWING", value: "7 Traders" },
-              { label: "WIN RATE",  value: "74%" },
-              { label: "SIGNALS",   value: "12 Active" },
+              { label: 'FOLLOWING', value: '0 Traders' },
+              { label: 'WIN RATE', value: '--' },
+              { label: 'SIGNALS', value: '0 Active' },
             ].map((s) => (
               <View key={s.label}>
                 <Text style={styles.statLabel}>{s.label}</Text>
@@ -337,48 +290,20 @@ export default function HomeScreen({ navigation }: any) {
         {/* Markets */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Markets</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
+          <TouchableOpacity><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
         </View>
         <MarqueeMarkets />
 
-        {/* Top Traders */}
+        {/* Latest News */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Traders</Text>
-          <TouchableOpacity onPress={() => onNavigate('traders')}>
-            <Text style={styles.seeAll}>See all</Text>
+          <Text style={styles.sectionTitle}>Latest News</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('News')}>
+            <ChevronRight size={18} color="#8899AA" />
           </TouchableOpacity>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 24, paddingRight: 12, gap: 12, marginBottom: 24 }}
-        >
-          {traders.map((t) => (
-            <TouchableOpacity key={t.name} style={styles.traderCard}>
-              <Image source={{ uri: t.avatar_url }} style={styles.traderAvatar} />
-              <Text style={styles.traderName}>{t.name}</Text>
-              <Text style={styles.traderHandle}>{t.handle}</Text>
-              <View style={styles.roiBadge}>
-                <Text style={styles.roiText}>{t.roi}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Latest News */}
-        {/* Latest News */}
-<View style={styles.sectionHeader}>
-  <Text style={styles.sectionTitle}>Latest News</Text>
-  <TouchableOpacity onPress={() => navigation.navigate('News')}>
-    <ChevronRight size={18} color="#8899AA" />
-  </TouchableOpacity>
-</View>
-<View style={{ paddingHorizontal: 24 }}>
-  <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
-</View>
-
+        <View style={{ paddingHorizontal: 24 }}>
+          <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -456,38 +381,4 @@ const styles = StyleSheet.create({
   marketPrice: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 2 },
   marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   marketChange: { fontSize: 12, fontWeight: '700' },
-
-  traderCard: {
-    width: 110, borderRadius: 20, padding: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-    alignItems: 'center',
-  },
-  traderAvatar: {
-    width: 48, height: 48, borderRadius: 24, marginBottom: 8,
-    borderWidth: 2, borderColor: 'rgba(171,75,255,0.4)',
-  },
-  traderName: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  traderHandle: { fontSize: 11, color: '#8899AA', marginTop: 2 },
-  roiBadge: {
-    marginTop: 8, paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 8, backgroundColor: 'rgba(47,239,196,0.12)',
-  },
-  roiText: { fontSize: 12, color: '#2FEFC4', fontWeight: '700' },
-
-  newsList: { paddingHorizontal: 24, gap: 12, marginBottom: 24 },
-  newsCard: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    padding: 16, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
-  newsTag: {
-    width: 72, alignItems: 'center', paddingVertical: 4,
-    borderRadius: 8, borderWidth: 1, flexShrink: 0,
-  },
-  newsTagText: { fontSize: 10, fontWeight: '700' },
-  newsContent: { flex: 1 },
-  newsTitle: { fontSize: 13, fontWeight: '600', color: '#F0EEFF', lineHeight: 18 },
-  newsTime: { fontSize: 11, color: '#8899AA', marginTop: 4 },
 });

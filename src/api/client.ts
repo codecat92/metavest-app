@@ -1,15 +1,20 @@
-// This is the base API client for all requests to backend
-// Base URL points to the production server
-const BASE_URL = 'http://157.66.4.40:8080/api';
+// Base API client — connects to local development backend
+// Ganti IP sesuai IP mesin kamu (cek pakai: ipconfig getifaddr en0)
+const BASE_URL = 'http://192.168.1.24:8000/api';
 
-// Default headers for all requests
-const defaultHeaders = {
+// Backend response always wraps data in { message, data, data_count? }
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+  data_count?: number;
+}
+
+const defaultHeaders: Record<string, string> = {
   'Content-Type': 'application/json',
   'Accept': 'application/json',
 };
 
-// Token storage — we'll use a simple in-memory store for now
-// Later we'll replace this with AsyncStorage for persistence
+// Token management — todo: replace with AsyncStorage/SecureStore
 let authToken: string | null = null;
 
 export const setToken = (token: string) => {
@@ -22,44 +27,37 @@ export const clearToken = () => {
   authToken = null;
 };
 
-// Core fetch wrapper
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const headers: Record<string, string> = { ...defaultHeaders };
 
-  // Attach auth token if available
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
-    headers: {
-      ...headers,
-      ...(options.headers as Record<string, string>),
-    },
+    headers: { ...headers, ...(options.headers as Record<string, string>) },
   });
 
-  const data = await response.json();
+  const json = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+    throw new Error(json.message || 'Request failed');
   }
 
-  return data;
+  return json;
 }
 
-// HTTP methods
 export const api = {
-  get: <T>(endpoint: string) =>
-    request<T>(endpoint),
+  get: <T>(endpoint: string) => request<T>(endpoint),
 
-  post: <T>(endpoint: string, body: object) =>
+  post: <T>(endpoint: string, body?: object) =>
     request<T>(endpoint, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     }),
 
   put: <T>(endpoint: string, body: object) =>

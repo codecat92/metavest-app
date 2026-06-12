@@ -1,12 +1,19 @@
-import { api } from './client';
+import { api, ApiResponse } from './client';
 
 export interface ForexCurrency {
   symbol: string;
-  price: number;
-  change: number;
-  change_pct: number;
+  currency_group: string;
+  currency_base: string;
+  currency_quote: string;
+}
+
+export interface ForexListResponse {
+  data: ForexCurrency[];
+  count: number;
+  status: string;
 }
 
 export const forexApi = {
-  getCurrencies: () => api.get<ForexCurrency[]>('/forex/curr'),
+  getCurrencies: () =>
+    api.get<ForexListResponse>('/forex/curr'),
 };

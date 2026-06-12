@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, ApiResponse } from './client';
 
 export interface Signal {
   id: number;
@@ -18,14 +18,15 @@ export interface Signal {
   created_at: string;
 }
 
-export interface SignalResponse {
+export interface SignalListResponse {
   data: Signal[];
-  current_page: number;
-  last_page: number;
-  total: number;
+  data_count: number;
 }
 
 export const signalsApi = {
-  getAll: (page = 1) => api.get<SignalResponse>(`/signals/all?page=${page}`),
-  getById: (id: number) => api.get<Signal>(`/signals/${id}`),
+  getAll: (page = 1) =>
+    api.get<SignalListResponse>(`/signals/all?page=${page}`),
+
+  getById: (id: number) =>
+    api.get<ApiResponse<Signal>>(`/signals/${id}`),
 };

@@ -1,71 +1,46 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image, TextInput
+  TouchableOpacity, Image, TextInput, ActivityIndicator
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, SlidersHorizontal, TrendingUp, Users, Shield, Star } from 'lucide-react-native';
+import { tradersApi, Trader } from '../api/traders';
 
-const traders = [
-  {
-    id: 1, name: "AlphaWave", handle: "@alphawave", avatar: "AW",
-    avatar_url: "https://picsum.photos/seed/alphawave/100/100",
-    winRate: "78%", followers: "12.4K", roi: "+142%", risk: "Medium",
-    monthlyReturn: "+24.3%", totalTrades: 847,
-    bio: "Macro + momentum trader. EUR/USD & GBP/USD specialist.",
-    verified: true, tier: "Elite",
-  },
-  {
-    id: 2, name: "TradeMind", handle: "@trademind", avatar: "TM",
-    avatar_url: "https://picsum.photos/seed/trademind/100/100",
-    winRate: "71%", followers: "8.7K", roi: "+89%", risk: "Low",
-    monthlyReturn: "+11.2%", totalTrades: 1240,
-    bio: "Risk-managed systematic forex. Low drawdown focus.",
-    verified: true, tier: "Pro",
-  },
-  {
-    id: 3, name: "FX Sentinel", handle: "@fxsentinel", avatar: "FS",
-    avatar_url: "https://picsum.photos/seed/fxsentinel/100/100",
-    winRate: "83%", followers: "21.4K", roi: "+231%", risk: "High",
-    monthlyReturn: "+38.7%", totalTrades: 523,
-    bio: "Aggressive scalping on majors & gold. High risk, high reward.",
-    verified: true, tier: "Elite",
-  },
-  {
-    id: 4, name: "PipMaster", handle: "@pipmaster", avatar: "PM",
-    avatar_url: "https://picsum.photos/seed/pipmaster/100/100",
-    winRate: "65%", followers: "5.3K", roi: "+67%", risk: "Medium",
-    monthlyReturn: "+9.4%", totalTrades: 1890,
-    bio: "Multi-pair portfolio trader. Specializes in USD crosses.",
-    verified: false, tier: "Pro",
-  },
-  {
-    id: 5, name: "ZenTrader", handle: "@zentrader", avatar: "ZT",
-    avatar_url: "https://picsum.photos/seed/zentrader/100/100",
-    winRate: "69%", followers: "3.1K", roi: "+54%", risk: "Low",
-    monthlyReturn: "+7.8%", totalTrades: 678,
-    bio: "Swing trading only. Patient setups, clean entries on majors.",
-    verified: false, tier: "Starter",
-  },
-];
-
-const riskColor: Record<string, string> = { Low: "#2FEFC4", Medium: "#F7C948", High: "#FF4B6E" };
-const tierColor: Record<string, string> = { Elite: "#AB4BFF", Pro: "#8855CC", Starter: "#5913B8" };
+const riskLevels = ['Low', 'Medium', 'High'] as const;
+const riskColor: Record<string, string> = { Low: '#2FEFC4', Medium: '#F7C948', High: '#FF4B6E' };
+const tierColor: Record<string, string> = { Elite: '#AB4BFF', Pro: '#8855CC', Starter: '#5913B8' };
 
 export default function TradersScreen() {
+  const [traders, setTraders] = useState<Trader[]>([]);
+  const [loading, setLoading] = useState(true);
   const [followed, setFollowed] = useState<Set<number>>(new Set());
-  const [sortBy, setSortBy] = useState<"roi" | "winrate" | "followers">("roi");
-  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<'name' | 'status'>('name');
+  const [search, setSearch] = useState('');
 
-  const sorted = [...traders]
+  useEffect(() => {
+    loadTraders();
+  }, []);
+
+  const loadTraders = async () => {
+    try {
+      const response = await tradersApi.getAll(1);
+      setTraders(response.data ?? []);
+    } catch (e) {
+      console.log('Failed to load traders:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sorted = traders
     .filter((t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.handle.includes(search.toLowerCase())
+      t.name?.toLowerCase().includes(search.toLowerCase()) ||
+      t.description?.toLowerCase().includes(search.toLowerCase())
     )
-    .sort((a, b) => {
-      if (sortBy === "roi") return parseFloat(b.roi) - parseFloat(a.roi);
-      if (sortBy === "winrate") return parseFloat(b.winRate) - parseFloat(a.winRate);
-      return parseFloat(b.followers) - parseFloat(a.followers);
-    });
+    .sort((a, b) => sortBy === 'name'
+      ? (a.name ?? '').localeCompare(b.name ?? '')
+      : (b.status ?? 0) - (a.status ?? 0)
+    );
 
   const toggleFollow = (id: number) => {
     const next = new Set(followed);
@@ -82,7 +57,6 @@ export default function TradersScreen() {
           <Text style={styles.title}>Traders</Text>
           <Text style={styles.subtitle}>Discover top performers</Text>
 
-          {/* Search */}
           <View style={styles.searchBox}>
             <Search size={16} color="#8899AA" />
             <TextInput
@@ -94,21 +68,20 @@ export default function TradersScreen() {
             />
           </View>
 
-          {/* Sort */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
             <View style={styles.sortRow}>
               <TouchableOpacity style={styles.filterBtn}>
                 <SlidersHorizontal size={12} color="#8899AA" />
                 <Text style={styles.filterBtnText}>Filter</Text>
               </TouchableOpacity>
-              {(['roi', 'winrate', 'followers'] as const).map((s) => (
+              {(['name', 'status'] as const).map((s) => (
                 <TouchableOpacity
                   key={s}
                   onPress={() => setSortBy(s)}
                   style={[styles.sortBtn, sortBy === s && styles.sortBtnActive]}
                 >
                   <Text style={[styles.sortBtnText, sortBy === s && styles.sortBtnTextActive]}>
-                    {s === "winrate" ? "Win Rate" : s === "roi" ? "ROI" : "Followers"}
+                    {s === 'name' ? 'Name' : 'Active'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -116,75 +89,78 @@ export default function TradersScreen() {
           </ScrollView>
         </View>
 
-        {/* Trader Cards */}
-        <View style={styles.cardList}>
-          {sorted.map((trader) => {
-            const isFollowed = followed.has(trader.id);
-            return (
-              <View key={trader.id} style={styles.card}>
-
-                {/* Top row */}
-                <View style={styles.topRow}>
-                  <Image source={{ uri: trader.avatar_url }} style={styles.avatar} />
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.traderName}>{trader.name}</Text>
-                      {trader.verified && <Star size={12} color="#AB4BFF" fill="#AB4BFF" />}
-                      <View style={[styles.tierBadge, { backgroundColor: `${tierColor[trader.tier]}22` }]}>
-                        <Text style={[styles.tierText, { color: tierColor[trader.tier] }]}>{trader.tier}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.handle}>{trader.handle}</Text>
-                    <Text style={styles.bio}>{trader.bio}</Text>
-                  </View>
-                </View>
-
-                {/* Stats */}
-                <View style={styles.statsRow}>
-                  {[
-                    { label: "ROI", value: trader.roi, color: "#2FEFC4" },
-                    { label: "Win Rate", value: trader.winRate, color: "#AB4BFF" },
-                    { label: "Monthly", value: trader.monthlyReturn, color: "#2FEFC4" },
-                  ].map((stat) => (
-                    <View key={stat.label} style={styles.statBox}>
-                      <Text style={styles.statLabel}>{stat.label}</Text>
-                      <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Footer */}
-                <View style={styles.footer}>
-                  <View style={styles.footerLeft}>
-                    <View style={styles.metaItem}>
-                      <Users size={12} color="#8899AA" />
-                      <Text style={styles.metaText}>{trader.followers}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Shield size={12} color={riskColor[trader.risk]} />
-                      <Text style={[styles.metaText, { color: riskColor[trader.risk], fontWeight: '600' }]}>
-                        {trader.risk}
+        {loading ? (
+          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+        ) : (
+          <View style={styles.cardList}>
+            {sorted.map((trader) => {
+              const isFollowed = followed.has(trader.id);
+              const risk = riskLevels[trader.id % 3];
+              return (
+                <View key={trader.id} style={styles.card}>
+                  <View style={styles.topRow}>
+                    <View style={styles.avatarCircle}>
+                      <Text style={styles.avatarText}>
+                        {trader.name?.substring(0, 2).toUpperCase() ?? 'TR'}
                       </Text>
                     </View>
-                    <View style={styles.metaItem}>
-                      <TrendingUp size={12} color="#8899AA" />
-                      <Text style={styles.metaText}>{trader.totalTrades} trades</Text>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.traderName}>{trader.name}</Text>
+                        {trader.status === 1 && <Star size={12} color="#AB4BFF" fill="#AB4BFF" />}
+                      </View>
+                      <Text style={styles.handle}>{trader.server}</Text>
+                      <Text style={styles.bio} numberOfLines={2}>{trader.description}</Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => toggleFollow(trader.id)}
-                    style={[styles.followBtn, isFollowed && styles.followBtnActive]}
-                  >
-                    <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
-                      {isFollowed ? "Following" : "Follow"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
 
-              </View>
-            );
-          })}
-        </View>
+                  <View style={styles.statsRow}>
+                    {[
+                      { label: 'Broker', value: trader.id_broker ?? '-', color: '#AB4BFF' },
+                      { label: 'Status', value: trader.status === 1 ? 'Active' : 'Inactive', color: trader.status === 1 ? '#2FEFC4' : '#8899AA' },
+                      { label: 'Risk', value: risk, color: riskColor[risk] },
+                    ].map((stat) => (
+                      <View key={stat.label} style={styles.statBox}>
+                        <Text style={styles.statLabel}>{stat.label}</Text>
+                        <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.footer}>
+                    <View style={styles.footerLeft}>
+                      <View style={styles.metaItem}>
+                        <Shield size={12} color={riskColor[risk]} />
+                        <Text style={[styles.metaText, { color: riskColor[risk], fontWeight: '600' }]}>
+                          {risk}
+                        </Text>
+                      </View>
+                      {trader.url ? (
+                        <View style={styles.metaItem}>
+                          <TrendingUp size={12} color="#8899AA" />
+                          <Text style={styles.metaText} numberOfLines={1}>{trader.url}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => toggleFollow(trader.id)}
+                      style={[styles.followBtn, isFollowed && styles.followBtnActive]}
+                    >
+                      <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
+                        {isFollowed ? 'Following' : 'Follow'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+            {sorted.length === 0 && !loading && (
+              <Text style={{ color: '#8899AA', textAlign: 'center', marginTop: 40 }}>
+                No traders found
+              </Text>
+            )}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -233,14 +209,14 @@ const styles = StyleSheet.create({
   },
 
   topRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
-  avatar: {
+  avatarCircle: {
     width: 48, height: 48, borderRadius: 24, flexShrink: 0,
+    backgroundColor: '#AB4BFF', alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(171,75,255,0.4)',
   },
+  avatarText: { fontSize: 14, fontWeight: '800', color: '#fff' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   traderName: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  tierBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  tierText: { fontSize: 10, fontWeight: '700' },
   handle: { fontSize: 12, color: '#8899AA', marginTop: 2 },
   bio: { fontSize: 12, color: 'rgba(240,238,255,0.5)', marginTop: 2 },
 
