@@ -5,3 +5,4 @@ export { tradersApi } from './traders';
 export { signalsApi } from './signals';
 export { forexApi } from './forex';
 export { walletApi } from './wallet';
+export { followApi } from './follow';
