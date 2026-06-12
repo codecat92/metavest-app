@@ -161,6 +161,13 @@ export default function ProfileScreen({ navigation }: any) {
           ))}
 
           <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            <Text style={styles.editText}>Edit Profile</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.logoutBtn}
             onPress={async () => {
               await logout();
@@ -247,6 +254,11 @@ const styles = StyleSheet.create({
   settingsLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: '#fff' },
   settingsValue: { fontSize: 13, fontWeight: '600', color: '#8899AA' },
 
+  editBtn: {
+    paddingVertical: 14, borderRadius: 18, marginBottom: 12,
+    backgroundColor: '#AB4BFF', alignItems: 'center', justifyContent: 'center',
+  },
+  editText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 16, borderRadius: 18,

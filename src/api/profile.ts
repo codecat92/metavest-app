@@ -3,6 +3,38 @@ import { getToken } from './client';
 const BASE_URL = 'http://192.168.1.24:8000/api';
 
 export const profileApi = {
+  editProfile: async (fields: Record<string, string>): Promise<{ message: string; data?: any }> => {
+    const token = getToken();
+    const response = await fetch(`${BASE_URL}/profile/edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(fields),
+    });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.message || 'Update failed');
+    return json;
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const token = getToken();
+    const response = await fetch(`${BASE_URL}/profile/edit/password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+    });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.message || 'Update failed');
+    return json;
+  },
+
   uploadPhoto: async (imageUri: string): Promise<{ message: string; data?: any }> => {
     const token = getToken();
     const formData = new FormData();
