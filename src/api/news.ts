@@ -18,11 +18,11 @@ export interface ArticleListResponse {
 
 export const newsApi = {
   getArticles: () =>
-    api.get<ArticleListResponse>('/article-event'),
+    api.get<ArticleListResponse>('/article-event?page=1'),
 
   getArticleById: (id: number) =>
     api.get<ApiResponse<Article>>(`/article-event/${id}`),
 
   getAcademy: () =>
-    api.get<ArticleListResponse>('/academy-article'),
+    api.get<ArticleListResponse>('/academy-article?page=1'),
 };
