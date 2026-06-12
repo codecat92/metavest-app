@@ -30,4 +30,13 @@ export const walletApi = {
 
   getHistory: (page = 1) =>
     api.get<WalletHistoryResponse>(`/wallet/history?page=${page}`),
+
+  requestTopUp: () =>
+    api.post<ApiResponse<any>>('/wallet/request-top-up'),
+
+  validateTopUp: (amount: number) =>
+    api.post<ApiResponse<any>>('/wallet/top-up', { amount }),
+
+  withdraw: (amount: number) =>
+    api.post<ApiResponse<any>>('/wallet/withdraw', { amount }),
 };

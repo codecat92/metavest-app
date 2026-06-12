@@ -1,19 +1,25 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, TextInput
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Plus, Minus, Wallet as WalletIcon } from 'lucide-react-native';
 import { walletApi, Wallet, WalletHistoryItem } from '../api/wallet';
 import { followApi, UserTrader } from '../api/follow';
 import { getToken } from '../api/client';
+import { useCustomAlert } from '../context/AlertContext';
 
 export default function PortfolioScreen() {
+  const alert = useCustomAlert();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [history, setHistory] = useState<WalletHistoryItem[]>([]);
   const [followed, setFollowed] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -73,6 +79,78 @@ export default function PortfolioScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Wallet Actions */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity onPress={() => { setShowTopUp(true); setShowWithdraw(false); setAmount(''); }} style={[styles.actionBtn, { backgroundColor: 'rgba(47,239,196,0.1)', borderColor: 'rgba(47,239,196,0.25)' }]}>
+                <Plus size={16} color="#2FEFC4" />
+                <Text style={[styles.actionBtnText, { color: '#2FEFC4' }]}>Top Up</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowWithdraw(true); setShowTopUp(false); setAmount(''); }} style={[styles.actionBtn, { backgroundColor: 'rgba(255,75,110,0.1)', borderColor: 'rgba(255,75,110,0.25)' }]}>
+                <Minus size={16} color="#FF4B6E" />
+                <Text style={[styles.actionBtnText, { color: '#FF4B6E' }]}>Withdraw</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Top Up Form */}
+            {showTopUp && (
+              <View style={styles.formCard}>
+                <Text style={styles.formTitle}>Top Up Wallet</Text>
+                <View style={styles.formInputBox}>
+                  <TextInput
+                    style={styles.formInput}
+                    value={amount}
+                    onChangeText={setAmount}
+                    placeholder="Enter amount"
+                    placeholderTextColor="#8899AA"
+                    keyboardType="numeric"
+                  />
+                </View>
+                <TouchableOpacity onPress={async () => {
+                  const val = Number(amount);
+                  if (!val || val <= 0) { alert.showAlert({ title: 'Error', message: 'Enter a valid amount', type: 'error' }); return; }
+                  setSubmitting(true);
+                  try {
+                    await walletApi.validateTopUp(val);
+                    alert.showAlert({ title: 'Success', message: 'Top up request submitted', type: 'success' });
+                    setShowTopUp(false); setAmount(''); loadData();
+                  } catch (e: any) { alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' }); }
+                  finally { setSubmitting(false); }
+                }} style={[styles.formBtn, submitting && { opacity: 0.6 }]} disabled={submitting}>
+                  <Text style={styles.formBtnText}>{submitting ? 'Processing...' : 'Confirm Top Up'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Withdraw Form */}
+            {showWithdraw && (
+              <View style={styles.formCard}>
+                <Text style={[styles.formTitle, { color: '#FF4B6E' }]}>Withdraw</Text>
+                <View style={styles.formInputBox}>
+                  <TextInput
+                    style={styles.formInput}
+                    value={amount}
+                    onChangeText={setAmount}
+                    placeholder="Enter amount"
+                    placeholderTextColor="#8899AA"
+                    keyboardType="numeric"
+                  />
+                </View>
+                <TouchableOpacity onPress={async () => {
+                  const val = Number(amount);
+                  if (!val || val <= 0) { alert.showAlert({ title: 'Error', message: 'Enter a valid amount', type: 'error' }); return; }
+                  setSubmitting(true);
+                  try {
+                    await walletApi.withdraw(val);
+                    alert.showAlert({ title: 'Success', message: 'Withdrawal request submitted', type: 'success' });
+                    setShowWithdraw(false); setAmount(''); loadData();
+                  } catch (e: any) { alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' }); }
+                  finally { setSubmitting(false); }
+                }} style={[styles.formBtn, { backgroundColor: '#FF4B6E' }, submitting && { opacity: 0.6 }]} disabled={submitting}>
+                  <Text style={styles.formBtnText}>{submitting ? 'Processing...' : 'Confirm Withdraw'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Followed Traders */}
             <View style={styles.section}>
@@ -211,4 +289,30 @@ const styles = StyleSheet.create({
   followDesc: { fontSize: 12, color: '#8899AA', marginTop: 2 },
   followStatus: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   followStatusText: { fontSize: 12, fontWeight: '600', color: '#2FEFC4' },
+
+  actionRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 20 },
+  actionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1,
+  },
+  actionBtnText: { fontSize: 14, fontWeight: '700' },
+
+  formCard: {
+    marginHorizontal: 24, padding: 20, borderRadius: 20, marginBottom: 20,
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+  },
+  formTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
+  formInputBox: {
+    height: 48, borderRadius: 14, paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    marginBottom: 12,
+  },
+  formInput: { flex: 1, color: '#fff', fontSize: 15 },
+  formBtn: {
+    height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#2FEFC4',
+  },
+  formBtnText: { fontSize: 15, fontWeight: '700', color: '#0E1439' },
 });
