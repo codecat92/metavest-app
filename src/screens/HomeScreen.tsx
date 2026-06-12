@@ -322,7 +322,7 @@ export default function HomeScreen({ navigation }: any) {
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
-      profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade',
+      profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };
@@ -376,7 +376,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* Markets */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Markets</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Market')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
         </View>
         <MarqueeMarkets />
 

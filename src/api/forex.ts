@@ -48,6 +48,17 @@ export const forexApi = {
     return result;
   },
 
+  getTimeSeries: async (symbol: string, interval = '1h') => {
+    const key = `forex_ts_${symbol}_${interval}`;
+    const cached = cacheGet(key);
+    if (cached) return cached;
+
+    await delay(200);
+    const result = await api.post<any>('/forex/time', { symbol, time: interval });
+    cacheSet(key, result, 15 * 60 * 1000);
+    return result;
+  },
+
   getPrice: async (symbol: string) => {
     const key = `forex_price_${symbol}`;
     const cached = cacheGet(key);
