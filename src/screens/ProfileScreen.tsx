@@ -17,6 +17,7 @@ const SERVER_HOST = 'http://192.168.1.24:8000';
 export default function ProfileScreen({ navigation }: any) {
   const { logout, user } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
+  const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
 
   const initials = user?.name
@@ -50,6 +51,7 @@ export default function ProfileScreen({ navigation }: any) {
         const response = await profileApi.uploadPhoto(result.assets[0].uri);
         if (response.data?.profile_image_src) {
           setProfileImage(response.data.profile_image_src);
+          setCacheBuster(Date.now());
         }
         Alert.alert('Success', 'Profile photo updated');
       } catch (e: any) {
@@ -61,9 +63,9 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const imageSrc = profileImage
-    ? (profileImage.startsWith('http')
+    ? ((profileImage.startsWith('http')
         ? profileImage.replace('localhost', '192.168.1.24')
-        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}`)
+        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}`) + `?t=${cacheBuster}`)
     : null;
 
   const settingsGroups = [
