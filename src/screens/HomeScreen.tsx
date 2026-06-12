@@ -161,7 +161,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   ];
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActions}>
+    <View style={styles.quickActions}>
       {actions.map((a, index) => {
         const isGlowing = glowIndex === index;
         return (
@@ -177,7 +177,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
           </TouchableOpacity>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
