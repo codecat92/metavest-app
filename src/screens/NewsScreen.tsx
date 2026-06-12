@@ -97,7 +97,12 @@ export default function NewsScreen({ navigation }: any) {
             {filtered.map((article, i) => {
               const tagColor = tagColors[article.tag] ?? '#8899AA';
               return (
-                <View key={`${article.tag}-${article.id}`} style={styles.articleCard}>
+                <TouchableOpacity
+                  key={`${article.tag}-${article.id}`}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('ArticleDetail', { article })}
+                  style={styles.articleCard}
+                >
                   <View style={styles.articleContent}>
                     <View style={styles.metaRow}>
                       <View style={[styles.tagBadge, {
@@ -119,7 +124,7 @@ export default function NewsScreen({ navigation }: any) {
                       </Text>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
             {filtered.length === 0 && !loading && (

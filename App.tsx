@@ -26,6 +26,7 @@ import MarketScreen from './src/screens/MarketScreen';
 import AcademyScreen from './src/screens/AcademyScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
 
 
 
@@ -100,6 +101,7 @@ function RootNavigator() {
       <Stack.Screen name="Academy" component={AcademyScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
     </Stack.Navigator>
   );
 }
