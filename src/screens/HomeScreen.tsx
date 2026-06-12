@@ -1,13 +1,14 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image, Animated, Easing
+  TouchableOpacity, Animated, Easing
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
+import { newsApi } from '../api/news';
 
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
@@ -218,38 +219,63 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
   );
 }
 
+function detectTag(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes('gold') || t.includes('xau')) return 'XAU/USD';
+  if (t.includes('eur') || t.includes('usd') && t.includes('dollar')) return 'EUR/USD';
+  if (t.includes('gbp')) return 'GBP/USD';
+  if (t.includes('oil') || t.includes('crude')) return 'Oil';
+  if (t.includes('fed') || t.includes('rate') || t.includes('nfp')) return 'Macro';
+  return 'Market';
+}
+
+const tagColors: Record<string, string> = {
+  Macro: '#C9A84C', 'EUR/USD': '#AB4BFF', 'XAU/USD': '#C9A84C',
+  'GBP/USD': '#2FEFC4', Oil: '#F7C948', Market: '#AB4BFF',
+};
+
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const translateY = useRef(new Animated.Value(0)).current;
-  const newsItems = [
-    { title: "Fed holds rates steady — dollar weakens as traders price in June cut", time: "2h ago", tag: "Macro" },
-    { title: "EUR/USD breaks key resistance at 1.0850 — bulls target 1.0920 next", time: "4h ago", tag: "EUR/USD" },
-    { title: "Gold surges past $2,340 on safe-haven demand amid geopolitical tensions", time: "6h ago", tag: "XAU/USD" },
+  const [items, setItems] = useState<{ title: string; time: string; tag: string }[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      newsApi.getArticles().then(res => {
+        const latest = (res.data ?? []).slice(0, 4).map(a => ({
+          title: a.title ?? '',
+          time: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+          tag: detectTag(a.title ?? ''),
+        }));
+        setItems(latest);
+      }).catch(() => {});
+    }, [])
+  );
+
+  const displayItems = items.length > 0 ? items : [
+    { title: "Fed holds rates steady — dollar weakens", time: "", tag: "Macro" },
   ];
-  const tagColors: Record<string, string> = {
-    Macro: '#C9A84C', 'EUR/USD': '#AB4BFF', 'XAU/USD': '#C9A84C',
-  };
 
   const ITEM_HEIGHT = 80;
-  const totalHeight = newsItems.length * ITEM_HEIGHT;
+  const totalHeight = displayItems.length * ITEM_HEIGHT;
 
   useEffect(() => {
     const anim = Animated.loop(
       Animated.timing(translateY, {
         toValue: -totalHeight,
-        duration: 28000,
+        duration: Math.max(displayItems.length * 8000, 12000),
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
     anim.start();
     return () => anim.stop();
-  }, []);
+  }, [totalHeight]);
 
-  const doubled = [...newsItems, ...newsItems];
+  const doubled = [...displayItems, ...displayItems];
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <View style={{ height: 300, overflow: 'hidden', position: 'relative' }}>
+      <View style={{ height: totalHeight, overflow: 'hidden', position: 'relative' }}>
         <Animated.View style={{ transform: [{ translateY }] }}>
           {doubled.map((item, i) => {
             const tagColor = tagColors[item.tag] ?? '#8899AA';
@@ -374,7 +400,7 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0E1439' },
-  scroll: { paddingBottom: 100 },
+  scroll: { paddingBottom: 80 },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
