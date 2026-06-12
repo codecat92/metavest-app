@@ -1,230 +1,249 @@
 import {
-    View, Text, ScrollView, StyleSheet,
-    TouchableOpacity, Linking
-  } from 'react-native';
-  import {
-    ArrowLeft, Bell, MapPin, Calendar,
-    Globe, Shield, CheckCircle
-  } from 'lucide-react-native';
-  
-  export default function PAMMScreen({ navigation }: any) {
-    const openLink = (url: string) => Linking.openURL(url);
-  
+  View, Text, ScrollView, StyleSheet,
+  TouchableOpacity, ActivityIndicator, TextInput
+} from 'react-native';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  ArrowLeft, Building2, Shield, CheckCircle, Plus, ChevronRight
+} from 'lucide-react-native';
+import { pammApi, PAMMEntry } from '../api/pamm';
+import { getToken } from '../api/client';
+import { useCustomAlert } from '../context/AlertContext';
+import { useAuth } from '../context/AuthContext';
+
+export default function PAMMScreen({ navigation }: any) {
+  const { user } = useAuth();
+  const alert = useCustomAlert();
+  const [entries, setEntries] = useState<PAMMEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [brokerId, setBrokerId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadData = useCallback(async () => {
+    if (!getToken()) { setLoading(false); return; }
+    try {
+      const res = await pammApi.getAll();
+      setEntries(res.data ?? []);
+    } catch (e) {
+      console.log('PAMM load failed:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => { setLoading(true); loadData(); }, [loadData])
+  );
+
+  const handleAdd = async () => {
+    if (!brokerId.trim()) {
+      alert.showAlert({ title: 'Error', message: 'Broker ID is required', type: 'error' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await pammApi.create(brokerId.trim(), user?.name ?? '', 1);
+      alert.showAlert({ title: 'Success', message: 'PAMM broker registered', type: 'success' });
+      setShowAdd(false);
+      setBrokerId('');
+      loadData();
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!getToken()) {
     return (
       <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-  
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backBtn}
-              >
-                <ArrowLeft size={18} color="#8899AA" />
-              </TouchableOpacity>
-              <Text style={styles.title}>PAMM</Text>
-            </View>
-            <TouchableOpacity style={styles.backBtn}>
-              <Bell size={18} color="#8899AA" />
-            </TouchableOpacity>
-          </View>
-  
-          {/* Broker Identity Card */}
-          <View style={styles.section}>
-            <View style={styles.brokerCard}>
-              <View style={styles.brokerLogo}>
-                <Text style={styles.brokerLogoText}>JDR</Text>
-              </View>
-              <Text style={styles.brokerName}>JDR Securities</Text>
-              <Text style={styles.brokerSub}>Authorised Forex Broker</Text>
-            </View>
-          </View>
-  
-          {/* Broker Specs */}
-          <View style={styles.section}>
-            <View style={styles.specsCard}>
-              {/* Row 1 */}
-              <View style={styles.specsRow}>
-                <View style={styles.specItem}>
-                  <Calendar size={15} color="#8899AA" />
-                  <View>
-                    <Text style={styles.specLabel}>ESTABLISHED</Text>
-                    <Text style={styles.specValue}>2024</Text>
-                  </View>
-                </View>
-                <View style={styles.specItem}>
-                  <Globe size={15} color="#8899AA" />
-                  <View>
-                    <Text style={styles.specLabel}>PLATFORM</Text>
-                    <Text style={styles.specValue}>MT5</Text>
-                  </View>
-                </View>
-              </View>
-  
-              {/* Row 2 */}
-              <View style={[styles.specsRow, { marginBottom: 20 }]}>
-                <View>
-                  <Text style={styles.specLabel}>MIN. DEPOSIT</Text>
-                  <Text style={styles.specValue}>$0</Text>
-                </View>
-                <View>
-                  <Text style={styles.specLabel}>MAX LEVERAGE</Text>
-                  <Text style={styles.specValue}>Up to 400:1</Text>
-                </View>
-                <View>
-                  <Text style={styles.specLabel}>SPREAD</Text>
-                  <Text style={styles.specValue}>1 pip (Std)</Text>
-                </View>
-              </View>
-  
-              {/* Address */}
-              <View style={styles.addressRow}>
-                <MapPin size={15} color="#8899AA" />
-                <Text style={styles.addressText}>
-                  Suite 2 Level 15, 60 Margaret St Sydney NSW 2000 Australia
-                </Text>
-              </View>
-            </View>
-          </View>
-  
-          {/* Regulations */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Regulations</Text>
-            <View style={styles.regRow}>
-              {[
-                { label: "ASIC", sub: "Regulated" },
-                { label: "NZ FSPR", sub: "1005237" },
-              ].map((reg) => (
-                <View key={reg.label} style={styles.regCard}>
-                  <Shield size={18} color="#C9A84C" />
-                  <View>
-                    <Text style={styles.regLabel}>{reg.label}</Text>
-                    <Text style={styles.regSub}>{reg.sub}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-  
-          {/* Description */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <View style={styles.descCard}>
-              {[
-                "A range of trading instruments",
-                "Demo accounts available",
-                "MT5 supported",
-                "No minimum deposit requirement",
-                "Multi-channel support to contact",
-                "ASIC Regulated",
-                "FSPR Registered",
-              ].map((item) => (
-                <View key={item} style={styles.descItem}>
-                  <CheckCircle size={15} color="#C9A84C" />
-                  <Text style={styles.descText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-  
-          {/* CTA Buttons */}
-          <View style={styles.ctaRow}>
-            <TouchableOpacity
-              style={styles.ctaPrimary}
-              onPress={() => openLink("https://secure.jdrsecurities.vc/login")}
-            >
-              <Text style={styles.ctaPrimaryText}>Open Broker</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.ctaSecondary}
-              onPress={() => openLink("https://pamm_investor.jdrsecurities.vc/app/auth/investor")}
-            >
-              <Text style={styles.ctaSecondaryText}>PAMM Invest</Text>
-            </TouchableOpacity>
-          </View>
-  
-        </ScrollView>
+        <View style={styles.center}><Text style={styles.centerText}>Login to see PAMM</Text></View>
       </View>
     );
   }
-  
-  const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0E1439' },
-    scroll: { paddingBottom: 40 },
-  
-    header: {
-      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 24,
-    },
-    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    backBtn: {
-      width: 40, height: 40, borderRadius: 20,
-      backgroundColor: 'rgba(255,255,255,0.07)',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-      alignItems: 'center', justifyContent: 'center',
-    },
-    title: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  
-    section: { paddingHorizontal: 24, marginBottom: 24 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 12 },
-  
-    brokerCard: {
-      borderRadius: 24, paddingVertical: 32, alignItems: 'center',
-      backgroundColor: 'rgba(171,75,255,0.15)',
-      borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
-    },
-    brokerLogo: {
-      width: 80, height: 80, borderRadius: 40,
-      backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
-      borderWidth: 3, borderColor: 'rgba(201,168,76,0.4)', marginBottom: 16,
-    },
-    brokerLogoText: { fontSize: 18, fontWeight: '900', color: '#0E1439', letterSpacing: -1 },
-    brokerName: { fontSize: 20, fontWeight: '800', color: '#fff' },
-    brokerSub: { fontSize: 13, color: '#8899AA', marginTop: 4 },
-  
-    specsCard: {
-      padding: 20, borderRadius: 20,
-      backgroundColor: 'rgba(14,20,57,0.85)',
-      borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-    },
-    specsRow: {
-      flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20,
-    },
-    specItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    specLabel: { fontSize: 11, color: '#8899AA', fontWeight: '500' },
-    specValue: { fontSize: 14, fontWeight: '700', color: '#fff', marginTop: 2 },
-    addressRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-    addressText: { fontSize: 13, color: '#8899AA', flex: 1, lineHeight: 20 },
-  
-    regRow: { flexDirection: 'row', gap: 12 },
-    regCard: {
-      flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12,
-      padding: 16, borderRadius: 16,
-      backgroundColor: 'rgba(201,168,76,0.08)',
-      borderWidth: 1, borderColor: 'rgba(201,168,76,0.25)',
-    },
-    regLabel: { fontSize: 14, fontWeight: '700', color: '#fff' },
-    regSub: { fontSize: 11, color: '#8899AA' },
-  
-    descCard: {
-      padding: 20, borderRadius: 20, gap: 12,
-      backgroundColor: 'rgba(14,20,57,0.85)',
-      borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-    },
-    descItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    descText: { fontSize: 14, color: '#D0D8E4' },
-  
-    ctaRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 24 },
-    ctaPrimary: {
-      flex: 1, paddingVertical: 16, borderRadius: 16,
-      backgroundColor: '#C9A84C', alignItems: 'center', justifyContent: 'center',
-    },
-    ctaPrimaryText: { fontSize: 15, fontWeight: '700', color: '#0E1439' },
-    ctaSecondary: {
-      flex: 1, paddingVertical: 16, borderRadius: 16,
-      borderWidth: 1.5, borderColor: '#C9A84C',
-      alignItems: 'center', justifyContent: 'center',
-    },
-    ctaSecondaryText: { fontSize: 15, fontWeight: '700', color: '#C9A84C' },
-  });
+
+  return (
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <ArrowLeft size={20} color="#8899AA" />
+          </TouchableOpacity>
+          <Text style={styles.title}>PAMM</Text>
+          <TouchableOpacity onPress={() => setShowAdd(!showAdd)} style={styles.addBtn}>
+            <Plus size={18} color={showAdd ? '#F7C948' : '#AB4BFF'} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Add Form */}
+        {showAdd && (
+          <View style={styles.addCard}>
+            <Text style={styles.addTitle}>Register PAMM Broker</Text>
+            <View style={styles.inputBox}>
+              <TextInput
+                style={styles.input}
+                value={brokerId}
+                onChangeText={setBrokerId}
+                placeholder="Enter broker ID"
+                placeholderTextColor="#8899AA"
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleAdd}
+              style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.submitText}>Register</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+        ) : (
+          <>
+            {/* Stats */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Building2 size={20} color="#AB4BFF" />
+                <Text style={styles.statValue}>{entries.length}</Text>
+                <Text style={styles.statLabel}>Brokers</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Shield size={20} color="#2FEFC4" />
+                <Text style={styles.statValue}>{entries.filter(e => e.status == 1).length}</Text>
+                <Text style={styles.statLabel}>Active</Text>
+              </View>
+            </View>
+
+            {/* PAMM List */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Registered Brokers</Text>
+              {entries.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>No PAMM registrations yet</Text>
+                </View>
+              ) : (
+                <View style={styles.list}>
+                  {entries.map((entry) => (
+                    <View key={entry.id} style={styles.entryCard}>
+                      <View style={styles.entryAvatar}>
+                        <Building2 size={20} color="#AB4BFF" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.entryName}>{entry.broker_name ?? `Broker #${entry.id_broker}`}</Text>
+                        <Text style={styles.entryUser}>by {entry.user_name ?? 'Unknown'}</Text>
+                      </View>
+                      <View style={[styles.statusBadge, {
+                        backgroundColor: entry.status == 1 ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
+                        borderColor: entry.status == 1 ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
+                      }]}>
+                        <CheckCircle size={11} color={entry.status == 1 ? '#2FEFC4' : '#FF4B6E'} />
+                        <Text style={[styles.statusText, {
+                          color: entry.status == 1 ? '#2FEFC4' : '#FF4B6E',
+                        }]}>
+                          {entry.status == 1 ? 'Active' : 'Pending'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0E1439' },
+  scroll: { paddingBottom: 100 },
+  center: { flex: 1, alignItems: 'center', marginTop: 200 },
+  centerText: { color: '#8899AA' },
+
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
+  },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  title: { fontSize: 24, fontWeight: '800', color: '#fff', flex: 1, marginLeft: 16 },
+  addBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(171,75,255,0.12)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  addCard: {
+    marginHorizontal: 24, padding: 20, borderRadius: 20, marginBottom: 20,
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+  },
+  addTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
+  inputBox: {
+    height: 48, borderRadius: 14, paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    marginBottom: 12,
+  },
+  input: { flex: 1, color: '#fff', fontSize: 15 },
+  submitBtn: {
+    height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#AB4BFF',
+  },
+  submitText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+
+  statsRow: {
+    flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 24,
+  },
+  statCard: {
+    flex: 1, alignItems: 'center', padding: 16, borderRadius: 18,
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+    gap: 6,
+  },
+  statValue: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  statLabel: { fontSize: 11, color: '#8899AA', fontWeight: '600' },
+
+  section: { paddingHorizontal: 24, marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
+
+  emptyCard: {
+    padding: 32, borderRadius: 20, alignItems: 'center',
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+  },
+  emptyText: { fontSize: 14, color: '#8899AA' },
+
+  list: { gap: 10 },
+  entryCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
+    borderRadius: 18, backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+  },
+  entryAvatar: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(171,75,255,0.12)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  entryName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  entryUser: { fontSize: 12, color: '#8899AA', marginTop: 2 },
+  statusBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1,
+  },
+  statusText: { fontSize: 11, fontWeight: '700' },
+});
