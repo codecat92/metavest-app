@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { profileApi } from '../api/profile';
 import { getToken } from '../api/client';
 
-const BASE_URL = 'http://192.168.1.24:8000';
+const SERVER_HOST = 'http://192.168.1.24:8000';
 
 export default function ProfileScreen({ navigation }: any) {
   const { logout, user } = useAuth();
@@ -61,7 +61,9 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const imageSrc = profileImage
-    ? `${BASE_URL}/${profileImage.startsWith('uploads/') ? '' : 'uploads/profilepic/'}${profileImage}`
+    ? (profileImage.startsWith('http')
+        ? profileImage.replace('localhost', '192.168.1.24')
+        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}`)
     : null;
 
   const settingsGroups = [
