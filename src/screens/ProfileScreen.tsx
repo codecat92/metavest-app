@@ -1,21 +1,68 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity
+  TouchableOpacity, Image, Alert
 } from 'react-native';
+import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
-  Shield, Bell, ChevronRight, LogOut,
-  Copy, Star, Award, Mail, Phone, Hash
+  Shield, Bell, LogOut,
+  Star, Award, Mail, Phone, Hash, Camera
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { profileApi } from '../api/profile';
+import { getToken } from '../api/client';
+
+const BASE_URL = 'http://192.168.1.24:8000';
 
 export default function ProfileScreen({ navigation }: any) {
   const { logout, user } = useAuth();
+  const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
+  const [uploading, setUploading] = useState(false);
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : 'UN';
 
   const rank = user?.user_rank as { rank_name?: string; rank_number?: string } | null;
+
+  const handlePickPhoto = async () => {
+    if (!getToken()) {
+      Alert.alert('Error', 'Please login first');
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Allow access to photos in Settings.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setUploading(true);
+      try {
+        const response = await profileApi.uploadPhoto(result.assets[0].uri);
+        if (response.data?.profile_image_src) {
+          setProfileImage(response.data.profile_image_src);
+        }
+        Alert.alert('Success', 'Profile photo updated');
+      } catch (e: any) {
+        Alert.alert('Error', e.message || 'Upload failed');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const imageSrc = profileImage
+    ? `${BASE_URL}/${profileImage.startsWith('uploads/') ? '' : 'uploads/profilepic/'}${profileImage}`
+    : null;
 
   const settingsGroups = [
     {
@@ -39,14 +86,26 @@ export default function ProfileScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-        {/* User Card */}
         <View style={styles.headerPad}>
           <View style={styles.userCard}>
             <View style={styles.avatarRow}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initials}</Text>
-              </View>
+              <TouchableOpacity onPress={handlePickPhoto} disabled={uploading} style={styles.avatarBtn}>
+                {imageSrc ? (
+                  <Image source={{ uri: imageSrc }} style={styles.avatarImg} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </View>
+                )}
+                <View style={styles.cameraBadge}>
+                  <Camera size={12} color="#fff" />
+                </View>
+                {uploading && (
+                  <View style={styles.uploadingOverlay}>
+                    <Text style={styles.uploadingText}>...</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
               <View>
                 <Text style={styles.userName}>{user?.name ?? 'Trader'}</Text>
                 <Text style={styles.userHandle}>{user?.email ?? '-'}</Text>
@@ -59,7 +118,6 @@ export default function ProfileScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* Stats */}
             <View style={styles.statsRow}>
               {[
                 { label: 'Rank', value: rank?.rank_name ?? '-' },
@@ -75,7 +133,6 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Account Details */}
         <View style={styles.section}>
           {settingsGroups.map((group) => (
             <View key={group.title} style={{ marginBottom: 16 }}>
@@ -108,7 +165,6 @@ export default function ProfileScreen({ navigation }: any) {
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
     </View>
   );
@@ -126,11 +182,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 },
+  avatarBtn: { position: 'relative' },
   avatar: {
-    width: 64, height: 64, borderRadius: 32,
+    width: 72, height: 72, borderRadius: 36,
     backgroundColor: '#AB4BFF', alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  avatarImg: { width: 72, height: 72, borderRadius: 36 },
+  avatarText: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  cameraBadge: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#2FEFC4', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#0E1439',
+  },
+  uploadingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: 36, backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  uploadingText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   userName: { fontSize: 20, fontWeight: '800', color: '#fff' },
   userHandle: { fontSize: 13, color: '#8899AA', marginTop: 2 },
   eliteBadge: {
