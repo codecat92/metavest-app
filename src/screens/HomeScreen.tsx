@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
@@ -145,10 +145,10 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    [0, 1, 2, 3].forEach((index) => {
+    [0, 1, 2, 3, 4].forEach((index) => {
       setTimeout(() => setGlowIndex(index), index * 900 + 400);
     });
-    setTimeout(() => setGlowIndex(null), 3 * 900 + 1300);
+    setTimeout(() => setGlowIndex(null), 4 * 900 + 1300);
   }, []);
 
   const actions = [
@@ -156,6 +156,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
     { label: 'Traders', screen: 'traders', Icon: Users },
     { label: 'Portfolio', screen: 'portfolio', Icon: BarChart2 },
     { label: 'PAMM', screen: 'pamm', Icon: Building2 },
+    { label: 'Forum', screen: 'forum', Icon: MessageCircle },
   ];
 
   return (
@@ -257,7 +258,7 @@ export default function HomeScreen({ navigation }: any) {
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
-      profile: 'Profile', pamm: 'PAMM',
+      profile: 'Profile', pamm: 'PAMM', forum: 'Forum',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };

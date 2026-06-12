@@ -7,3 +7,4 @@ export { forexApi } from './forex';
 export { walletApi } from './wallet';
 export { followApi } from './follow';
 export { pammApi } from './pamm';
+export { forumApi } from './forum';
