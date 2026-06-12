@@ -255,8 +255,9 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
     { title: "Fed holds rates steady — dollar weakens", time: "", tag: "Macro" },
   ];
 
-  const ITEM_HEIGHT = 80;
-  const totalHeight = displayItems.length * ITEM_HEIGHT;
+  const VISIBLE_COUNT = 3;
+  const ITEM_HEIGHT = 72;
+  const totalHeight = VISIBLE_COUNT * ITEM_HEIGHT;
 
   useEffect(() => {
     const anim = Animated.loop(
@@ -303,10 +304,9 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
 const newsStyles = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    padding: 12, marginBottom: 8, borderRadius: 16,
+    padding: 12, borderRadius: 16, height: 72,
     backgroundColor: 'rgba(14,20,57,0.85)',
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-    height: 80,
   },
   tag: {
     width: 72, alignItems: 'center', paddingVertical: 4,
@@ -400,7 +400,7 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0E1439' },
-  scroll: { paddingBottom: 80 },
+  scroll: { paddingBottom: 72 },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
