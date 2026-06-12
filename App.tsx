@@ -24,6 +24,7 @@ import ForumScreen from './src/screens/ForumScreen';
 import CopyTradeScreen from './src/screens/CopyTradeScreen';
 import MarketScreen from './src/screens/MarketScreen';
 import AcademyScreen from './src/screens/AcademyScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 
 
 
@@ -96,6 +97,7 @@ function RootNavigator() {
       <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
       <Stack.Screen name="Market" component={MarketScreen} />
       <Stack.Screen name="Academy" component={AcademyScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
 }
