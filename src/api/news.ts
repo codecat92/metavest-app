@@ -1,24 +1,28 @@
 import { api, ApiResponse } from './client';
 
-export interface NewsItem {
+export interface Article {
   id: number;
   title: string;
   content: string;
-  image_url: string | null;
-  source: string | null;
-  published_at: string;
+  image_src?: string | null;
+  writer_id?: number;
   created_at: string;
+  media_src?: string | null;
+  media_link?: string | null;
 }
 
-export interface NewsListResponse {
-  data: NewsItem[];
+export interface ArticleListResponse {
+  data: Article[];
   data_count: number;
 }
 
 export const newsApi = {
-  getAll: () =>
-    api.get<NewsListResponse>('/news'),
+  getArticles: () =>
+    api.get<ArticleListResponse>('/article-event'),
 
-  getByKeyword: (keyword: string) =>
-    api.get<NewsListResponse>(`/news/${keyword}`),
+  getArticleById: (id: number) =>
+    api.get<ApiResponse<Article>>(`/article-event/${id}`),
+
+  getAcademy: () =>
+    api.get<ArticleListResponse>('/academy-article'),
 };
