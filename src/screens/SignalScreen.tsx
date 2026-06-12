@@ -3,7 +3,7 @@ import {
   TouchableOpacity, ActivityIndicator, Alert
 } from 'react-native';
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
   Clock, Shield, Copy, Eye
@@ -29,6 +29,7 @@ const riskColor: Record<string, string> = {
 type TabFilter = 'all' | 'buy' | 'sell';
 
 export default function SignalScreen() {
+  const navigation = useNavigation<any>();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
@@ -135,7 +136,12 @@ export default function SignalScreen() {
               const typeName = signalTypeNames[signal.signal_type] ?? 'SIGNAL';
               const risk = riskFromSignal(signal);
               return (
-                <View key={signal.id} style={[styles.card, expanded && styles.cardExpanded]}>
+                <TouchableOpacity
+                  key={signal.id}
+                  activeOpacity={0.9}
+                  onPress={() => navigation.navigate('SignalDetail', { signalId: signal.id })}
+                  style={[styles.card, expanded && styles.cardExpanded]}
+                >
                   <View style={styles.cardInner}>
                     <View style={styles.traderRow}>
                       <View style={styles.avatarCircle}>
@@ -219,7 +225,7 @@ export default function SignalScreen() {
                       {expanded ? 'Show less' : 'View details'}
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               );
             })}
             {filtered.length === 0 && !loading && (

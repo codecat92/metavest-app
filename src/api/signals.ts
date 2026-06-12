@@ -10,6 +10,8 @@ export interface Signal {
   stop_loss: string;
   risk_per_one_trade: string;
   potential_profit: string;
+  price: number;
+  price_value: number;
   signal_execution: number;
   notes: string | null;
   clicks: number;
@@ -29,4 +31,19 @@ export const signalsApi = {
 
   getById: (id: number) =>
     api.get<ApiResponse<Signal>>(`/signals/${id}`),
+
+  like: (id: number) =>
+    api.post<ApiResponse<any>>(`/signals/like/${id}`),
+
+  unlike: (id: number) =>
+    api.post<ApiResponse<any>>(`/signals/unlike/${id}`),
+
+  share: (id: number) =>
+    api.post<ApiResponse<any>>(`/signals/share/${id}`),
+
+  click: (id: number) =>
+    api.post<ApiResponse<any>>(`/signals/click/${id}`),
+
+  execute: (id: number) =>
+    api.post<ApiResponse<any>>('/signals/execute', { id }),
 };

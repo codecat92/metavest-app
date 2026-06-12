@@ -18,6 +18,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import PAMMScreen from './src/screens/PAMMScreen';
 import NewsScreen from './src/screens/NewsScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import SignalDetailScreen from './src/screens/SignalDetailScreen';
 
 
 
@@ -85,6 +86,7 @@ function RootNavigator() {
       <Stack.Screen name="Tabs" component={TabNavigator} />
       <Stack.Screen name="PAMM" component={PAMMScreen} />
       <Stack.Screen name="News" component={NewsScreen} />
+      <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
     </Stack.Navigator>
   );
 }
