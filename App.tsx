@@ -21,6 +21,7 @@ import NewsScreen from './src/screens/NewsScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import SignalDetailScreen from './src/screens/SignalDetailScreen';
 import ForumScreen from './src/screens/ForumScreen';
+import CopyTradeScreen from './src/screens/CopyTradeScreen';
 
 
 
@@ -90,6 +91,7 @@ function RootNavigator() {
       <Stack.Screen name="News" component={NewsScreen} />
       <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
       <Stack.Screen name="Forum" component={ForumScreen} />
+      <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
     </Stack.Navigator>
   );
 }

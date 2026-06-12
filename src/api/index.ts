@@ -8,3 +8,4 @@ export { walletApi } from './wallet';
 export { followApi } from './follow';
 export { pammApi } from './pamm';
 export { forumApi } from './forum';
+export { copytradeApi } from './copytrade';
