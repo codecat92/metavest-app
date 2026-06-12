@@ -10,6 +10,13 @@ import { useAuth } from '../context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
 import { newsApi } from '../api/news';
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning ☀️';
+  if (h < 17) return 'Good afternoon 🌤️';
+  return 'Good evening 🌙';
+}
+
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
 
@@ -354,7 +361,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.username}>{user?.name ?? 'Trader'}</Text>
           </View>
           <View style={styles.headerRight}>
