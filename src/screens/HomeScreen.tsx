@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
-import { forexApi, ForexCurrency } from '../api/forex';
+import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
 
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
@@ -52,15 +52,38 @@ function Sparkline({ up, id }: { up: boolean; id: string }) {
 
 const majorPairs = ['USD/EUR', 'USD/GBP', 'USD/JPY', 'USD/AUD', 'USD/CAD', 'USD/CHF', 'USD/NZD'];
 
+interface MarketItem {
+  pair: string;
+  price: string;
+  change: string;
+  up: boolean;
+}
+
 function MarqueeMarkets() {
-  const [currencies, setCurrencies] = useState<ForexCurrency[]>([]);
+  const [items, setItems] = useState<MarketItem[]>(majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true })));
   const translateX = useRef(new Animated.Value(0)).current;
 
   const fetchForex = useCallback(async () => {
     try {
       const res = await forexApi.getCurrencies();
       const filtered = (res.data ?? []).filter(c => majorPairs.includes(c.symbol));
-      setCurrencies(filtered);
+
+      const pricePromises = filtered.map(async c => {
+        try {
+          const quote = await forexApi.getPrice(c.symbol);
+          return {
+            pair: c.symbol,
+            price: quote.close ? Number(quote.close).toFixed(4) : '-.--',
+            change: quote.percent_change ? `${Number(quote.percent_change) >= 0 ? '+' : ''}${Number(quote.percent_change).toFixed(2)}%` : '--',
+            up: Number(quote.percent_change ?? 0) >= 0,
+          };
+        } catch {
+          return { pair: c.symbol, price: '-.--', change: '--', up: true };
+        }
+      });
+
+      const marketItems = await Promise.all(pricePromises);
+      if (marketItems.length > 0) setItems(marketItems);
     } catch (e) {
       console.log('Forex fetch failed:', e);
     }
@@ -70,9 +93,7 @@ function MarqueeMarkets() {
     useCallback(() => { fetchForex(); }, [fetchForex])
   );
 
-  const displayItems = currencies.length > 0
-    ? currencies.map(c => ({ pair: c.symbol, price: '-.--', change: '--', up: true }))
-    : majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true }));
+  const displayItems = items.length > 0 ? items : majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true }));
 
   const totalWidth = displayItems.length * (CARD_WIDTH + CARD_GAP);
 

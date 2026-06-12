@@ -13,7 +13,20 @@ export interface ForexListResponse {
   status: string;
 }
 
+export interface ForexQuote {
+  symbol: string;
+  close: string;
+  change: string;
+  percent_change: string;
+  open: string;
+  high: string;
+  low: string;
+}
+
 export const forexApi = {
   getCurrencies: () =>
     api.get<ForexListResponse>('/forex/curr'),
+
+  getPrice: (symbol: string) =>
+    api.post<ForexQuote>('/forex/percentage', { symbol }),
 };
