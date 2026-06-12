@@ -2,9 +2,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 
 
@@ -64,26 +64,41 @@ function TabNavigator() {
   );
 }
 
+function RootNavigator() {
+  const { isLoggedIn, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0E1439', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#AB4BFF" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator
+      initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0E1439' } }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Tabs" component={TabNavigator} />
+      <Stack.Screen name="PAMM" component={PAMMScreen} />
+      <Stack.Screen name="News" component={NewsScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
     <View style={styles.wrapper}>
       <View style={styles.phone}>
         <AuthProvider>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <Stack.Navigator
-            initialRouteName="Login"
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0E1439' }, 
-          }}
-          >
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="Tabs" component={TabNavigator} />
-            <Stack.Screen name="PAMM" component={PAMMScreen} />
-            <Stack.Screen name="News" component={NewsScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </AuthProvider>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
       </View>
     </View>
   );

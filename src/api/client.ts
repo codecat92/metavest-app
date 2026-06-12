@@ -1,6 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // Base API client — connects to local development backend
 // Ganti IP sesuai IP mesin kamu (cek pakai: ipconfig getifaddr en0)
 const BASE_URL = 'http://192.168.1.24:8000/api';
+
+const TOKEN_KEY = 'metavest_auth_token';
 
 // Backend response always wraps data in { message, data, data_count? }
 export interface ApiResponse<T> {
@@ -14,17 +18,34 @@ const defaultHeaders: Record<string, string> = {
   'Accept': 'application/json',
 };
 
-// Token management — todo: replace with AsyncStorage/SecureStore
+// Token management — persisted with AsyncStorage
 let authToken: string | null = null;
 
-export const setToken = (token: string) => {
+// Load persisted token on startup
+AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
+  if (stored) authToken = stored;
+});
+
+export const setToken = async (token: string) => {
   authToken = token;
+  await AsyncStorage.setItem(TOKEN_KEY, token);
 };
 
 export const getToken = () => authToken;
 
-export const clearToken = () => {
+export const clearToken = async () => {
   authToken = null;
+  await AsyncStorage.removeItem(TOKEN_KEY);
+};
+
+// Check if a stored token exists (for auto-login)
+export const hasStoredToken = async (): Promise<boolean> => {
+  const stored = await AsyncStorage.getItem(TOKEN_KEY);
+  if (stored) {
+    authToken = stored;
+    return true;
+  }
+  return false;
 };
 
 async function request<T>(

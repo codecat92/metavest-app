@@ -1,4 +1,4 @@
-export { api, setToken, getToken, clearToken } from './client';
+export { api, setToken, getToken, clearToken, hasStoredToken } from './client';
 export { authApi } from './auth';
 export { newsApi } from './news';
 export { tradersApi } from './traders';
