@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Building2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
@@ -155,9 +155,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const actions = [
     { label: 'Signals', screen: 'signals', Icon: Zap },
     { label: 'Traders', screen: 'traders', Icon: Users },
-    { label: 'Copytrade', screen: 'copytrade', Icon: Copy },
     { label: 'Portfolio', screen: 'portfolio', Icon: BarChart2 },
-    { label: 'PAMM', screen: 'pamm', Icon: Building2 },
     { label: 'Forum', screen: 'forum', Icon: MessageCircle },
   ];
 
@@ -178,6 +176,44 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
           </TouchableOpacity>
         );
       })}
+    </View>
+  );
+}
+
+function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
+  const features = [
+    {
+      label: 'Copy Trading',
+      desc: 'Auto-copy trades to your MT5 account',
+      screen: 'copytrade',
+      Icon: Copy,
+      accent: '#AB4BFF',
+    },
+    {
+      label: 'PAMM',
+      desc: 'Register broker for PAMM verification',
+      screen: 'pamm',
+      Icon: Wallet,
+      accent: '#C9A84C',
+    },
+  ];
+
+  return (
+    <View style={fcStyles.row}>
+      {features.map((f) => (
+        <TouchableOpacity
+          key={f.label}
+          onPress={() => onNavigate(f.screen)}
+          activeOpacity={0.8}
+          style={[fcStyles.card, { borderColor: `${f.accent}30` }]}
+        >
+          <View style={[fcStyles.iconWrap, { backgroundColor: `${f.accent}18` }]}>
+            <f.Icon size={28} color={f.accent} strokeWidth={1.5} />
+          </View>
+          <Text style={fcStyles.label}>{f.label}</Text>
+          <Text style={fcStyles.desc}>{f.desc}</Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }
@@ -318,6 +354,9 @@ export default function HomeScreen({ navigation }: any) {
         </View>
         <MarqueeMarkets />
 
+        {/* Feature Cards — CopyTrade & PAMM */}
+        <FeatureCards onNavigate={onNavigate} />
+
         {/* Latest News */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Latest News</Text>
@@ -405,4 +444,21 @@ const styles = StyleSheet.create({
   marketPrice: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 2 },
   marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   marketChange: { fontSize: 12, fontWeight: '700' },
+});
+
+const fcStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 28,
+  },
+  card: {
+    flex: 1, padding: 20, borderRadius: 22, alignItems: 'center',
+    backgroundColor: 'rgba(14,20,57,0.85)',
+    borderWidth: 1,
+  },
+  iconWrap: {
+    width: 56, height: 56, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  },
+  label: { fontSize: 14, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  desc: { fontSize: 11, color: '#8899AA', textAlign: 'center', lineHeight: 16 },
 });
