@@ -1,6 +1,6 @@
 import { getToken } from './client';
 
-const BASE_URL = 'http://192.168.1.24:8000/api';
+const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
 
 export const profileApi = {
   editProfile: async (fields: Record<string, string>): Promise<{ message: string; data?: any }> => {

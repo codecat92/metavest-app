@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base API client — connects to local development backend
-// Ganti IP sesuai IP mesin kamu (cek pakai: ipconfig getifaddr en0)
-const BASE_URL = 'http://192.168.1.24:8000/api';
+// Base API client — auto-detect environment
+// Production/Staging: Railway backend URL
+// Development: local machine IP
+const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
 
 const TOKEN_KEY = 'metavest_auth_token';
 
