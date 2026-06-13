@@ -6,6 +6,8 @@ import {
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { authApi } from '../api/auth';
+import { otpApi } from '../api/otp';
 import { useCustomAlert } from '../context/AlertContext';
 
 export default function LoginScreen() {
@@ -19,20 +21,30 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert.showAlert({ title: 'Error', message: 'Please enter your email and password.', type: 'error' });
+      Alert.alert('Error', 'Please enter your email and password.');
       return;
-  }
+    }
 
-      setLoading(true);
-      try {
-        await login(email, password);
-        navigation.replace('Tabs');
-      } catch (error: any) {
-        alert.showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password.', type: 'error' });
-      } finally {
-        setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      // Step 1: verify credentials, get user info
+      const step1 = await authApi.loginStep1(email, password);
+
+      // Step 2: send OTP to user's email
+      await otpApi.sendOtp(step1.email, 0, step1.type);
+
+      // Navigate to OTP screen
+      navigation.navigate('OTP', {
+        userId: step1.userId,
+        email: step1.email,
+        type: step1.type,
+      });
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView

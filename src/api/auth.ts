@@ -2,12 +2,23 @@ import { api, setToken, clearToken, ApiResponse } from './client';
 
 // --- Types matching backend response shapes ---
 
-interface LoginStep1Data {
+export interface LoginStep1Data {
   type: 'user' | 'trader';
   id_user?: string;
   id?: string;
   email: string;
   phone_number?: string;
+}
+
+export interface LoginResult {
+  token: string;
+  user: User;
+}
+
+export interface LoginStep1Result {
+  userId: string;
+  email: string;
+  type: 'user' | 'trader';
 }
 
 interface LoginStep2Data {
@@ -62,38 +73,37 @@ const getFcmToken = (): string => {
 
 export const authApi = {
   /**
-   * Login — step 1: verify credentials, get user type + id
-   * Then step 2: exchange for Sanctum token
+   * Step 1: verify credentials only — no token yet
    */
-  login: async (email: string, password: string): Promise<LoginResult> => {
-    // Step 1: verify credentials
-    const step1 = await api.post<ApiResponse<LoginStep1Data>>('/login', {
-      email,
-      password,
-    });
-
+  loginStep1: async (email: string, password: string): Promise<LoginStep1Result> => {
+    const step1 = await api.post<ApiResponse<LoginStep1Data>>('/login', { email, password });
     const userId = step1.data.id_user ?? step1.data.id;
-    if (!userId) {
-      throw new Error('Login failed: no user ID returned');
-    }
+    if (!userId) throw new Error('Login failed: no user ID returned');
+    return { userId, email: step1.data.email, type: step1.data.type };
+  },
 
-    // Step 2: get Sanctum token
+  /**
+   * Step 2: verify OTP then get Sanctum token + user profile
+   */
+  completeLogin: async (userId: string): Promise<LoginResult> => {
     const step2 = await api.post<ApiResponse<LoginStep2Data>>('/login-token', {
       user_id: userId,
       fcm_token: getFcmToken(),
     });
-
     const accessToken = step2.data.access_token;
     setToken(accessToken);
-
-    // Fetch user profile
     const profileResponse = await api.get<User>('/auth-user');
     const user = profileResponse as unknown as User;
+    return { token: accessToken, user };
+  },
 
-    return {
-      token: accessToken,
-      user,
-    };
+  /**
+   * Login — full flow including 2FA OTP
+   * Returns step1 result so caller can do OTP, then calls completeLogin after OTP verified
+   */
+  login: async (email: string, password: string): Promise<LoginResult> => {
+    // This is kept for backward compatibility but 2FA flow uses loginStep1 + completeLogin
+    return authApi.completeLogin((await authApi.loginStep1(email, password)).userId);
   },
 
   /**

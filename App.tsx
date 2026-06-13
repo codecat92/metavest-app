@@ -30,6 +30,7 @@ import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
 import EconomicsCalendarScreen from './src/screens/EconomicsCalendarScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import BrokersScreen from './src/screens/BrokersScreen';
+import OTPScreen from './src/screens/OTPScreen';
 
 
 
@@ -108,6 +109,7 @@ function RootNavigator() {
       <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Brokers" component={BrokersScreen} />
+      <Stack.Screen name="OTP" component={OTPScreen} />
     </Stack.Navigator>
   );
 }
