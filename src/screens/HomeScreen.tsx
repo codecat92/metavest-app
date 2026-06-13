@@ -404,7 +404,10 @@ export default function HomeScreen({ navigation }: any) {
         {/* Markets */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Markets</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Market')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('EconomicsCalendar')}><Text style={[styles.seeAll, { color: '#C9A84C' }]}>Calendar</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Market')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          </View>
         </View>
         <MarqueeMarkets />
 
