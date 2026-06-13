@@ -1,237 +1,152 @@
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Image, KeyboardAvoidingView,
-  Platform, ScrollView, ActivityIndicator
+  View, Text, TouchableOpacity,
+  StyleSheet, KeyboardAvoidingView,
+  Platform, ScrollView, ActivityIndicator, Image
 } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { useCustomAlert } from '../context/AlertContext';
 import { authApi } from '../api/auth';
 import { otpApi } from '../api/otp';
-import { useCustomAlert } from '../context/AlertContext';
+import { colors, space, radius, typography } from '../theme';
+import { AppButton, AppInput, GlassCard } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
+
+function warmServer() {
+  Promise.all([
+    fetch(`${BASE_URL}/forex/curr`),
+    fetch(`${BASE_URL}/article-event?page=1`),
+  ]).catch(() => {});
+}
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { login } = useAuth();
   const alert = useCustomAlert();
 
-  // Pre-warm Railway server (cold start mitigation)
-  useEffect(() => {
-    Promise.all([
-      fetch(`${BASE_URL}/forex/curr`),
-      fetch(`${BASE_URL}/article-event?page=1`),
-    ]).then(() => console.log('Server warmed up'))
-      .catch(() => {});
-  }, []);
+  useEffect(() => { warmServer(); }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter your email and password.');
+      alert.showAlert({ title: 'Error', message: 'Please enter your email and password.', type: 'error' });
       return;
     }
 
     setLoading(true);
     try {
-      // Step 1: verify credentials, get user info
       const step1 = await authApi.loginStep1(email, password);
-
-      // Step 2: send OTP to user's email
       await otpApi.sendOtp(step1.email, 0, step1.type);
-
-      // Navigate to OTP screen
       navigation.navigate('OTP', {
         userId: step1.userId,
         email: step1.email,
         type: step1.type,
       });
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+      alert.showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password.', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View style={styles.glow} />
 
-        {/* Glow */}
-        <View style={styles.glow} />
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../assets/metavest-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: space.sm }]}>
+              Smart Social Trading Platform
+            </Text>
+          </View>
 
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/metavest-logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
+          <View style={styles.welcomeContainer}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              Welcome back
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              Sign in to your account
+            </Text>
+          </View>
+
+          <AppInput
+            label="EMAIL"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!loading}
           />
-          <Text style={styles.tagline}>Smart Social Trading Platform</Text>
-        </View>
 
-        {/* Welcome */}
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>Welcome back</Text>
-          <Text style={styles.welcomeSub}>Sign in to your account</Text>
-        </View>
+          <AppInput
+            label="PASSWORD"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            secureTextEntry={!showPassword}
+            editable={!loading}
+          />
 
-        {/* Email */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>EMAIL</Text>
-          <View style={styles.inputBox}>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor="#8899AA"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!loading}
-            />
-          </View>
-        </View>
-
-        {/* Password */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>PASSWORD</Text>
-          <View style={styles.inputBox}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor="#8899AA"
-              secureTextEntry={!showPassword}
-              editable={!loading}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
-            </TouchableOpacity>
-          </View>
           <TouchableOpacity style={styles.forgotContainer} onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>
+              Forgot password?
+            </Text>
           </TouchableOpacity>
-        </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Continue</Text>
-          }
-        </TouchableOpacity>
+          <AppButton
+            title="Sign In"
+            onPress={handleLogin}
+            loading={loading}
+            size="lg"
+            style={{ marginTop: space.sm }}
+          />
 
-
-        {/* DEV ONLY — remove before production */}
-        <TouchableOpacity
-          style={styles.devBypass}
-          onPress={() => navigation.replace('Tabs')}  
-            >
-          <Text style={styles.devBypassText}>Dev: Skip Login</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or continue with</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Social */}
-        <View style={styles.socialRow}>
-          {['G', '𝕏', 'in'].map((icon) => (
-            <TouchableOpacity key={icon} style={styles.socialBtn}>
-              <Text style={styles.socialText}>{icon}</Text>
+          <View style={styles.registerRow}>
+            <Text style={[typography.body, { color: colors.text.secondary }]}>
+              Don't have an account?{' '}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={[typography.body, { color: colors.accent.purple, fontWeight: '700' }]}>
+                Sign up free
+              </Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Register */}
-        {/* Register */}
-        <View style={[styles.registerRow, { backgroundColor: '#0E1439' }]}>
-          <Text style={styles.registerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerLink}>Sign up free</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-container: { flex: 1, backgroundColor: '#0E1439' },
-scroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
+  scroll: { flexGrow: 1, paddingHorizontal: space['2xl'], paddingTop: space['4xl'], paddingBottom: space['3xl'] },
   glow: {
     position: 'absolute', top: -80, left: -60,
     width: 320, height: 320, borderRadius: 160,
-    backgroundColor: 'rgba(171,75,255,0.15)',
+    backgroundColor: 'rgba(139,92,246,0.12)',
   },
-  logoContainer: { alignItems: 'center', marginBottom: 40 },
+  logoContainer: { alignItems: 'center', marginBottom: space['3xl'] },
   logo: { width: 200, height: 100 },
-  tagline: { fontSize: 15, color: '#8899AA', marginTop: 8 },
-  welcomeContainer: { marginBottom: 32 },
-  welcomeTitle: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  welcomeSub: { fontSize: 15, color: '#8899AA' },
-  inputGroup: { marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '600', color: '#8899AA', letterSpacing: 0.5, marginBottom: 8 },
-  inputBox: {
-    flexDirection: 'row', alignItems: 'center',
-    height: 52, borderRadius: 16, paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-  },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
-  eyeText: { color: '#8899AA', fontSize: 13 },
-  forgotContainer: { alignItems: 'flex-end', marginTop: 8 },
-  forgotText: { color: '#AB4BFF', fontSize: 13, fontWeight: '600' },
-  button: {
-    height: 56, borderRadius: 18, marginBottom: 24,
-    backgroundColor: '#AB4BFF',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(171,75,255,0.15)' },
-  dividerText: { color: '#8899AA', fontSize: 13, marginHorizontal: 12 },
-  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  socialBtn: {
-    flex: 1, height: 52, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.18)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  socialText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  registerRow: { flexDirection: 'row', justifyContent: 'center' },
-  registerText: { color: '#8899AA', fontSize: 14 },
-  registerLink: { color: '#AB4BFF', fontSize: 14, fontWeight: '700' },
-
-
-
-  devBypass: {
-    marginTop: 12, paddingVertical: 10, alignItems: 'center',
-    borderRadius: 12, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  devBypassText: {
-    fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: '600',
-  },
+  welcomeContainer: { marginBottom: space['3xl'] },
+  forgotContainer: { alignItems: 'flex-end', marginBottom: space.lg },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: space['3xl'] },
 });
-
-
-

@@ -4,15 +4,20 @@ import {
 } from 'react-native';
 import { useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Shield } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCustomAlert } from '../context/AlertContext';
 import { authApi } from '../api/auth';
 import { otpApi } from '../api/otp';
+import { colors, space, radius, typography } from '../theme';
+import { AppButton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function OTPScreen() {
   const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const { login } = useAuth();
 
@@ -30,10 +35,7 @@ export default function OTPScreen() {
     setLoading(true);
     try {
       await otpApi.verifyOtp(userId, code);
-      // OTP verified — complete login
-      const result = await authApi.completeLogin(userId);
-      login(result.user.email, ''); // Use AuthContext's login to set user state
-      // Actually just navigate — the completeLogin already set token + user via setToken
+      await authApi.completeLogin(userId);
       navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch (e: any) {
       alert.showAlert({ title: 'Verification Failed', message: e.message || 'Invalid OTP code', type: 'error' });
@@ -46,7 +48,7 @@ export default function OTPScreen() {
     setResending(true);
     try {
       await otpApi.sendOtp(email, 0, type ?? 'user');
-      alert.showAlert({ title: 'OTP Sent', message: 'A new code has been sent to your email', type: 'info' });
+      alert.showAlert({ title: 'OTP Sent', message: 'A new code has been sent to your email', type: 'success' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed to resend', type: 'error' });
     } finally {
@@ -55,19 +57,21 @@ export default function OTPScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <ArrowLeft size={20} color="#8899AA" />
+        <ArrowLeft size={20} color={colors.text.secondary} />
       </TouchableOpacity>
 
       <View style={styles.header}>
         <View style={styles.iconWrap}>
-          <Shield size={32} color="#AB4BFF" />
+          <Shield size={32} color={colors.accent.purple} />
         </View>
-        <Text style={styles.title}>Verification Required</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          Verification Required
+        </Text>
+        <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginTop: space.sm }]}>
           A verification code has been sent to{' '}
-          <Text style={styles.email}>{email}</Text>
+          <Text style={{ color: colors.accent.purple, fontWeight: '700' }}>{email}</Text>
         </Text>
       </View>
 
@@ -78,56 +82,54 @@ export default function OTPScreen() {
           value={code}
           onChangeText={t => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
           placeholder="000000"
-          placeholderTextColor="#8899AA"
+          placeholderTextColor={colors.text.secondary}
           keyboardType="number-pad"
           maxLength={6}
           autoFocus
         />
       </View>
 
-      <TouchableOpacity onPress={handleVerify} style={[styles.verifyBtn, loading && { opacity: 0.6 }]} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.verifyText}>Verify</Text>}
-      </TouchableOpacity>
+      <AppButton
+        title="Verify"
+        onPress={handleVerify}
+        loading={loading}
+        size="lg"
+        style={{ marginBottom: space.lg }}
+      />
 
       <TouchableOpacity onPress={handleResend} style={styles.resendBtn} disabled={resending}>
-        <Text style={styles.resendText}>{resending ? 'Sending...' : 'Resend code'}</Text>
+        <Text style={[typography.bodyBold, { color: colors.text.secondary }]}>
+          {resending ? 'Sending...' : 'Resend code'}
+        </Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439', paddingHorizontal: 24, paddingTop: 60 },
+  container: { flex: 1, backgroundColor: colors.bg.primary, paddingHorizontal: space['2xl'], paddingTop: space.xl },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, marginBottom: 32,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    width: 40, height: 40, borderRadius: 20, marginBottom: space['3xl'],
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  header: { alignItems: 'center', marginBottom: 36 },
+  header: { alignItems: 'center', marginBottom: space['3xl'] },
   iconWrap: {
-    width: 72, height: 72, borderRadius: 24, marginBottom: 20,
-    backgroundColor: 'rgba(171,75,255,0.12)',
+    width: 72, height: 72, borderRadius: radius.xl, marginBottom: space.xl,
+    backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#8899AA', textAlign: 'center', lineHeight: 21 },
-  email: { color: '#AB4BFF', fontWeight: '700' },
   codeInputBox: {
-    height: 60, borderRadius: 16, paddingHorizontal: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
-    marginBottom: 24, alignItems: 'center', justifyContent: 'center',
+    height: 60, borderRadius: radius.md, paddingHorizontal: space.xl,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.borderStrong,
+    marginBottom: space['2xl'], alignItems: 'center', justifyContent: 'center',
   },
   codeInput: {
-    fontSize: 28, fontWeight: '800', color: '#fff',
+    fontSize: 28, fontWeight: '800', color: colors.text.primary,
     letterSpacing: 8, textAlign: 'center', width: '100%',
+    fontFamily: 'SpaceGrotesk-Bold',
   },
-  verifyBtn: {
-    height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#AB4BFF', marginBottom: 16,
-  },
-  verifyText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  resendBtn: { alignItems: 'center', paddingVertical: 8 },
-  resendText: { fontSize: 14, fontWeight: '600', color: '#8899AA' },
+  resendBtn: { alignItems: 'center', paddingVertical: space.sm },
 });

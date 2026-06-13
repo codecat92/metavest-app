@@ -4,12 +4,17 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
   Share2, Zap, Clock, Shield, Target, Eye
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '../api/signals';
 import { useCustomAlert } from '../context/AlertContext';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, Badge, Skeleton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const currencyNames: Record<number, string> = {
   1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
@@ -24,7 +29,7 @@ const signalTypeNames: Record<number, string> = {
 
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const signalId: number = route.params?.signalId;
   const [signal, setSignal] = useState<Signal | null>(null);
@@ -92,19 +97,19 @@ export default function SignalDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 200 }} />
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 200 }} />
+      </SafeAreaView>
     );
   }
 
   if (!signal) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={{ marginTop: 200, alignItems: 'center' }}>
-          <Text style={{ color: '#8899AA' }}>Signal not found</Text>
+          <Text style={{ color: colors.text.secondary }}>Signal not found</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -115,22 +120,22 @@ export default function SignalDetailScreen() {
     : parseFloat(signal.risk_per_one_trade ?? '0') <= 1 ? 'Medium' : 'High';
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <View style={[styles.typeBadge, {
             backgroundColor: buy ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
             borderColor: buy ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
           }]}>
             {buy
-              ? <TrendingUp size={14} color="#2FEFC4" />
-              : <TrendingDown size={14} color="#FF4B6E" />
+              ? <TrendingUp size={14} color={colors.semantic.positive} />
+              : <TrendingDown size={14} color={colors.semantic.negative} />
             }
-            <Text style={[styles.typeText, { color: buy ? '#2FEFC4' : '#FF4B6E' }]}>
+            <Text style={[styles.typeText, { color: buy ? colors.semantic.positive : colors.semantic.negative }]}>
               {buy ? 'BUY' : 'SELL'}
             </Text>
           </View>
@@ -146,9 +151,9 @@ export default function SignalDetailScreen() {
         <View style={styles.priceCard}>
           <View style={styles.priceRow}>
             {[
-              { label: 'Entry', value: signal.open_price ?? '-', color: '#fff' },
-              { label: 'Take Profit', value: signal.take_profit ?? '-', color: '#2FEFC4' },
-              { label: 'Stop Loss', value: signal.stop_loss ?? '-', color: '#FF4B6E' },
+              { label: 'Entry', value: signal.open_price ?? '-', color: colors.text.primary },
+              { label: 'Take Profit', value: signal.take_profit ?? '-', color: colors.semantic.positive },
+              { label: 'Stop Loss', value: signal.stop_loss ?? '-', color: colors.semantic.negative },
             ].map((p) => (
               <View key={p.label} style={styles.priceItem}>
                 <Text style={styles.priceLabel}>{p.label}</Text>
@@ -161,11 +166,11 @@ export default function SignalDetailScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {[
-            { icon: Target, label: 'Risk/Reward', value: signal.potential_profit ? `1:${signal.potential_profit}` : '-', color: '#AB4BFF' },
-            { icon: Shield, label: 'Risk Level', value: risk, color: risk === 'Low' ? '#2FEFC4' : risk === 'Medium' ? '#F7C948' : '#FF4B6E' },
-            { icon: Eye, label: 'Clicks', value: String(signal.clicks ?? 0), color: '#8899AA' },
-            { icon: Heart, label: 'Likes', value: String(localLikes), color: '#FF4B6E' },
-            { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: '#8899AA' },
+            { icon: Target, label: 'Risk/Reward', value: signal.potential_profit ? `1:${signal.potential_profit}` : '-', color: colors.accent.purple },
+            { icon: Shield, label: 'Risk Level', value: risk, color: risk === 'Low' ? colors.semantic.positive : risk === 'Medium' ? '#F7C948' : colors.semantic.negative },
+            { icon: Eye, label: 'Clicks', value: String(signal.clicks ?? 0), color: colors.text.secondary },
+            { icon: Heart, label: 'Likes', value: String(localLikes), color: colors.semantic.negative },
+            { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: colors.text.secondary },
             { icon: Clock, label: 'Risk/Trade', value: `${signal.risk_per_one_trade ?? '-'}%`, color: '#F7C948' },
           ].map((s) => (
             <View key={s.label} style={styles.statItem}>
@@ -195,13 +200,13 @@ export default function SignalDetailScreen() {
       {/* Bottom Actions */}
       <View style={styles.bottomBar}>
         <TouchableOpacity onPress={handleLike} style={styles.actionBtn}>
-          <Heart size={20} color={liked ? '#FF4B6E' : '#8899AA'} fill={liked ? '#FF4B6E' : 'none'} />
-          <Text style={[styles.actionText, liked && { color: '#FF4B6E' }]}>
+          <Heart size={20} color={liked ? colors.semantic.negative : colors.text.secondary} fill={liked ? colors.semantic.negative : 'none'} />
+          <Text style={[styles.actionText, liked && { color: colors.semantic.negative }]}>
             {liked ? 'Liked' : 'Like'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleShare} style={styles.actionBtn}>
-          <Share2 size={20} color="#8899AA" />
+          <Share2 size={20} color={colors.text.secondary} />
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -219,12 +224,12 @@ export default function SignalDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </View>
-  );
-}
+      </SafeAreaView>
+    );
+  }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 120 },
 
   header: {
@@ -245,8 +250,8 @@ const styles = StyleSheet.create({
   typeText: { fontSize: 14, fontWeight: '800' },
 
   heroSection: { paddingHorizontal: 24, marginTop: 20, marginBottom: 20 },
-  pairName: { fontSize: 36, fontWeight: '800', color: '#fff', letterSpacing: -1 },
-  pairType: { fontSize: 16, color: '#8899AA', marginTop: 4, fontWeight: '600' },
+  pairName: { fontSize: 36, fontWeight: '800', color: colors.text.primary, letterSpacing: -1 },
+  pairType: { fontSize: 16, color: colors.text.secondary, marginTop: 4, fontWeight: '600' },
 
   priceCard: {
     marginHorizontal: 24, padding: 20, borderRadius: 22,
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
   },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between' },
   priceItem: { alignItems: 'center' },
-  priceLabel: { fontSize: 11, color: '#8899AA', fontWeight: '600', marginBottom: 4 },
+  priceLabel: { fontSize: 11, color: colors.text.secondary, fontWeight: '600', marginBottom: 4 },
   priceValue: { fontSize: 16, fontWeight: '800' },
 
   statsGrid: {
@@ -269,11 +274,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
     gap: 4,
   },
-  statLabel: { fontSize: 10, color: '#8899AA', fontWeight: '500' },
+  statLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '500' },
   statValue: { fontSize: 16, fontWeight: '800', marginTop: 2 },
 
   notesSection: { paddingHorizontal: 24, marginBottom: 20 },
-  notesTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 10 },
+  notesTitle: { fontSize: 14, fontWeight: '700', color: colors.text.primary, marginBottom: 10 },
   notesCard: {
     padding: 16, borderRadius: 18,
     backgroundColor: 'rgba(171,75,255,0.08)',
@@ -282,7 +287,7 @@ const styles = StyleSheet.create({
   notesText: { fontSize: 13, color: 'rgba(240,238,255,0.7)', lineHeight: 20 },
 
   createdAt: {
-    paddingHorizontal: 24, fontSize: 12, color: '#8899AA', textAlign: 'center',
+    paddingHorizontal: 24, fontSize: 12, color: colors.text.secondary, textAlign: 'center',
   },
 
   bottomBar: {
@@ -297,11 +302,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  actionText: { fontSize: 11, fontWeight: '700', color: '#8899AA' },
+  actionText: { fontSize: 11, fontWeight: '700', color: colors.text.secondary },
   executeBtn: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: '#AB4BFF',
+    backgroundColor: colors.accent.purple,
   },
-  executeText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  executeText: { fontSize: 14, fontWeight: '800', color: colors.text.primary },
 });

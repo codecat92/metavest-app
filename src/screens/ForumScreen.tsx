@@ -2,16 +2,28 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, TextInput, ActivityIndicator, Modal
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  ArrowLeft, MessageCircle, Heart, Share2, Plus, Send, User
+  MessageCircle, Heart, Share2, Plus, Send, User
 } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { forumApi, ForumPost, ForumComment } from '../api/forum';
 import { getToken } from '../api/client';
 import { useCustomAlert } from '../context/AlertContext';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export default function ForumScreen({ navigation }: any) {
+type ForumProps = NativeStackScreenProps<RootStackParamList, 'Forum'>;
+
+interface PostCommentState {
+  text: string;
+  replyToId: number | null;
+}
+
+export default function ForumScreen({ navigation }: ForumProps) {
   const alert = useCustomAlert();
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +33,7 @@ export default function ForumScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, ForumComment[]>>({});
-  const [commentText, setCommentText] = useState('');
-  const [replyToId, setReplyToId] = useState<number | null>(null);
+  const [commentStates, setCommentStates] = useState<Record<number, PostCommentState>>({});
 
   const loadPosts = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -70,14 +81,14 @@ export default function ForumScreen({ navigation }: any) {
   };
 
   const handleComment = async (postId: number) => {
-    if (!commentText.trim()) {
+    const state = commentStates[postId] ?? { text: '', replyToId: null };
+    if (!state.text.trim()) {
       alert.showAlert({ title: 'Error', message: 'Comment cannot be empty', type: 'error' });
       return;
     }
     try {
-      await forumApi.createComment(postId, commentText.trim());
-      setCommentText('');
-      setReplyToId(null);
+      await forumApi.createComment(postId, state.text.trim());
+      setCommentStates(prev => ({ ...prev, [postId]: { text: '', replyToId: null } }));
       loadComments(postId);
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
@@ -93,101 +104,145 @@ export default function ForumScreen({ navigation }: any) {
     }
   };
 
+  const handleShare = async (postId: number) => {
+    try {
+      await forumApi.sharePost(postId);
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, shares: (p.shares ?? 0) + 1 } : p));
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+    }
+  };
+
   const handleExpand = (postId: number) => {
     if (expandedId === postId) {
       setExpandedId(null);
-      setReplyToId(null);
-      setCommentText('');
     } else {
       setExpandedId(postId);
-      setReplyToId(null);
-      setCommentText('');
       if (!comments[postId]) loadComments(postId);
     }
   };
 
+  const setPostCommentText = (postId: number, text: string) => {
+    setCommentStates(prev => ({
+      ...prev,
+      [postId]: { ...(prev[postId] ?? { text: '', replyToId: null }), text },
+    }));
+  };
+
   if (!getToken()) {
     return (
-      <View style={styles.container}>
-        <View style={styles.center}><Text style={styles.centerText}>Login to see forum</Text></View>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <AppHeader title="Forum" onBack={() => navigation.goBack()} />
+        <EmptyState
+          icon={<MessageCircle size={40} color={colors.text.secondary} />}
+          title="Login to see forum"
+          subtitle="Sign in to join the discussion"
+        />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Forum</Text>
-          <TouchableOpacity onPress={() => setShowCreate(true)} style={styles.addBtn}>
-            <Plus size={18} color="#AB4BFF" />
-          </TouchableOpacity>
-        </View>
+        <AppHeader
+          title="Forum"
+          onBack={() => navigation.goBack()}
+          right={
+            <TouchableOpacity onPress={() => setShowCreate(true)} style={styles.addBtn}>
+              <Plus size={18} color={colors.accent.purple} />
+            </TouchableOpacity>
+          }
+        />
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
+            {[1, 2, 3].map(i => (
+              <GlassCard key={i} elevation={2}>
+                <Skeleton height={36} width={36} borderRadius={18} style={{ marginBottom: space.md }} />
+                <Skeleton height={16} width="80%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={14} width="100%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={14} width="60%" />
+              </GlassCard>
+            ))}
+          </View>
         ) : (
           <View style={styles.list}>
             {posts.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MessageCircle size={40} color="#8899AA" />
-                <Text style={styles.emptyText}>No posts yet</Text>
-                <Text style={styles.emptySubText}>Be the first to start a discussion</Text>
-              </View>
+              <EmptyState
+                icon={<MessageCircle size={40} color={colors.text.secondary} />}
+                title="No posts yet"
+                subtitle="Be the first to start a discussion"
+                action={{ label: 'Create Post', onPress: () => setShowCreate(true) }}
+              />
             ) : (
               posts.map((post) => {
                 const expanded = expandedId === post.id;
                 const postComments = comments[post.id] ?? [];
+                const commentState = commentStates[post.id] ?? { text: '', replyToId: null };
                 return (
-                  <View key={post.id} style={styles.card}>
+                  <GlassCard key={post.id} elevation={2}>
                     <TouchableOpacity onPress={() => handleExpand(post.id)} activeOpacity={0.8}>
                       <View style={styles.cardHeader}>
                         <View style={styles.authorRow}>
                           <View style={styles.avatar}>
-                            <User size={14} color="#AB4BFF" />
+                            <User size={14} color={colors.accent.purple} />
                           </View>
                           <View>
-                            <Text style={styles.authorName}>{post.poster_name ?? 'User'}</Text>
-                            <Text style={styles.postTime}>
+                            <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
+                              {post.poster_name ?? 'User'}
+                            </Text>
+                            <Text style={[typography.label, { color: colors.text.secondary }]}>
                               {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
                             </Text>
                           </View>
                         </View>
                       </View>
-                      <Text style={styles.postTitle}>{post.title}</Text>
-                      <Text style={styles.postContent} numberOfLines={expanded ? undefined : 3}>
+                      <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                        {post.title}
+                      </Text>
+                      <Text
+                        style={[typography.body, { color: colors.text.muted }]}
+                        numberOfLines={expanded ? undefined : 3}
+                      >
                         {post.content}
                       </Text>
                       <View style={styles.cardFooter}>
                         <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.footerBtn}>
-                          <Heart size={14} color="#8899AA" />
-                          <Text style={styles.footerText}>{post.likes ?? 0}</Text>
+                          <Heart size={14} color={colors.text.secondary} />
+                          <Text style={[typography.label, { color: colors.text.secondary }]}>
+                            {post.likes ?? 0}
+                          </Text>
                         </TouchableOpacity>
-                        <View style={styles.footerBtn}>
-                          <MessageCircle size={14} color="#8899AA" />
-                          <Text style={styles.footerText}>{postComments.length}</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => forumApi.sharePost(post.id)} style={styles.footerBtn}>
-                          <Share2 size={14} color="#8899AA" />
-                          <Text style={styles.footerText}>{post.shares ?? 0}</Text>
+                        <TouchableOpacity onPress={() => handleExpand(post.id)} style={styles.footerBtn}>
+                          <MessageCircle size={14} color={colors.text.secondary} />
+                          <Text style={[typography.label, { color: colors.text.secondary }]}>
+                            {postComments.length}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleShare(post.id)} style={styles.footerBtn}>
+                          <Share2 size={14} color={colors.text.secondary} />
+                          <Text style={[typography.label, { color: colors.text.secondary }]}>
+                            {post.shares ?? 0}
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     </TouchableOpacity>
 
-                    {/* Comments section */}
                     {expanded && (
                       <View style={styles.commentsSection}>
                         {postComments.map((c) => (
                           <View key={c.id} style={styles.commentItem}>
                             <View style={styles.commentAvatar}>
-                              <User size={10} color="#8899AA" />
+                              <User size={10} color={colors.text.secondary} />
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={styles.commentAuthor}>{c.poster_name ?? 'User'}</Text>
-                              <Text style={styles.commentContent}>{c.content}</Text>
+                              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '700' }]}>
+                                {c.poster_name ?? 'User'}
+                              </Text>
+                              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                                {c.content}
+                              </Text>
                             </View>
                           </View>
                         ))}
@@ -195,17 +250,20 @@ export default function ForumScreen({ navigation }: any) {
                           <TextInput
                             style={styles.commentInput}
                             placeholder="Write a comment..."
-                            placeholderTextColor="#8899AA"
-                            value={commentText}
-                            onChangeText={setCommentText}
+                            placeholderTextColor={colors.text.secondary}
+                            value={commentState.text}
+                            onChangeText={(t) => setPostCommentText(post.id, t)}
                           />
-                          <TouchableOpacity onPress={() => handleComment(post.id)} style={styles.sendBtn}>
+                          <TouchableOpacity
+                            onPress={() => handleComment(post.id)}
+                            style={styles.sendBtn}
+                          >
                             <Send size={14} color="#fff" />
                           </TouchableOpacity>
                         </View>
                       </View>
                     )}
-                  </View>
+                  </GlassCard>
                 );
               })
             )}
@@ -213,161 +271,116 @@ export default function ForumScreen({ navigation }: any) {
         )}
       </ScrollView>
 
-      {/* Create Post Modal */}
       <Modal visible={showCreate} animationType="slide" transparent onRequestClose={() => setShowCreate(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Post</Text>
+              <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                New Post
+              </Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>
-                <Text style={styles.modalClose}>Cancel</Text>
+                <Text style={[typography.bodyBold, { color: colors.semantic.negative }]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
             </View>
-            <TextInput
-              style={styles.titleInput}
-              placeholder="Post title"
-              placeholderTextColor="#8899AA"
+            <AppInput
+              label="TITLE"
               value={newTitle}
               onChangeText={setNewTitle}
+              placeholder="Post title"
             />
             <TextInput
               style={styles.contentInput}
               placeholder="Write your thoughts..."
-              placeholderTextColor="#8899AA"
+              placeholderTextColor={colors.text.secondary}
               value={newContent}
               onChangeText={setNewContent}
               multiline
               numberOfLines={4}
             />
-            <TouchableOpacity
+            <AppButton
+              title="Publish"
               onPress={handleCreate}
-              style={[styles.postBtn, submitting && { opacity: 0.6 }]}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.postBtnText}>Publish</Text>
-              )}
-            </TouchableOpacity>
+              loading={submitting}
+              size="lg"
+            />
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
-  center: { flex: 1, alignItems: 'center', marginTop: 200 },
-  centerText: { color: '#8899AA' },
 
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff', flex: 1, marginLeft: 16 },
   addBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(171,75,255,0.12)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
+    backgroundColor: 'rgba(139,92,246,0.12)',
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
 
-  list: { paddingHorizontal: 24, gap: 14 },
-  emptyCard: {
-    padding: 48, borderRadius: 24, alignItems: 'center',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-    marginTop: 20,
-  },
-  emptyText: { fontSize: 16, fontWeight: '700', color: '#8899AA', marginTop: 12 },
-  emptySubText: { fontSize: 13, color: '#8899AA', marginTop: 4 },
+  list: { paddingHorizontal: space['2xl'], gap: space.md },
 
-  card: {
-    borderRadius: 20, padding: 18,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.md },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   avatar: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(171,75,255,0.15)',
+    backgroundColor: 'rgba(139,92,246,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  authorName: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  postTime: { fontSize: 11, color: '#8899AA', marginTop: 1 },
-  postTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 8 },
-  postContent: { fontSize: 13, color: 'rgba(240,238,255,0.65)', lineHeight: 20 },
   cardFooter: {
-    flexDirection: 'row', gap: 20, marginTop: 14, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: 'rgba(171,75,255,0.08)',
+    flexDirection: 'row', gap: space.xl, marginTop: space.md, paddingTop: space.md,
+    borderTopWidth: 1, borderTopColor: colors.glass.border,
   },
-  footerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  footerText: { fontSize: 12, color: '#8899AA' },
+  footerBtn: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 
   commentsSection: {
-    marginTop: 12, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: 'rgba(171,75,255,0.12)',
+    marginTop: space.md, paddingTop: space.md,
+    borderTopWidth: 1, borderTopColor: colors.glass.border,
   },
-  commentItem: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  commentItem: { flexDirection: 'row', gap: space.sm, marginBottom: space.sm },
   commentAvatar: {
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.glass.g2,
     alignItems: 'center', justifyContent: 'center',
   },
-  commentAuthor: { fontSize: 12, fontWeight: '700', color: '#AB4BFF' },
-  commentContent: { fontSize: 12, color: 'rgba(240,238,255,0.6)', marginTop: 2 },
   commentInputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8,
+    flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.sm,
   },
   commentInput: {
-    flex: 1, height: 40, borderRadius: 12, paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-    color: '#fff', fontSize: 13,
+    flex: 1, height: 40, borderRadius: radius.md, paddingHorizontal: space.md,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
+    color: colors.text.primary, fontSize: 13, fontFamily: 'DMSans',
   },
   sendBtn: {
-    width: 36, height: 36, borderRadius: 12,
-    backgroundColor: '#AB4BFF', alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36, borderRadius: radius.md,
+    backgroundColor: colors.accent.purple, alignItems: 'center', justifyContent: 'center',
   },
 
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(6,9,16,0.9)',
+    flex: 1, backgroundColor: colors.overlay.modal,
     justifyContent: 'flex-end',
   },
   modalCard: {
-    backgroundColor: '#0E1439', borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    padding: 24, paddingBottom: 48,
+    backgroundColor: colors.bg.primary,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    padding: space['2xl'],
+    paddingBottom: space['4xl'] + space['2xl'],
   },
   modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  modalClose: { fontSize: 15, fontWeight: '600', color: '#FF4B6E' },
-  titleInput: {
-    height: 48, borderRadius: 14, paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-    color: '#fff', fontSize: 15, marginBottom: 12,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.xl,
   },
   contentInput: {
-    height: 120, borderRadius: 14, padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-    color: '#fff', fontSize: 14, textAlignVertical: 'top',
+    height: 120, borderRadius: radius.md, padding: space.lg,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
+    color: colors.text.primary, fontSize: 14, textAlignVertical: 'top',
+    marginBottom: space.lg, fontFamily: 'DMSans',
   },
-  postBtn: {
-    height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#AB4BFF', marginTop: 16,
-  },
-  postBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 });

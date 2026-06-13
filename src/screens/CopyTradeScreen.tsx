@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Server, Key, User, Zap, Activity,
   TrendingUp, Shield, Trash2
@@ -11,8 +12,14 @@ import {
 import { copytradeApi, Mt5Account } from '../api/copytrade';
 import { getToken } from '../api/client';
 import { useCustomAlert } from '../context/AlertContext';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, AppButton, AppInput, Badge, EmptyState } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export default function CopyTradeScreen({ navigation }: any) {
+type CopyTradeProps = NativeStackScreenProps<RootStackParamList, 'CopyTrade'>;
+
+export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const alert = useCustomAlert();
   const [subscriber, setSubscriber] = useState<Mt5Account | null>(null);
   const [mt5Account, setMt5Account] = useState<any>(null);
@@ -86,40 +93,40 @@ export default function CopyTradeScreen({ navigation }: any) {
 
   if (!getToken()) {
     return (
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.center}><Text style={styles.centerText}>Login to use Copy Trading</Text></View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.title}>Copy Trading</Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 60 }} />
         ) : subscriber ? (
           <>
             {/* MT5 Account Info */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Shield size={18} color="#2FEFC4" />
+                <Shield size={18} color={colors.semantic.positive} />
                 <Text style={styles.cardTitle}>MT5 Account Connected</Text>
               </View>
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
-                  <User size={14} color="#8899AA" />
+                  <User size={14} color={colors.text.secondary} />
                   <Text style={styles.infoLabel}>Account</Text>
                   <Text style={styles.infoValue}>{subscriber.account}</Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Server size={14} color="#8899AA" />
+                  <Server size={14} color={colors.text.secondary} />
                   <Text style={styles.infoLabel}>Server</Text>
                   <Text style={styles.infoValue}>{subscriber.mt5_server}</Text>
                 </View>
@@ -158,15 +165,15 @@ export default function CopyTradeScreen({ navigation }: any) {
                   <View key={i} style={styles.positionCard}>
                     <View style={styles.posHeader}>
                       <View style={styles.posSymbol}>
-                        <Activity size={14} color="#AB4BFF" />
+                        <Activity size={14} color={colors.accent.purple} />
                         <Text style={styles.posSymbolText}>{pos.symbol ?? 'N/A'}</Text>
                       </View>
                       <View style={[styles.posBadge, {
                         backgroundColor: Number(pos.profit ?? 0) >= 0 ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
                         borderColor: Number(pos.profit ?? 0) >= 0 ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
                       }]}>
-                        <TrendingUp size={11} color={Number(pos.profit ?? 0) >= 0 ? '#2FEFC4' : '#FF4B6E'} />
-                        <Text style={[styles.posPnl, { color: Number(pos.profit ?? 0) >= 0 ? '#2FEFC4' : '#FF4B6E' }]}>
+                        <TrendingUp size={11} color={Number(pos.profit ?? 0) >= 0 ? colors.semantic.positive : colors.semantic.negative} />
+                        <Text style={[styles.posPnl, { color: Number(pos.profit ?? 0) >= 0 ? colors.semantic.positive : colors.semantic.negative }]}>
                           ${Number(pos.profit ?? 0).toFixed(2)}
                         </Text>
                       </View>
@@ -183,7 +190,7 @@ export default function CopyTradeScreen({ navigation }: any) {
 
             {/* Unsubscribe */}
             <TouchableOpacity onPress={handleUnsubscribe} style={styles.unsubscribeBtn}>
-              <Trash2 size={16} color="#FF4B6E" />
+              <Trash2 size={16} color={colors.semantic.negative} />
               <Text style={styles.unsubscribeText}>Disconnect MT5 Account</Text>
             </TouchableOpacity>
           </>
@@ -241,7 +248,7 @@ export default function CopyTradeScreen({ navigation }: any) {
           </View>
         ) : (
           <View style={styles.emptyCard}>
-            <Zap size={48} color="#AB4BFF" />
+            <Zap size={48} color={colors.accent.purple} />
             <Text style={styles.emptyTitle}>Copy Trading</Text>
             <Text style={styles.emptySub}>
               Automatically copy trades from your followed traders to your MT5 account.
@@ -252,15 +259,15 @@ export default function CopyTradeScreen({ navigation }: any) {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
   center: { flex: 1, alignItems: 'center', marginTop: 200 },
-  centerText: { color: '#8899AA' },
+  centerText: { color: colors.text.secondary },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
@@ -272,7 +279,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  title: { fontSize: 24, fontWeight: '800', color: colors.text.primary },
 
   card: {
     marginHorizontal: 24, padding: 20, borderRadius: 22, marginBottom: 20,
@@ -280,11 +287,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
   infoRow: { flexDirection: 'row', gap: 20 },
   infoItem: { flex: 1, gap: 4 },
-  infoLabel: { fontSize: 10, color: '#8899AA', fontWeight: '600' },
-  infoValue: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  infoLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '600' },
+  infoValue: { fontSize: 14, fontWeight: '800', color: colors.text.primary },
 
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 24, marginBottom: 20 },
   statCard: {
@@ -292,11 +299,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(14,20,57,0.85)',
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
   },
-  statLabel: { fontSize: 10, color: '#8899AA', fontWeight: '600' },
-  statValue: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 4 },
+  statLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '600' },
+  statValue: { fontSize: 16, fontWeight: '800', color: colors.text.primary, marginTop: 4 },
 
   section: { paddingHorizontal: 24, marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text.primary, marginBottom: 12 },
   positionCard: {
     padding: 14, borderRadius: 16, marginBottom: 8,
     backgroundColor: 'rgba(14,20,57,0.85)',
@@ -304,11 +311,11 @@ const styles = StyleSheet.create({
   },
   posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   posSymbol: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  posSymbolText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  posSymbolText: { fontSize: 14, fontWeight: '700', color: colors.text.primary },
   posBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   posPnl: { fontSize: 12, fontWeight: '700' },
   posDetails: { flexDirection: 'row', gap: 14 },
-  posDetail: { fontSize: 12, color: '#8899AA' },
+  posDetail: { fontSize: 12, color: colors.text.secondary },
 
   unsubscribeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -316,40 +323,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,75,110,0.08)',
     borderWidth: 1, borderColor: 'rgba(255,75,110,0.2)',
   },
-  unsubscribeText: { fontSize: 14, fontWeight: '700', color: '#FF4B6E' },
+  unsubscribeText: { fontSize: 14, fontWeight: '700', color: colors.semantic.negative },
 
   emptyCard: {
     marginHorizontal: 24, padding: 40, borderRadius: 24, alignItems: 'center',
     backgroundColor: 'rgba(14,20,57,0.85)',
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: '#fff', marginTop: 16 },
-  emptySub: { fontSize: 13, color: '#8899AA', textAlign: 'center', lineHeight: 20, marginTop: 8, marginBottom: 24 },
+  emptyTitle: { fontSize: 22, fontWeight: '800', color: colors.text.primary, marginTop: 16 },
+  emptySub: { fontSize: 13, color: colors.text.secondary, textAlign: 'center', lineHeight: 20, marginTop: 8, marginBottom: 24 },
   connectBtn: {
     paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: '#AB4BFF',
+    backgroundColor: colors.accent.purple,
   },
-  connectBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  connectBtnText: { fontSize: 15, fontWeight: '700', color: colors.text.primary },
 
   formCard: {
     marginHorizontal: 24, padding: 24, borderRadius: 22,
     backgroundColor: 'rgba(14,20,57,0.85)',
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
-  formTitle: { fontSize: 18, fontWeight: '800', color: '#fff', marginBottom: 20 },
+  formTitle: { fontSize: 18, fontWeight: '800', color: colors.text.primary, marginBottom: 20 },
   inputGroup: { marginBottom: 14 },
-  label: { fontSize: 11, fontWeight: '600', color: '#8899AA', letterSpacing: 0.5, marginBottom: 6 },
+  label: { fontSize: 11, fontWeight: '600', color: colors.text.secondary, letterSpacing: 0.5, marginBottom: 6 },
   inputBox: {
     height: 48, borderRadius: 14, paddingHorizontal: 16,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
+  input: { flex: 1, color: colors.text.primary, fontSize: 15 },
   submitBtn: {
     height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#AB4BFF', marginTop: 8,
+    backgroundColor: colors.accent.purple, marginTop: 8,
   },
-  submitText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  submitText: { fontSize: 15, fontWeight: '700', color: colors.text.primary },
   cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 8 },
-  cancelText: { fontSize: 13, fontWeight: '600', color: '#8899AA' },
+  cancelText: { fontSize: 13, fontWeight: '600', color: colors.text.secondary },
 });

@@ -4,12 +4,19 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Book, Play, FileText, ChevronRight, GraduationCap
 } from 'lucide-react-native';
 import { academyApi, Academy, AcademyClass, AcademyArticle, AcademyLivestream } from '../api/academy';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, Badge, Skeleton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export default function AcademyScreen({ navigation }: any) {
+type AcademyProps = NativeStackScreenProps<RootStackParamList, 'Academy'>;
+
+export default function AcademyScreen({ navigation }: AcademyProps) {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [articles, setArticles] = useState<AcademyArticle[]>([]);
@@ -40,7 +47,7 @@ export default function AcademyScreen({ navigation }: any) {
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
-  const tabs: { key: typeof tab; label: string; Icon: any }[] = [
+  const tabs: { key: typeof tab; label: string; Icon: React.ComponentType<{ size: number; color: string }> }[] = [
     { key: 'academies', label: 'Academies', Icon: GraduationCap },
     { key: 'classes', label: 'Classes', Icon: Book },
     { key: 'articles', label: 'Articles', Icon: FileText },
@@ -48,16 +55,17 @@ export default function AcademyScreen({ navigation }: any) {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Academy</Text>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Academy
+          </Text>
         </View>
 
-        {/* Tabs */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
           {tabs.map(t => (
             <TouchableOpacity
@@ -65,57 +73,85 @@ export default function AcademyScreen({ navigation }: any) {
               onPress={() => setTab(t.key)}
               style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]}
             >
-              <t.Icon size={14} color={tab === t.key ? '#fff' : '#8899AA'} />
+              <t.Icon size={14} color={tab === t.key ? '#fff' : colors.text.secondary} />
               <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.sm }}>
+            {[1, 2, 3].map(i => (
+              <GlassCard key={i} elevation={2}>
+                <Skeleton height={44} width={44} borderRadius={16} style={{ marginBottom: space.md }} />
+                <Skeleton height={14} width="60%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={12} width="40%" />
+              </GlassCard>
+            ))}
+          </View>
         ) : (
           <View style={styles.list}>
             {tab === 'academies' && academies.map(a => (
-              <View key={a.id} style={styles.card}>
-                <View style={styles.cardIcon}><GraduationCap size={22} color="#AB4BFF" /></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{a.name}</Text>
-                  {a.description ? <Text style={styles.cardDesc}>{a.description}</Text> : null}
+              <GlassCard key={a.id} elevation={2}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                  <View style={styles.cardIcon}><GraduationCap size={22} color={colors.accent.purple} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      {a.name}
+                    </Text>
+                    {a.description ? <Text style={[typography.caption, { color: colors.text.secondary }]}>{a.description}</Text> : null}
+                  </View>
+                  <ChevronRight size={16} color={colors.text.secondary} />
                 </View>
-                <ChevronRight size={16} color="#8899AA" />
-              </View>
+              </GlassCard>
             ))}
             {tab === 'classes' && classes.map(c => (
-              <View key={c.id} style={styles.card}>
-                <View style={styles.cardIcon}><Book size={22} color="#F7C948" /></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{c.name}</Text>
-                  <Text style={styles.cardDesc}>{c.description ?? ''}</Text>
+              <GlassCard key={c.id} elevation={2}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                  <View style={styles.cardIcon}><Book size={22} color={colors.accent.gold} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      {c.name}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{c.description ?? ''}</Text>
+                  </View>
+                  <Text style={[typography.captionBold, { color: colors.accent.gold, fontFamily: 'DMSans-Bold' }]}>
+                    {c.price > 0 ? `$${c.price}` : 'Free'}
+                  </Text>
                 </View>
-                <Text style={styles.cardPrice}>{c.price > 0 ? `$${c.price}` : 'Free'}</Text>
-              </View>
+              </GlassCard>
             ))}
             {tab === 'articles' && articles.map(a => (
-              <View key={a.id} style={styles.card}>
-                <View style={styles.cardIcon}><FileText size={22} color="#2FEFC4" /></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{a.title}</Text>
-                  <Text style={styles.cardDesc} numberOfLines={2}>{a.content}</Text>
+              <GlassCard key={a.id} elevation={2}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                  <View style={styles.cardIcon}><FileText size={22} color={colors.semantic.positive} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      {a.title}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>{a.content}</Text>
+                  </View>
+                  <Text style={[typography.caption, { color: colors.text.secondary, fontWeight: '700' }]}>
+                    Ch.{a.chapter}
+                  </Text>
                 </View>
-                <Text style={styles.cardChapter}>Ch.{a.chapter}</Text>
-              </View>
+              </GlassCard>
             ))}
             {tab === 'live' && livestreams.map(l => (
-              <View key={l.id} style={styles.card}>
-                <View style={[styles.cardIcon, { backgroundColor: 'rgba(255,75,110,0.12)' }]}>
-                  <Play size={22} color="#FF4B6E" />
+              <GlassCard key={l.id} elevation={2}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                  <View style={[styles.cardIcon, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
+                    <Play size={22} color={colors.semantic.negative} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      {l.title}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.semantic.negative }]} numberOfLines={1}>{l.link}</Text>
+                  </View>
+                  <Badge label="LIVE" variant="danger" />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{l.title}</Text>
-                  <Text style={[styles.cardDesc, { color: '#FF4B6E' }]} numberOfLines={1}>{l.link}</Text>
-                </View>
-                <View style={styles.liveBadge}><Text style={styles.liveBadgeText}>LIVE</Text></View>
-              </View>
+              </GlassCard>
             ))}
 
             {(
@@ -124,63 +160,46 @@ export default function AcademyScreen({ navigation }: any) {
               (tab === 'articles' && articles.length === 0) ||
               (tab === 'live' && livestreams.length === 0)
             ) && (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No {tabs.find(t => t.key === tab)?.label} yet</Text>
-              </View>
+              <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', paddingVertical: space['3xl'] }]}>
+                No {tabs.find(t => t.key === tab)?.label} yet
+              </Text>
             )}
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
   header: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: space.lg,
+    paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.lg,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
 
-  tabRow: { paddingHorizontal: 24, gap: 8, marginBottom: 20 },
+  tabRow: { paddingHorizontal: space['2xl'], gap: space.sm, marginBottom: space.xl },
   tabBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+    paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.md,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  tabBtnActive: { backgroundColor: '#AB4BFF', borderColor: '#AB4BFF' },
-  tabText: { fontSize: 12, fontWeight: '700', color: '#8899AA' },
+  tabBtnActive: { backgroundColor: colors.accent.purple, borderColor: colors.accent.purple },
+  tabText: { fontSize: 12, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
   tabTextActive: { color: '#fff' },
 
-  list: { paddingHorizontal: 24, gap: 10 },
-  card: {
-    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
-    borderRadius: 18, backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
+  list: { paddingHorizontal: space['2xl'], gap: space.sm },
   cardIcon: {
-    width: 44, height: 44, borderRadius: 16,
-    backgroundColor: 'rgba(171,75,255,0.12)',
+    width: 44, height: 44, borderRadius: radius.lg,
+    backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  cardDesc: { fontSize: 12, color: '#8899AA', marginTop: 2 },
-  cardPrice: { fontSize: 13, fontWeight: '800', color: '#F7C948' },
-  cardChapter: { fontSize: 12, fontWeight: '700', color: '#8899AA' },
-  liveBadge: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-    backgroundColor: 'rgba(255,75,110,0.15)',
-  },
-  liveBadgeText: { fontSize: 10, fontWeight: '800', color: '#FF4B6E' },
-  empty: { alignItems: 'center', paddingVertical: 48 },
-  emptyText: { fontSize: 14, color: '#8899AA' },
 });

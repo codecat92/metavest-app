@@ -4,12 +4,19 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Clock } from 'lucide-react-native';
 import { newsApi, Article } from '../api/news';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, Skeleton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const categories = ['All', 'Market', 'Education'];
 
-export default function NewsScreen({ navigation }: any) {
+type NewsProps = NativeStackScreenProps<RootStackParamList, 'News'>;
+
+export default function NewsScreen({ navigation }: NewsProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [academy, setAcademy] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +42,6 @@ export default function NewsScreen({ navigation }: any) {
     useCallback(() => { setLoading(true); loadNews(); }, [loadNews])
   );
 
-  // Merge articles + academy, tag them for category filtering
   const allItems: (Article & { tag: string })[] = [
     ...articles.map(a => ({ ...a, tag: 'Market' })),
     ...academy.map(a => ({ ...a, tag: 'Education' })),
@@ -48,30 +54,34 @@ export default function NewsScreen({ navigation }: any) {
   });
 
   const tagColors: Record<string, string> = {
-    Market: '#AB4BFF',
-    Education: '#2FEFC4',
+    Market: colors.accent.purple,
+    Education: colors.semantic.positive,
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>News & Education</Text>
-            <Text style={styles.subtitle}>Market updates & learning</Text>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              News & Education
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              Market updates & learning
+            </Text>
           </View>
         </View>
 
         <View style={styles.searchBox}>
-          <Search size={15} color="#8899AA" />
+          <Search size={15} color={colors.text.secondary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search articles..."
-            placeholderTextColor="#8899AA"
+            placeholderTextColor={colors.text.secondary}
             style={styles.searchInput}
           />
         </View>
@@ -91,111 +101,104 @@ export default function NewsScreen({ navigation }: any) {
         </ScrollView>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
+            {[1, 2, 3].map(i => (
+              <GlassCard key={i} elevation={2}>
+                <Skeleton height={14} width="30%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={16} width="90%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={12} width="100%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={12} width="60%" />
+              </GlassCard>
+            ))}
+          </View>
         ) : (
           <View style={styles.articleList}>
-            {filtered.map((article, i) => {
-              const tagColor = tagColors[article.tag] ?? '#8899AA';
+            {filtered.map((article) => {
+              const tagColor = tagColors[article.tag] ?? colors.text.secondary;
               return (
                 <TouchableOpacity
                   key={`${article.tag}-${article.id}`}
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate('ArticleDetail', { article })}
-                  style={styles.articleCard}
+                  style={{ borderRadius: radius.lg, overflow: 'hidden' }}
                 >
-                  <View style={styles.articleContent}>
+                  <GlassCard elevation={2}>
                     <View style={styles.metaRow}>
                       <View style={[styles.tagBadge, {
                         backgroundColor: `${tagColor}18`,
                         borderColor: `${tagColor}44`,
                       }]}>
-                        <Text style={[styles.tagText, { color: tagColor }]}>{article.tag}</Text>
+                        <Text style={[typography.label, { color: tagColor }]}>{article.tag}</Text>
                       </View>
-                      <Text style={styles.dateText}>
+                      <Text style={[typography.label, { color: colors.text.secondary }]}>
                         {article.created_at ? new Date(article.created_at).toLocaleDateString() : ''}
                       </Text>
                     </View>
-                    <Text style={styles.articleTitle}>{article.title}</Text>
-                    <Text style={styles.articleExcerpt} numberOfLines={3}>{article.content}</Text>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>
+                      {article.title}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: space.sm }]} numberOfLines={3}>
+                      {article.content}
+                    </Text>
                     <View style={styles.readTimeRow}>
-                      <Clock size={11} color="#8899AA" />
-                      <Text style={styles.readTimeText}>
+                      <Clock size={11} color={colors.text.secondary} />
+                      <Text style={[typography.label, { color: colors.text.secondary }]}>
                         {Math.ceil((article.content?.length ?? 0) / 500) || 1} min read
                       </Text>
                     </View>
-                  </View>
+                  </GlassCard>
                 </TouchableOpacity>
               );
             })}
             {filtered.length === 0 && !loading && (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No articles found</Text>
-              </View>
+              <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', paddingVertical: space['3xl'] }]}>
+                No articles found
+              </Text>
             )}
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
-  scroll: { paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
+  scroll: { paddingBottom: space['3xl'] },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: space.lg,
+    paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.lg,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  subtitle: { fontSize: 13, color: '#8899AA', marginTop: 2 },
 
   searchBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    height: 46, borderRadius: 14, paddingHorizontal: 16,
-    marginHorizontal: 24, marginBottom: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    flexDirection: 'row', alignItems: 'center', gap: space.sm,
+    height: 46, borderRadius: radius.md, paddingHorizontal: space.lg,
+    marginHorizontal: space['2xl'], marginBottom: space.md,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  searchInput: { flex: 1, color: '#F0EEFF', fontSize: 14 },
+  searchInput: { flex: 1, color: colors.text.primary, fontSize: 14, fontFamily: 'DMSans' },
 
-  categoryRow: { paddingHorizontal: 24, gap: 8, marginBottom: 20 },
+  categoryRow: { paddingHorizontal: space['2xl'], gap: space.sm, marginBottom: space.xl },
   categoryBtn: {
-    paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+    paddingHorizontal: space.lg, paddingVertical: 6, borderRadius: radius.lg,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  categoryBtnActive: {
-    backgroundColor: 'rgba(171,75,255,0.2)',
-    borderColor: 'rgba(171,75,255,0.5)',
-  },
-  categoryText: { fontSize: 12, fontWeight: '700', color: '#8899AA' },
-  categoryTextActive: { color: '#AB4BFF' },
+  categoryBtnActive: { backgroundColor: colors.glass.g3, borderColor: colors.glass.borderStrong },
+  categoryText: { fontSize: 12, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
+  categoryTextActive: { color: colors.accent.purple },
 
-  articleList: { paddingHorizontal: 24, gap: 14 },
-  articleCard: {
-    borderRadius: 20, overflow: 'hidden',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
-  articleContent: { padding: 16 },
+  articleList: { paddingHorizontal: space['2xl'], gap: space.md },
 
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  tagBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  tagText: { fontSize: 10, fontWeight: '700' },
-  dateText: { fontSize: 11, color: '#8899AA' },
-
-  articleTitle: { fontSize: 15, fontWeight: '700', color: '#fff', lineHeight: 22, marginBottom: 8 },
-  articleExcerpt: { fontSize: 12, color: '#8899AA', lineHeight: 18, marginBottom: 10 },
-  readTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  readTimeText: { fontSize: 11, color: '#8899AA' },
-
-  emptyState: { alignItems: 'center', paddingVertical: 64 },
-  emptyText: { fontSize: 14, color: '#8899AA' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.sm },
+  tagBadge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm, borderWidth: 1 },
+  readTimeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 });

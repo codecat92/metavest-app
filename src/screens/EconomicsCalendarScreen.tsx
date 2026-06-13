@@ -4,8 +4,13 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowLeft, Calendar, Star, TrendingUp, DollarSign, Globe } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Calendar, Star, Globe } from 'lucide-react-native';
 import { api, ApiResponse } from '../api/client';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, Badge, EmptyState } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 interface EconEvent {
   date: string;
@@ -18,7 +23,9 @@ interface EconEvent {
   forecast?: string;
 }
 
-export default function EconomicsCalendarScreen({ navigation }: any) {
+type EconProps = NativeStackScreenProps<RootStackParamList, 'EconomicsCalendar'>;
+
+export default function EconomicsCalendarScreen({ navigation }: EconProps) {
   const [events, setEvents] = useState<EconEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -29,7 +36,6 @@ export default function EconomicsCalendarScreen({ navigation }: any) {
       const res = await api.get<ApiResponse<EconEvent[]>>('/economics-calendar/all');
       setEvents(res.data ?? []);
     } catch (e) {
-      // API key missing — fallback to empty
       setEvents([]);
     } finally {
       setLoading(false);
@@ -41,25 +47,20 @@ export default function EconomicsCalendarScreen({ navigation }: any) {
   );
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
 
   const impactColor: Record<string, string> = {
-    High: '#FF4B6E', Medium: '#F7C948', Low: '#2FEFC4',
+    High: colors.semantic.negative,
+    Medium: colors.semantic.warning,
+    Low: colors.semantic.positive,
   };
 
-  const impactBg: Record<string, string> = {
-    High: 'rgba(255,75,110,0.15)', Medium: 'rgba(247,201,72,0.15)', Low: 'rgba(47,239,196,0.15)',
-  };
-
-  // Filter events for selected month
   const monthEvents = events.filter(e => {
     try { return new Date(e.date).getMonth() === selectedMonth && new Date(e.date).getFullYear() === selectedYear; }
     catch { return false; }
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Group by date
   const grouped: Record<string, EconEvent[]> = {};
   monthEvents.forEach(e => {
     const d = e.date?.split('T')[0] ?? '';
@@ -68,16 +69,17 @@ export default function EconomicsCalendarScreen({ navigation }: any) {
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Economic Calendar</Text>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Economic Calendar
+          </Text>
         </View>
 
-        {/* Month Selector */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthsRow}>
           {months.map((m, i) => (
             <TouchableOpacity
@@ -90,10 +92,12 @@ export default function EconomicsCalendarScreen({ navigation }: any) {
           ))}
         </ScrollView>
 
-        <Text style={styles.monthTitle}>{monthNames[selectedMonth]} {selectedYear}</Text>
+        <Text style={[typography.h3, { color: colors.text.primary, paddingHorizontal: space['2xl'], marginBottom: space.xl, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          {monthNames[selectedMonth]} {selectedYear}
+        </Text>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 40 }} />
         ) : Object.keys(grouped).length > 0 ? (
           <View style={styles.list}>
             {Object.entries(grouped).map(([date, items]) => {
@@ -103,121 +107,106 @@ export default function EconomicsCalendarScreen({ navigation }: any) {
                 <View key={date} style={styles.dayGroup}>
                   <View style={styles.dayHeader}>
                     <View style={styles.dayBadge}>
-                      <Text style={styles.dayNum}>{day}</Text>
-                      <Text style={styles.dayWeek}>{weekday}</Text>
+                      <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                        {day}
+                      </Text>
+                      <Text style={[typography.label, { color: colors.text.secondary }]}>{weekday}</Text>
                     </View>
                     <View style={styles.dayLine} />
                   </View>
                   {items.map((ev, idx) => (
-                    <View key={idx} style={styles.eventCard}>
-                      <View style={styles.eventLeft}>
-                        <Text style={styles.eventTime}>{ev.time ?? 'All Day'}</Text>
-                        <View style={[styles.impactDot, { backgroundColor: impactColor[ev.impact ?? 'Low'] ?? '#8899AA' }]} />
-                      </View>
-                      <View style={styles.eventContent}>
-                        <View style={styles.eventHeader}>
-                          <Globe size={11} color="#8899AA" />
-                          <Text style={styles.eventCountry}>{ev.country}</Text>
-                          {ev.impact && (
-                            <View style={[styles.impactBadge, { backgroundColor: impactBg[ev.impact] ?? 'rgba(255,255,255,0.05)' }]}>
-                              <Star size={9} color={impactColor[ev.impact] ?? '#8899AA'} />
-                              <Text style={[styles.impactText, { color: impactColor[ev.impact] ?? '#8899AA' }]}>
-                                {ev.impact}
-                              </Text>
+                    <GlassCard key={idx} elevation={2} style={{ marginBottom: 6 }}>
+                      <View style={{ flexDirection: 'row', gap: space.md }}>
+                        <View style={{ alignItems: 'center', gap: 6, width: 52 }}>
+                          <Text style={[typography.label, { color: colors.text.secondary }]}>
+                            {ev.time ?? 'All Day'}
+                          </Text>
+                          <View style={[styles.impactDot, { backgroundColor: impactColor[ev.impact ?? 'Low'] ?? colors.text.secondary }]} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: space.xs }}>
+                            <Globe size={11} color={colors.text.secondary} />
+                            <Text style={[typography.label, { color: colors.text.secondary }]}>{ev.country}</Text>
+                            {ev.impact && (
+                              <Badge
+                                label={ev.impact}
+                                variant={ev.impact === 'High' ? 'danger' : ev.impact === 'Medium' ? 'warning' : 'success'}
+                              />
+                            )}
+                          </View>
+                          <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                            {ev.event}
+                          </Text>
+                          {(ev.actual || ev.forecast || ev.previous) && (
+                            <View style={{ flexDirection: 'row', gap: space.md, marginTop: space.xs }}>
+                              {ev.actual && (
+                                <Text style={[typography.label, { color: colors.text.secondary }]}>
+                                  Actual: <Text style={{ color: colors.text.primary, fontWeight: '700' }}>{ev.actual}</Text>
+                                </Text>
+                              )}
+                              {ev.forecast && (
+                                <Text style={[typography.label, { color: colors.text.secondary }]}>
+                                  Forecast: <Text style={{ color: colors.text.primary, fontWeight: '700' }}>{ev.forecast}</Text>
+                                </Text>
+                              )}
+                              {ev.previous && (
+                                <Text style={[typography.label, { color: colors.text.secondary }]}>
+                                  Previous: <Text style={{ color: colors.text.primary, fontWeight: '700' }}>{ev.previous}</Text>
+                                </Text>
+                              )}
                             </View>
                           )}
                         </View>
-                        <Text style={styles.eventName}>{ev.event}</Text>
-                        {(ev.actual || ev.forecast || ev.previous) && (
-                          <View style={styles.eventValues}>
-                            {ev.actual && <Text style={styles.eventVal}>Actual: <Text style={{ color: '#fff', fontWeight: '700' }}>{ev.actual}</Text></Text>}
-                            {ev.forecast && <Text style={styles.eventVal}>Forecast: <Text style={{ color: '#fff', fontWeight: '700' }}>{ev.forecast}</Text></Text>}
-                            {ev.previous && <Text style={styles.eventVal}>Previous: <Text style={{ color: '#fff', fontWeight: '700' }}>{ev.previous}</Text></Text>}
-                          </View>
-                        )}
                       </View>
-                    </View>
+                    </GlassCard>
                   ))}
                 </View>
               );
             })}
           </View>
         ) : (
-          <View style={styles.empty}>
-            <Calendar size={48} color="#8899AA" />
-            <Text style={styles.emptyTitle}>No economic events</Text>
-            <Text style={styles.emptySub}>
-              Add ECONOMICS_CALENDAR_API_KEY to your .env to enable real data from Financial Modeling Prep.
-            </Text>
-          </View>
+          <EmptyState
+            icon={<Calendar size={48} color={colors.text.secondary} />}
+            title="No economic events"
+            subtitle="Add ECONOMICS_CALENDAR_API_KEY to your .env to enable real data."
+          />
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
   header: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: space.lg,
+    paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.lg,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
 
-  monthsRow: { paddingHorizontal: 24, gap: 8, marginBottom: 12 },
+  monthsRow: { paddingHorizontal: space['2xl'], gap: space.sm, marginBottom: space.md },
   monthBtn: {
-    paddingHorizontal: 18, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+    paddingHorizontal: 18, paddingVertical: space.sm, borderRadius: radius.md,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  monthBtnActive: { backgroundColor: '#AB4BFF', borderColor: '#AB4BFF' },
-  monthText: { fontSize: 13, fontWeight: '700', color: '#8899AA' },
+  monthBtnActive: { backgroundColor: colors.accent.purple, borderColor: colors.accent.purple },
+  monthText: { fontSize: 13, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
   monthTextActive: { color: '#fff' },
 
-  monthTitle: {
-    fontSize: 20, fontWeight: '800', color: '#fff',
-    paddingHorizontal: 24, marginBottom: 20,
-  },
-
-  list: { paddingHorizontal: 24, gap: 8 },
-  dayGroup: { marginBottom: 4 },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  list: { paddingHorizontal: space['2xl'], gap: space.sm },
+  dayGroup: { marginBottom: space.xs },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.sm },
   dayBadge: {
-    width: 48, alignItems: 'center', paddingVertical: 6, borderRadius: 12,
-    backgroundColor: 'rgba(171,75,255,0.12)',
+    width: 48, alignItems: 'center', paddingVertical: 6, borderRadius: radius.md,
+    backgroundColor: 'rgba(139,92,246,0.12)',
   },
-  dayNum: { fontSize: 18, fontWeight: '800', color: '#fff' },
-  dayWeek: { fontSize: 9, color: '#8899AA', fontWeight: '700', marginTop: 1 },
-  dayLine: { flex: 1, height: 1, backgroundColor: 'rgba(171,75,255,0.1)' },
-
-  eventCard: {
-    flexDirection: 'row', gap: 12, padding: 14, borderRadius: 16, marginBottom: 6,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.1)',
-  },
-  eventLeft: { alignItems: 'center', gap: 6, width: 52 },
-  eventTime: { fontSize: 10, fontWeight: '700', color: '#8899AA' },
+  dayLine: { flex: 1, height: 1, backgroundColor: colors.glass.border },
   impactDot: { width: 6, height: 6, borderRadius: 3 },
-  eventContent: { flex: 1, gap: 4 },
-  eventHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  eventCountry: { fontSize: 10, fontWeight: '700', color: '#8899AA' },
-  impactBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
-  },
-  impactText: { fontSize: 9, fontWeight: '700' },
-  eventName: { fontSize: 13, fontWeight: '600', color: '#fff', lineHeight: 18 },
-  eventValues: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  eventVal: { fontSize: 11, color: '#8899AA' },
-
-  empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#8899AA', marginTop: 16 },
-  emptySub: { fontSize: 13, color: '#8899AA', textAlign: 'center', lineHeight: 20, marginTop: 8 },
 });

@@ -4,13 +4,18 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCustomAlert } from '../context/AlertContext';
 import { profileApi } from '../api/profile';
+import { colors, space, radius, typography } from '../theme';
+import { AppButton, AppInput } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function EditProfileScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, refreshUser } = useAuth();
   const alert = useCustomAlert();
 
@@ -20,7 +25,6 @@ export default function EditProfileScreen() {
   const [city, setCity] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Password
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [changingPass, setChangingPass] = useState(false);
@@ -72,87 +76,49 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ArrowLeft size={20} color="#8899AA" />
-        </TouchableOpacity>
-
-        <Text style={styles.title}>Edit Profile</Text>
-
-        {/* Profile Fields */}
-        <View style={styles.section}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>NAME</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#8899AA" /></View>
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>EMAIL</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor="#8899AA" keyboardType="email-address" autoCapitalize="none" /></View>
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>PHONE</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Phone number" placeholderTextColor="#8899AA" keyboardType="phone-pad" /></View>
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>CITY</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="City" placeholderTextColor="#8899AA" /></View>
-          </View>
-
-          <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, saving && { opacity: 0.6 }]} disabled={saving}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Save Changes</Text>}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-        </View>
 
-        {/* Password */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Change Password</Text>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>CURRENT PASSWORD</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={oldPass} onChangeText={setOldPass} placeholder="Current password" placeholderTextColor="#8899AA" secureTextEntry /></View>
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>NEW PASSWORD</Text>
-            <View style={styles.inputBox}><TextInput style={styles.input} value={newPass} onChangeText={setNewPass} placeholder="Min 8 characters" placeholderTextColor="#8899AA" secureTextEntry /></View>
+          <Text style={[typography.h2, { color: colors.text.primary, marginBottom: space.xl, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Edit Profile
+          </Text>
+
+          <View style={styles.section}>
+            <AppInput label="NAME" value={name} onChangeText={setName} placeholder="Your name" />
+            <AppInput label="EMAIL" value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" autoCapitalize="none" />
+            <AppInput label="PHONE" value={phone} onChangeText={setPhone} placeholder="Phone number" keyboardType="phone-pad" />
+            <AppInput label="CITY" value={city} onChangeText={setCity} placeholder="City" />
+
+            <AppButton title="Save Changes" onPress={handleSave} loading={saving} size="lg" />
           </View>
 
-          <TouchableOpacity onPress={handleChangePassword} style={[styles.passBtn, changingPass && { opacity: 0.6 }]} disabled={changingPass}>
-            {changingPass ? <ActivityIndicator color="#0E1439" /> : <Text style={styles.passText}>Change Password</Text>}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.section}>
+            <Text style={[typography.h4, { color: colors.accent.gold, marginBottom: space.lg, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              Change Password
+            </Text>
+            <AppInput label="CURRENT PASSWORD" value={oldPass} onChangeText={setOldPass} placeholder="Current password" secureTextEntry />
+            <AppInput label="NEW PASSWORD" value={newPass} onChangeText={setNewPass} placeholder="Min 8 characters" secureTextEntry />
+
+            <AppButton title="Change Password" variant="secondary" onPress={handleChangePassword} loading={changingPass} size="lg" />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
-  scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 60 },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
+  scroll: { paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space['4xl'] },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    width: 40, height: 40, borderRadius: 20, marginBottom: space.xl,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 28 },
-  section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#F7C948', marginBottom: 16 },
-  inputGroup: { marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '600', color: '#8899AA', letterSpacing: 0.5, marginBottom: 8 },
-  inputBox: {
-    height: 50, borderRadius: 14, paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-  },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
-  saveBtn: {
-    height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#AB4BFF', marginTop: 8,
-  },
-  saveText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  passBtn: {
-    height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F7C948', marginTop: 8,
-  },
-  passText: { fontSize: 16, fontWeight: '700', color: '#0E1439' },
+  section: { marginBottom: space['3xl'] },
 });

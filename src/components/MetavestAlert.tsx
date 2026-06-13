@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { colors, radius, space, typography } from '../theme';
 
 interface Props {
   visible: boolean;
@@ -10,16 +11,20 @@ interface Props {
 }
 
 export default function MetavestAlert({ visible, title, message, type = 'info', onClose }: Props) {
-  const accentColor = type === 'success' ? '#2FEFC4' : type === 'error' ? '#FF4B6E' : '#AB4BFF';
+  const accentColor = type === 'success' ? colors.semantic.positive : type === 'error' ? colors.semantic.negative : colors.accent.purple;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={[styles.title, { color: accentColor }]}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={[typography.h3, { color: accentColor, textAlign: 'center', fontFamily: 'SpaceGrotesk-Bold' }]}>
+            {title}
+          </Text>
+          <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginBottom: space['2xl'] }]}>
+            {message}
+          </Text>
           <TouchableOpacity onPress={onClose} style={[styles.button, { backgroundColor: accentColor }]}>
-            <Text style={styles.buttonText}>OK</Text>
+            <Text style={[typography.bodyBold, { color: '#fff' }]}>OK</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -29,20 +34,17 @@ export default function MetavestAlert({ visible, title, message, type = 'info', 
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(6,9,16,0.85)',
-    alignItems: 'center', justifyContent: 'center', padding: 40,
+    flex: 1, backgroundColor: colors.overlay.modal,
+    alignItems: 'center', justifyContent: 'center', padding: space['3xl'],
   },
   card: {
-    width: '100%', borderRadius: 24, padding: 28,
-    backgroundColor: '#0E1439',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
+    width: '100%', borderRadius: radius.xl, padding: 28,
+    backgroundColor: colors.bg.primary,
+    borderWidth: 1, borderColor: colors.glass.borderStrong,
     alignItems: 'center',
   },
-  title: { fontSize: 18, fontWeight: '800', marginBottom: 12, textAlign: 'center' },
-  message: { fontSize: 14, color: '#8899AA', textAlign: 'center', lineHeight: 21, marginBottom: 24 },
   button: {
-    paddingHorizontal: 48, paddingVertical: 14, borderRadius: 14,
+    paddingHorizontal: 48, paddingVertical: space.md, borderRadius: radius.md,
     alignItems: 'center', minWidth: 140,
   },
-  buttonText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

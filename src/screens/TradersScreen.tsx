@@ -4,19 +4,22 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Search, Shield, Star, TrendingUp } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '../api/follow';
 import { getToken } from '../api/client';
 import { useCustomAlert } from '../context/AlertContext';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, EmptyState, Skeleton, Badge } from '../components';
 
-const avatarColors = ['#AB4BFF', '#F7C948', '#2FEFC4', '#FF4B6E', '#8855CC'];
+const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
 
 export default function TradersScreen() {
   const [traders, setTraders] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
-  const [followMap, setFollowMap] = useState<Record<string, number>>({}); // trader_id → follow_id
+  const [followMap, setFollowMap] = useState<Record<string, number>>({});
   const alert = useCustomAlert();
 
   const loadTraders = useCallback(async () => {
@@ -34,7 +37,6 @@ export default function TradersScreen() {
       });
       setFollowedSet(followed);
 
-      // Map trader_id → follow_id for unfollow
       const map: Record<string, number> = {};
       (followedRes.data ?? []).forEach((f: any) => {
         if (f.trader_id) map[f.trader_id] = f.id;
@@ -56,7 +58,6 @@ export default function TradersScreen() {
       await followApi.follow(traderId);
       setFollowedSet(prev => { const n = new Set(prev); n.add(traderId); return n; });
       alert.showAlert({ title: 'Success', message: 'You are now following this trader', type: 'success' });
-      // Reload to get updated follow IDs
       setTimeout(() => loadTraders(), 500);
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
@@ -83,35 +84,47 @@ export default function TradersScreen() {
 
   if (!getToken()) {
     return (
-      <View style={styles.container}>
-        <View style={styles.center}><Text style={styles.centerText}>Login to see traders</Text></View>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <EmptyState icon={<Search size={40} color={colors.text.secondary} />} title="Login to see traders" />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Traders</Text>
-            <Text style={styles.subtitle}>Discover top performers</Text>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              Traders
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              Discover top performers
+            </Text>
           </View>
         </View>
 
         <View style={styles.searchBox}>
-          <Search size={16} color="#8899AA" />
+          <Search size={16} color={colors.text.secondary} />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Search traders..."
-            placeholderTextColor="#8899AA"
+            placeholderTextColor={colors.text.secondary}
             style={styles.searchInput}
           />
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
+            {[1, 2, 3].map(i => (
+              <GlassCard key={i} elevation={2}>
+                <Skeleton height={52} width={52} borderRadius={26} style={{ marginBottom: space.md }} />
+                <Skeleton height={16} width="60%" style={{ marginBottom: space.sm }} />
+                <Skeleton height={12} width="80%" />
+              </GlassCard>
+            ))}
+          </View>
         ) : (
           <View style={styles.cardList}>
             {sorted.map((trader, i) => {
@@ -119,15 +132,17 @@ export default function TradersScreen() {
               const initials = (trader.name ?? 'TR').substring(0, 2).toUpperCase();
               const avatarColor = avatarColors[i % avatarColors.length];
               return (
-                <View key={trader.id} style={styles.card}>
+                <GlassCard key={trader.id} elevation={2}>
                   <View style={styles.topRow}>
                     <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
                       <Text style={styles.avatarText}>{initials}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
-                        <Text style={styles.traderName}>{trader.name}</Text>
-                        {trader.status === 1 && <Star size={12} color="#AB4BFF" fill="#AB4BFF" />}
+                        <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                          {trader.name}
+                        </Text>
+                        {trader.status === 1 && <Star size={12} color={colors.accent.purple} fill={colors.accent.purple} />}
                       </View>
                       {trader.description ? (
                         <Text style={styles.bio} numberOfLines={2}>{trader.description}</Text>
@@ -145,86 +160,77 @@ export default function TradersScreen() {
 
                   <View style={styles.statsRow}>
                     {[
-                      { label: 'Status', value: trader.status === 1 ? 'Active' : 'Inactive', color: trader.status === 1 ? '#2FEFC4' : '#8899AA' },
-                      { label: 'Trades', value: '--', color: '#AB4BFF' },
-                      { label: 'Followers', value: '--', color: '#F7C948' },
+                      { label: 'Status', value: trader.status === 1 ? 'Active' : 'Inactive', color: trader.status === 1 ? colors.semantic.positive : colors.text.secondary },
+                      { label: 'Trades', value: '--', color: colors.accent.purple },
+                      { label: 'Followers', value: '--', color: colors.accent.gold },
                     ].map((s) => (
                       <View key={s.label} style={styles.statBox}>
-                        <Text style={styles.statLabel}>{s.label}</Text>
-                        <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
+                        <Text style={[typography.label, { color: colors.text.secondary }]}>{s.label}</Text>
+                        <Text style={[typography.captionBold, { color: s.color, marginTop: 2, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                          {s.value}
+                        </Text>
                       </View>
                     ))}
                   </View>
-                </View>
+                </GlassCard>
               );
             })}
             {sorted.length === 0 && !loading && (
-              <Text style={styles.emptyText}>No traders found</Text>
+              <EmptyState icon={<Search size={40} color={colors.text.secondary} />} title="No traders found" />
             )}
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
-  center: { flex: 1, alignItems: 'center', marginTop: 200 },
-  centerText: { color: '#8899AA' },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 8,
+    paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.sm,
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  subtitle: { fontSize: 13, color: '#8899AA', marginTop: 2 },
 
   searchBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    height: 48, borderRadius: 16, paddingHorizontal: 16,
-    marginHorizontal: 24, marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    flexDirection: 'row', alignItems: 'center', gap: space.sm,
+    height: 48, borderRadius: radius.md, paddingHorizontal: space.lg,
+    marginHorizontal: space['2xl'], marginBottom: space.xl,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  searchInput: { flex: 1, color: '#F0EEFF', fontSize: 14 },
+  searchInput: { flex: 1, color: colors.text.primary, fontSize: 14, fontFamily: 'DMSans' },
 
-  cardList: { paddingHorizontal: 24, gap: 14 },
-  card: {
-    borderRadius: 22, padding: 18,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-  },
-  topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  cardList: { paddingHorizontal: space['2xl'], gap: space.md },
+
+  topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, marginBottom: space.md },
   avatar: {
     width: 52, height: 52, borderRadius: 26, flexShrink: 0,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 2, borderColor: colors.glass.border,
   },
-  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 },
-  traderName: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  bio: { fontSize: 12, color: 'rgba(240,238,255,0.55)', lineHeight: 17, marginTop: 2 },
+  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: 'SpaceGrotesk-Bold' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.xs },
+  bio: { fontSize: 12, color: colors.text.muted, lineHeight: 17, marginTop: 2, fontFamily: 'DMSans' },
 
   followBtn: {
-    height: 34, paddingHorizontal: 14, borderRadius: 12,
-    backgroundColor: '#AB4BFF', alignItems: 'center', justifyContent: 'center',
+    height: 34, paddingHorizontal: space.md, borderRadius: radius.md,
+    backgroundColor: colors.accent.purple, alignItems: 'center', justifyContent: 'center',
   },
   followBtnActive: {
-    backgroundColor: 'rgba(171,75,255,0.15)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.35)',
+    backgroundColor: 'rgba(139,92,246,0.15)',
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
   },
-  followBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  followBtnTextActive: { color: '#AB4BFF' },
+  followBtnText: { fontSize: 12, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
+  followBtnTextActive: { color: colors.accent.purple },
 
-  statsRow: { flexDirection: 'row', gap: 8 },
+  statsRow: { flexDirection: 'row', gap: space.sm },
   statBox: {
-    flex: 1, alignItems: 'center', paddingVertical: 8,
-    borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.1)',
+    flex: 1, alignItems: 'center', paddingVertical: space.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  statLabel: { fontSize: 10, color: '#8899AA', fontWeight: '500' },
-  statValue: { fontSize: 13, fontWeight: '800', marginTop: 2 },
-  emptyText: { color: '#8899AA', textAlign: 'center', marginTop: 40 },
 });

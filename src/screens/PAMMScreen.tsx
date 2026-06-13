@@ -4,15 +4,22 @@ import {
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft, Building2, Shield, CheckCircle, Plus, ChevronRight
+  ArrowLeft, Building2, Shield, CheckCircle, Plus
 } from 'lucide-react-native';
 import { pammApi, PAMMEntry } from '../api/pamm';
 import { getToken } from '../api/client';
 import { useCustomAlert } from '../context/AlertContext';
 import { useAuth } from '../context/AuthContext';
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, AppButton, AppInput, EmptyState, Badge, Skeleton } from '../components';
+import type { RootStackParamList } from '../types/navigation';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export default function PAMMScreen({ navigation }: any) {
+type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
+
+export default function PAMMScreen({ navigation }: PAMMProps) {
   const { user } = useAuth();
   const alert = useCustomAlert();
   const [entries, setEntries] = useState<PAMMEntry[]>([]);
@@ -58,103 +65,102 @@ export default function PAMMScreen({ navigation }: any) {
 
   if (!getToken()) {
     return (
-      <View style={styles.container}>
-        <View style={styles.center}><Text style={styles.centerText}>Login to see PAMM</Text></View>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <EmptyState icon={<Shield size={40} color={colors.text.secondary} />} title="Login to see PAMM" />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color="#8899AA" />
+            <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.title}>PAMM</Text>
+          <Text style={[typography.h2, { color: colors.text.primary, flex: 1, marginLeft: space.lg, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            PAMM
+          </Text>
           <TouchableOpacity onPress={() => setShowAdd(!showAdd)} style={styles.addBtn}>
-            <Plus size={18} color={showAdd ? '#F7C948' : '#AB4BFF'} />
+            <Plus size={18} color={showAdd ? colors.accent.gold : colors.accent.purple} />
           </TouchableOpacity>
         </View>
 
-        {/* Add Form */}
         {showAdd && (
-          <View style={styles.addCard}>
-            <Text style={styles.addTitle}>Register PAMM Broker</Text>
-            <View style={styles.inputBox}>
-              <TextInput
-                style={styles.input}
-                value={brokerId}
-                onChangeText={setBrokerId}
-                placeholder="Enter broker ID"
-                placeholderTextColor="#8899AA"
-              />
-            </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Brokers')} style={{ marginBottom: 12, marginTop: -4 }}>
-              <Text style={{ fontSize: 12, color: '#AB4BFF', fontWeight: '600' }}>View available brokers →</Text>
+          <GlassCard elevation={2} style={{ marginHorizontal: space['2xl'], marginBottom: space.xl }}>
+            <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              Register PAMM Broker
+            </Text>
+            <AppInput
+              value={brokerId}
+              onChangeText={setBrokerId}
+              placeholder="Enter broker ID"
+            />
+            <TouchableOpacity onPress={() => navigation.navigate('Brokers')} style={{ marginBottom: space.md, marginTop: -space.sm }}>
+              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>
+                View available brokers
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleAdd}
-              style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.submitText}>Register</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+            <AppButton title="Register" onPress={handleAdd} loading={submitting} />
+          </GlassCard>
         )}
 
         {loading ? (
-          <ActivityIndicator size="large" color="#AB4BFF" style={{ marginTop: 60 }} />
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
+            <Skeleton height={80} borderRadius={radius.lg} />
+            <Skeleton height={80} borderRadius={radius.lg} />
+          </View>
         ) : (
           <>
-            {/* Stats */}
             <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Building2 size={20} color="#AB4BFF" />
-                <Text style={styles.statValue}>{entries.length}</Text>
-                <Text style={styles.statLabel}>Brokers</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Shield size={20} color="#2FEFC4" />
-                <Text style={styles.statValue}>{entries.filter(e => e.status == 1).length}</Text>
-                <Text style={styles.statLabel}>Active</Text>
-              </View>
+              <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                <Building2 size={20} color={colors.accent.purple} />
+                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                  {entries.length}
+                </Text>
+                <Text style={[typography.label, { color: colors.text.secondary }]}>Brokers</Text>
+              </GlassCard>
+              <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+                <Shield size={20} color={colors.semantic.positive} />
+                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                  {entries.filter(e => e.status == 1).length}
+                </Text>
+                <Text style={[typography.label, { color: colors.text.secondary }]}>Active</Text>
+              </GlassCard>
             </View>
 
-            {/* PAMM List */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Registered Brokers</Text>
+              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                Registered Brokers
+              </Text>
               {entries.length === 0 ? (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>No PAMM registrations yet</Text>
-                </View>
+                <EmptyState
+                  icon={<Building2 size={40} color={colors.text.secondary} />}
+                  title="No PAMM registrations yet"
+                />
               ) : (
-                <View style={styles.list}>
+                <View style={{ gap: space.sm }}>
                   {entries.map((entry) => (
-                    <View key={entry.id} style={styles.entryCard}>
-                      <View style={styles.entryAvatar}>
-                        <Building2 size={20} color="#AB4BFF" />
+                    <GlassCard key={entry.id} elevation={2}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                        <View style={styles.entryAvatar}>
+                          <Building2 size={20} color={colors.accent.purple} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                            {entry.broker_name ?? `Broker #${entry.id_broker}`}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                            by {entry.user_name ?? 'Unknown'}
+                          </Text>
+                        </View>
+                        <Badge
+                          label={entry.status == 1 ? 'Active' : 'Pending'}
+                          variant={entry.status == 1 ? 'success' : 'warning'}
+                          icon={<CheckCircle size={11} color={entry.status == 1 ? colors.semantic.positive : colors.semantic.warning} />}
+                        />
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.entryName}>{entry.broker_name ?? `Broker #${entry.id_broker}`}</Text>
-                        <Text style={styles.entryUser}>by {entry.user_name ?? 'Unknown'}</Text>
-                      </View>
-                      <View style={[styles.statusBadge, {
-                        backgroundColor: entry.status == 1 ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
-                        borderColor: entry.status == 1 ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
-                      }]}>
-                        <CheckCircle size={11} color={entry.status == 1 ? '#2FEFC4' : '#FF4B6E'} />
-                        <Text style={[styles.statusText, {
-                          color: entry.status == 1 ? '#2FEFC4' : '#FF4B6E',
-                        }]}>
-                          {entry.status == 1 ? 'Active' : 'Pending'}
-                        </Text>
-                      </View>
-                    </View>
+                    </GlassCard>
                   ))}
                 </View>
               )}
@@ -162,91 +168,40 @@ export default function PAMMScreen({ navigation }: any) {
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 100 },
-  center: { flex: 1, alignItems: 'center', marginTop: 200 },
-  centerText: { color: '#8899AA' },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
+    paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.xl,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#fff', flex: 1, marginLeft: 16 },
   addBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(171,75,255,0.12)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.3)',
+    backgroundColor: 'rgba(139,92,246,0.12)',
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
-
-  addCard: {
-    marginHorizontal: 24, padding: 20, borderRadius: 20, marginBottom: 20,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-  },
-  addTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 14 },
-  inputBox: {
-    height: 48, borderRadius: 14, paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-    marginBottom: 12,
-  },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
-  submitBtn: {
-    height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#AB4BFF',
-  },
-  submitText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
   statsRow: {
-    flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 24,
+    flexDirection: 'row', gap: space.md, paddingHorizontal: space['2xl'], marginBottom: space['2xl'],
   },
-  statCard: {
-    flex: 1, alignItems: 'center', padding: 16, borderRadius: 18,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
-    gap: 6,
-  },
-  statValue: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  statLabel: { fontSize: 11, color: '#8899AA', fontWeight: '600' },
 
-  section: { paddingHorizontal: 24, marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  section: { paddingHorizontal: space['2xl'], marginBottom: space['2xl'] },
 
-  emptyCard: {
-    padding: 32, borderRadius: 20, alignItems: 'center',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
-  emptyText: { fontSize: 14, color: '#8899AA' },
-
-  list: { gap: 10 },
-  entryCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
-    borderRadius: 18, backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-  },
   entryAvatar: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(171,75,255,0.12)',
+    backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
-  entryName: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  entryUser: { fontSize: 12, color: '#8899AA', marginTop: 2 },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1,
-  },
-  statusText: { fontSize: 11, fontWeight: '700' },
 });

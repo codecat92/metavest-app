@@ -1,31 +1,36 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Animated, Easing
+  TouchableOpacity, Animated, Easing, RefreshControl
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap } from 'lucide-react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
 import { newsApi } from '../api/news';
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning ☀️';
-  if (h < 17) return 'Good afternoon 🌤️';
-  return 'Good evening 🌙';
-}
+import { colors, space, radius, typography } from '../theme';
+import { GlassCard, AppButton, Skeleton } from '../components';
+import type { TabParamList, RootStackParamList } from '../types/navigation';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
 
-// Sparkline using react-native-svg
+function getGreeting(): { text: string; Icon: React.ComponentType<{ size: number; color: string }> } {
+  const h = new Date().getHours();
+  if (h < 12) return { text: 'Good morning', Icon: Sun };
+  if (h < 17) return { text: 'Good afternoon', Icon: Sunset };
+  return { text: 'Good evening', Icon: Moon };
+}
+
 function Sparkline({ up, id }: { up: boolean; id: string }) {
   const data = up
     ? [{ x: 1, y: 40 }, { x: 2, y: 55 }, { x: 3, y: 48 }, { x: 4, y: 70 }, { x: 5, y: 65 }, { x: 6, y: 80 }, { x: 7, y: 75 }, { x: 8, y: 90 }]
     : [{ x: 1, y: 80 }, { x: 2, y: 72 }, { x: 3, y: 78 }, { x: 4, y: 60 }, { x: 5, y: 65 }, { x: 6, y: 55 }, { x: 7, y: 50 }, { x: 8, y: 42 }];
-  const color = up ? '#2FEFC4' : '#FF4B6E';
+  const accentColor = up ? colors.semantic.positive : colors.semantic.negative;
   const width = 122;
   const height = 36;
   const min = Math.min(...data.map(d => d.y));
@@ -45,15 +50,15 @@ function Sparkline({ up, id }: { up: boolean; id: string }) {
   const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
 
   return (
-    <Svg width={width} height={height} style={{ marginTop: 8 }}>
+    <Svg width={width} height={height} style={{ marginTop: space.sm }}>
       <Defs>
         <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor={color} stopOpacity="0.3" />
-          <Stop offset="100%" stopColor={color} stopOpacity="0" />
+          <Stop offset="0%" stopColor={accentColor} stopOpacity="0.3" />
+          <Stop offset="100%" stopColor={accentColor} stopOpacity="0" />
         </LinearGradient>
       </Defs>
       <Path d={areaPath} fill={`url(#${gradId})`} />
-      <Path d={linePath} stroke={color} strokeWidth="1.5" fill="none" />
+      <Path d={linePath} stroke={accentColor} strokeWidth="1.5" fill="none" />
     </Svg>
   );
 }
@@ -122,22 +127,26 @@ function MarqueeMarkets() {
   const doubled = [...displayItems, ...displayItems];
 
   return (
-    <View style={{ overflow: 'hidden', marginBottom: 24 }}>
+    <View style={{ overflow: 'hidden', marginBottom: space['2xl'] }}>
       <Animated.View style={{
         flexDirection: 'row',
         transform: [{ translateX }],
-        paddingLeft: 24,
+        paddingLeft: space['2xl'],
       }}>
         {doubled.map((m, idx) => (
           <View key={`${m.pair}-${idx}`} style={styles.marketCard}>
-            <Text style={styles.marketPair}>{m.pair}</Text>
-            <Text style={styles.marketPrice}>{m.price}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
+              {m.pair}
+            </Text>
+            <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              {m.price}
+            </Text>
             <View style={styles.marketChangeRow}>
               {m.up
-                ? <TrendingUp size={12} color="#2FEFC4" />
-                : <TrendingDown size={12} color="#FF4B6E" />
+                ? <TrendingUp size={12} color={colors.semantic.positive} />
+                : <TrendingDown size={12} color={colors.semantic.negative} />
               }
-              <Text style={[styles.marketChange, { color: m.up ? '#2FEFC4' : '#FF4B6E' }]}>
+              <Text style={[typography.caption, { color: m.up ? colors.semantic.positive : colors.semantic.negative, fontWeight: '700' }]}>
                 {m.change}
               </Text>
             </View>
@@ -153,8 +162,8 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    const len = actions.length - 1;
-    Array.from({length: actions.length}).forEach((_, index) => {
+    const len = actions.length;
+    actions.forEach((_, index) => {
       setTimeout(() => setGlowIndex(index), index * 800 + 300);
     });
     setTimeout(() => setGlowIndex(null), len * 800 + 1100);
@@ -175,10 +184,15 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
           <TouchableOpacity
             key={a.label}
             onPress={() => onNavigate(a.screen)}
+            activeOpacity={0.8}
             style={[styles.actionBtn, isGlowing && styles.actionBtnGlow]}
           >
-            <a.Icon size={20} color={isGlowing ? '#F7C948' : '#AB4BFF'} strokeWidth={1.8} />
-            <Text style={[styles.actionLabel, isGlowing && { color: '#F7C948' }]}>
+            <a.Icon size={20} color={isGlowing ? colors.accent.gold : colors.accent.purple} strokeWidth={1.8} />
+            <Text style={[typography.label, {
+              color: isGlowing ? colors.accent.gold : colors.text.secondary,
+              marginTop: space.xs,
+              fontFamily: 'DMSans-SemiBold',
+            }]}>
               {a.label}
             </Text>
           </TouchableOpacity>
@@ -195,14 +209,12 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
       desc: 'Auto-copy trades to your MT5 account',
       screen: 'copytrade',
       Icon: Copy,
-      accent: '#AB4BFF',
     },
     {
       label: 'PAMM',
       desc: 'Register broker for PAMM verification',
       screen: 'pamm',
       Icon: Wallet,
-      accent: '#C9A84C',
     },
   ];
 
@@ -213,13 +225,17 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
           key={f.label}
           onPress={() => onNavigate(f.screen)}
           activeOpacity={0.8}
-          style={[fcStyles.card, { borderColor: `${f.accent}30` }]}
+          style={fcStyles.card}
         >
-          <View style={[fcStyles.iconWrap, { backgroundColor: `${f.accent}18` }]}>
-            <f.Icon size={28} color={f.accent} strokeWidth={1.5} />
+          <View style={fcStyles.iconWrap}>
+            <f.Icon size={28} color={colors.accent.gold} strokeWidth={1.5} />
           </View>
-          <Text style={fcStyles.label}>{f.label}</Text>
-          <Text style={fcStyles.desc}>{f.desc}</Text>
+          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            {f.label}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
+            {f.desc}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -229,7 +245,7 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
 function detectTag(title: string): string {
   const t = title.toLowerCase();
   if (t.includes('gold') || t.includes('xau')) return 'XAU/USD';
-  if (t.includes('eur') || t.includes('usd') && t.includes('dollar')) return 'EUR/USD';
+  if (t.includes('eur') || (t.includes('usd') && t.includes('dollar'))) return 'EUR/USD';
   if (t.includes('gbp')) return 'GBP/USD';
   if (t.includes('oil') || t.includes('crude')) return 'Oil';
   if (t.includes('fed') || t.includes('rate') || t.includes('nfp')) return 'Macro';
@@ -237,8 +253,12 @@ function detectTag(title: string): string {
 }
 
 const tagColors: Record<string, string> = {
-  Macro: '#C9A84C', 'EUR/USD': '#AB4BFF', 'XAU/USD': '#C9A84C',
-  'GBP/USD': '#2FEFC4', Oil: '#F7C948', Market: '#AB4BFF',
+  Macro: colors.accent.gold,
+  'EUR/USD': colors.accent.purple,
+  'XAU/USD': colors.accent.gold,
+  'GBP/USD': colors.semantic.positive,
+  Oil: colors.accent.goldLight,
+  Market: colors.accent.purple,
 };
 
 function AcademyCard({ onPress }: { onPress: () => void }) {
@@ -246,17 +266,17 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={acStyles.card}>
       <View style={acStyles.inner}>
         <View style={acStyles.iconWrap}>
-          <GraduationCap size={24} color="#C9A84C" strokeWidth={1.5} />
+          <GraduationCap size={24} color={colors.accent.gold} strokeWidth={1.5} />
         </View>
         <View style={acStyles.textWrap}>
-          <Text style={acStyles.title}>Metavest Academy</Text>
-          <Text style={acStyles.desc}>
+          <Text style={[typography.h3, { color: colors.accent.goldLight, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Metavest Academy
+          </Text>
+          <Text style={[typography.body, { color: 'rgba(208,200,160,0.7)', marginTop: space.sm }]}>
             Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro — learn at your own pace.
           </Text>
         </View>
-        <View style={acStyles.cta}>
-          <Text style={acStyles.ctaText}>Explore</Text>
-        </View>
+        <AppButton title="Explore" variant="secondary" size="md" />
       </View>
     </TouchableOpacity>
   );
@@ -280,7 +300,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   );
 
   const displayItems = items.length > 0 ? items : [
-    { title: "Fed holds rates steady — dollar weakens", time: "", tag: "Macro" },
+    { title: 'Fed holds rates steady — dollar weakens', time: '', tag: 'Macro' },
   ];
 
   const VISIBLE_COUNT = 3;
@@ -307,7 +327,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
       <View style={{ height: totalHeight, overflow: 'hidden', position: 'relative' }}>
         <Animated.View style={{ transform: [{ translateY }] }}>
           {doubled.map((item, i) => {
-            const tagColor = tagColors[item.tag] ?? '#8899AA';
+            const tagColor = tagColors[item.tag] ?? colors.text.secondary;
             return (
               <View key={i} style={newsStyles.item}>
                 <View style={[newsStyles.tag, {
@@ -331,22 +351,25 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
 
 const newsStyles = StyleSheet.create({
   item: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    padding: 12, borderRadius: 16, height: 72,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+    flexDirection: 'row', alignItems: 'flex-start', gap: space.md,
+    padding: space.md, borderRadius: radius.lg, height: 72,
+    backgroundColor: colors.glass.g2,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
   tag: {
-    width: 72, alignItems: 'center', paddingVertical: 4,
-    borderRadius: 8, borderWidth: 1, flexShrink: 0,
+    width: 72, alignItems: 'center', paddingVertical: space.xs,
+    borderRadius: radius.sm, borderWidth: 1, flexShrink: 0,
   },
-  tagText: { fontSize: 10, fontWeight: '700' },
-  title: { fontSize: 12, fontWeight: '600', color: '#F0EEFF', lineHeight: 17 },
-  time: { fontSize: 11, color: '#8899AA', marginTop: 4 },
+  tagText: { fontSize: 10, fontWeight: '700', fontFamily: 'DMSans-Bold' },
+  title: { fontSize: 12, fontWeight: '600', color: colors.text.primary, lineHeight: 17, fontFamily: 'DMSans-SemiBold' },
+  time: { fontSize: 11, color: colors.text.secondary, marginTop: space.xs, fontFamily: 'DMSans' },
 });
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen() {
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation<any>();
+
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
@@ -355,34 +378,54 @@ export default function HomeScreen({ navigation }: any) {
     if (map[screen]) navigation.navigate(map[screen]);
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await new Promise(r => setTimeout(r, 800));
+    setRefreshing(false);
+  }, []);
+
+  const greeting = getGreeting();
+  const GreetingIcon = greeting.Icon;
+
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Header */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent.purple} />}
+      >
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.username}>{user?.name ?? 'Trader'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+              <GreetingIcon size={18} color={colors.accent.gold} />
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                {greeting.text}
+              </Text>
+            </View>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              {user?.name ?? 'Trader'}
+            </Text>
           </View>
           <View style={styles.headerRight}>
             <View style={styles.mpBadge}>
-              <Zap size={13} color="#C9A84C" fill="#C9A84C" />
+              <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
               <Text style={styles.mpText}>0 MP</Text>
             </View>
             <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate('Notifications')}>
-              <Bell size={18} color="#8899AA" />
+              <Bell size={18} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Portfolio Card */}
-        <View style={styles.portfolioCard}>
-          <Text style={styles.portfolioLabel}>Total Portfolio</Text>
-          <Text style={styles.portfolioValue}>$0.00</Text>
+        <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+          <Text style={[typography.caption, { color: colors.text.muted }]}>Total Portfolio</Text>
+          <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold', marginTop: space.xs }]}>
+            $0.00
+          </Text>
           <View style={styles.portfolioChangeRow}>
-            <ArrowUpRight size={14} color="#2FEFC4" />
-            <Text style={styles.portfolioChange}>--</Text>
-            <Text style={styles.portfolioChangeSub}>today</Text>
+            <ArrowUpRight size={14} color={colors.semantic.positive} />
+            <Text style={[typography.body, { color: colors.semantic.positive, fontWeight: '700' }]}>--</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
           </View>
           <View style={styles.portfolioStats}>
             {[
@@ -396,35 +439,38 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             ))}
           </View>
-        </View>
+        </GlassCard>
 
-        {/* Quick Actions */}
         <QuickActions onNavigate={onNavigate} />
 
-        {/* Markets */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Markets</Text>
-          <View style={{ flexDirection: 'row', gap: 16 }}>
-            <TouchableOpacity onPress={() => navigation.navigate('EconomicsCalendar')}><Text style={[styles.seeAll, { color: '#C9A84C' }]}>Calendar</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Market')}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Markets
+          </Text>
+          <View style={{ flexDirection: 'row', gap: space.lg }}>
+            <TouchableOpacity onPress={() => navigation.navigate('EconomicsCalendar')}>
+              <Text style={[typography.caption, { color: colors.accent.gold, fontWeight: '600' }]}>Calendar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Market')}>
+              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>See all</Text>
+            </TouchableOpacity>
           </View>
         </View>
         <MarqueeMarkets />
 
-        {/* Feature Cards — CopyTrade & PAMM */}
         <FeatureCards onNavigate={onNavigate} />
 
-        {/* Academy Card */}
         <AcademyCard onPress={() => navigation.navigate('Academy')} />
 
-        {/* Latest News */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Latest News</Text>
+          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            Latest News
+          </Text>
           <TouchableOpacity onPress={() => navigation.navigate('News')}>
-            <ChevronRight size={18} color="#8899AA" />
+            <ChevronRight size={18} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
-        <View style={{ paddingHorizontal: 24 }}>
+        <View style={{ paddingHorizontal: space['2xl'] }}>
           <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
         </View>
       </ScrollView>
@@ -433,114 +479,89 @@ export default function HomeScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0E1439' },
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { paddingBottom: 72 },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
+    paddingHorizontal: space['2xl'], paddingTop: 60, paddingBottom: space.xl,
   },
-  greeting: { fontSize: 13, color: '#8899AA', fontWeight: '500' },
-  username: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   mpBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: 'rgba(201,168,76,0.12)',
-    borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)',
+    paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.full,
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.35)',
   },
-  mpText: { fontSize: 13, fontWeight: '700', color: '#C9A84C' },
+  mpText: { fontSize: 13, fontWeight: '700', color: colors.accent.gold, fontFamily: 'DMSans-Bold' },
   bellBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
 
-  portfolioCard: {
-    marginHorizontal: 24, borderRadius: 24, padding: 20,
-    backgroundColor: 'rgba(171,75,255,0.15)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.25)',
-    marginBottom: 24,
-  },
-  portfolioLabel: { fontSize: 13, color: 'rgba(240,238,255,0.6)' },
-  portfolioValue: { fontSize: 36, fontWeight: '800', color: '#fff', letterSpacing: -1, marginTop: 4 },
-  portfolioChangeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  portfolioChange: { fontSize: 14, color: '#2FEFC4', fontWeight: '700' },
-  portfolioChangeSub: { fontSize: 13, color: 'rgba(240,238,255,0.5)' },
-  portfolioStats: { flexDirection: 'row', gap: 24, marginTop: 16 },
-  statLabel: { fontSize: 11, color: 'rgba(240,238,255,0.5)', fontWeight: '500' },
-  statValue: { fontSize: 16, fontWeight: '700', color: '#fff', marginTop: 2 },
+  portfolioChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
+  portfolioStats: { flexDirection: 'row', gap: space['2xl'], marginTop: space.lg },
+  statLabel: { fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' },
+  statValue: { fontSize: 16, fontWeight: '700', color: colors.text.primary, marginTop: 2, fontFamily: 'SpaceGrotesk-Bold' },
 
   quickActions: {
-    flexDirection: 'row', paddingHorizontal: 24,
-    gap: 12, marginBottom: 24,
+    flexDirection: 'row', paddingHorizontal: space['2xl'],
+    gap: space.md, marginBottom: space['2xl'],
   },
   actionBtn: {
-    flex: 1, alignItems: 'center', paddingVertical: 12,
-    borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)', gap: 4,
+    flex: 1, alignItems: 'center', paddingVertical: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
   actionBtnGlow: {
-    backgroundColor: 'rgba(247,201,72,0.1)',
-    borderColor: 'rgba(247,201,72,0.35)',
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    borderColor: 'rgba(212,175,55,0.35)',
   },
-  actionLabel: { fontSize: 11, color: '#8899AA', fontWeight: '600' },
 
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingHorizontal: 24, marginBottom: 12,
+    alignItems: 'center', paddingHorizontal: space['2xl'], marginBottom: space.md,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  seeAll: { fontSize: 13, color: '#AB4BFF', fontWeight: '600' },
 
   marketCard: {
-    width: CARD_WIDTH, borderRadius: 20, padding: 14,
+    width: CARD_WIDTH, borderRadius: radius.lg, padding: space.md,
     marginRight: CARD_GAP,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
-  marketPair: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  marketPrice: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 2 },
-  marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  marketChange: { fontSize: 12, fontWeight: '700' },
+  marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
 });
 
 const fcStyles = StyleSheet.create({
   row: {
-    flexDirection: 'row', gap: 12, paddingHorizontal: 24, marginBottom: 28,
+    flexDirection: 'row', gap: space.md, paddingHorizontal: space['2xl'], marginBottom: 28,
   },
   card: {
-    flex: 1, padding: 20, borderRadius: 22, alignItems: 'center',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1,
+    flex: 1, padding: space.xl, borderRadius: radius.lg, alignItems: 'center',
+    backgroundColor: colors.glass.g2,
+    borderWidth: 1, borderColor: colors.glass.border,
   },
   iconWrap: {
-    width: 56, height: 56, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    width: 56, height: 56, borderRadius: radius.xl,
+    backgroundColor: 'rgba(212,175,55,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: space.md,
   },
-  label: { fontSize: 14, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  desc: { fontSize: 11, color: '#8899AA', textAlign: 'center', lineHeight: 16 },
 });
 
 const acStyles = StyleSheet.create({
   card: {
-    marginHorizontal: 24, marginBottom: 28, borderRadius: 24, overflow: 'hidden',
-    backgroundColor: 'rgba(201,168,76,0.08)',
-    borderWidth: 1, borderColor: 'rgba(201,168,76,0.25)',
+    marginHorizontal: space['2xl'], marginBottom: 28, borderRadius: radius.xl, overflow: 'hidden',
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
   },
-  inner: { padding: 20 },
+  inner: { padding: space.xl },
   iconWrap: {
-    width: 48, height: 48, borderRadius: 16, marginBottom: 14,
-    backgroundColor: 'rgba(201,168,76,0.15)',
+    width: 48, height: 48, borderRadius: radius.lg, marginBottom: space.md,
+    backgroundColor: 'rgba(212,175,55,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  textWrap: { marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: '800', color: '#F7E8B0', marginBottom: 8 },
-  desc: { fontSize: 13, color: 'rgba(208,200,160,0.7)', lineHeight: 20 },
-  cta: {
-    alignSelf: 'flex-end', paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: 14, backgroundColor: '#C9A84C',
-  },
-  ctaText: { fontSize: 13, fontWeight: '700', color: '#0E1439' },
+  textWrap: { marginBottom: space.lg },
 });
