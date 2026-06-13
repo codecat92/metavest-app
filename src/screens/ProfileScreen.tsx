@@ -14,7 +14,7 @@ import { useCustomAlert } from '../context/AlertContext';
 import { profileApi } from '../api/profile';
 import { getToken } from '../api/client';
 
-const SERVER_HOST = 'http://192.168.1.24:8000';
+const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 
 export default function ProfileScreen({ navigation }: any) {
   const { logout, user, refreshUser } = useAuth();
@@ -70,9 +70,9 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const imageSrc = profileImage
-    ? ((profileImage.startsWith('http')
-        ? profileImage.replace('localhost', '192.168.1.24')
-        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}`) + `?t=${cacheBuster}`)
+    ? (profileImage.startsWith('http')
+        ? profileImage
+        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}` + `?t=${cacheBuster}`)
     : null;
 
   const settingsGroups = [

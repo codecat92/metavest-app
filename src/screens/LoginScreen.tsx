@@ -23,8 +23,10 @@ export default function LoginScreen() {
 
   // Pre-warm Railway server (cold start mitigation)
   useEffect(() => {
-    fetch(`${BASE_URL}/forex/curr`)
-      .then(() => console.log('Server warmed up'))
+    Promise.all([
+      fetch(`${BASE_URL}/forex/curr`),
+      fetch(`${BASE_URL}/article-event?page=1`),
+    ]).then(() => console.log('Server warmed up'))
       .catch(() => {});
   }, []);
 

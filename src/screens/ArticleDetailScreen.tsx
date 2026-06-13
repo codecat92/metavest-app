@@ -5,7 +5,7 @@ import {
 import { ArrowLeft, Clock, User, FileText } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
-const SERVER_HOST = 'http://192.168.1.24:8000';
+const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 
 export default function ArticleDetailScreen() {
   const route = useRoute<any>();
