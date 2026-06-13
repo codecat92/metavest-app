@@ -19,7 +19,7 @@ export const profileApi = {
     return json;
   },
 
-  changePassword: async (oldPassword: string, newPassword: string): Promise<{ message: string }> => {
+  changePassword: async (userId: string, oldPassword: string, newPassword: string): Promise<{ message: string }> => {
     const token = getToken();
     const response = await fetch(`${BASE_URL}/profile/edit/password`, {
       method: 'POST',
@@ -28,7 +28,7 @@ export const profileApi = {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+      body: JSON.stringify({ user_id: userId, old_password: oldPassword, new_password: newPassword }),
     });
     const json = await response.json();
     if (!response.ok) throw new Error(json.message || 'Update failed');

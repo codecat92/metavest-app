@@ -61,7 +61,7 @@ export default function EditProfileScreen() {
     }
     setChangingPass(true);
     try {
-      await profileApi.changePassword(oldPass, newPass);
+      await profileApi.changePassword(user?.id_user ?? '', oldPass, newPass);
       alert.showAlert({ title: 'Done', message: 'Password changed successfully', type: 'success' });
       setOldPass(''); setNewPass('');
     } catch (e: any) {
