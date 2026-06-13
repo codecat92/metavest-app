@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Animated, type ViewStyle } from 'react-native';
-import { radius } from '../theme';
+import { radius } from '@/theme';
 
 interface SkeletonProps {
   width?: number | string;

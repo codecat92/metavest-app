@@ -6,12 +6,12 @@ import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { useAuth } from '../context/AuthContext';
-import { useCustomAlert } from '../context/AlertContext';
-import { profileApi } from '../api/profile';
-import { colors, space, radius, typography } from '../theme';
-import { AppButton, AppInput } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useCustomAlert } from '@/context/AlertContext';
+import { profileApi } from '@/api/profile';
+import { colors, space, radius, typography } from '@/theme';
+import { AppButton, AppInput } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function EditProfileScreen() {

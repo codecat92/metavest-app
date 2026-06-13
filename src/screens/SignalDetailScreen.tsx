@@ -9,11 +9,11 @@ import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
   Share2, Zap, Clock, Shield, Target, Eye
 } from 'lucide-react-native';
-import { signalsApi, Signal } from '../api/signals';
-import { useCustomAlert } from '../context/AlertContext';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Badge, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { signalsApi, Signal } from '@/api/signals';
+import { useCustomAlert } from '@/context/AlertContext';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Badge, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const currencyNames: Record<number, string> = {

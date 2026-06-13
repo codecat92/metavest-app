@@ -8,10 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Book, Play, FileText, ChevronRight, GraduationCap
 } from 'lucide-react-native';
-import { academyApi, Academy, AcademyClass, AcademyArticle, AcademyLivestream } from '../api/academy';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Badge, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { academyApi, Academy, AcademyClass, AcademyArticle, AcademyLivestream } from '@/api/academy';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Badge, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type AcademyProps = NativeStackScreenProps<RootStackParamList, 'Academy'>;

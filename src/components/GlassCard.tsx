@@ -1,5 +1,5 @@
 import { View, StyleSheet, type ViewProps, type ViewStyle } from 'react-native';
-import { colors, radius, space } from '../theme';
+import { colors, radius, space } from '@/theme';
 
 type Elevation = 1 | 2 | 3 | 4;
 

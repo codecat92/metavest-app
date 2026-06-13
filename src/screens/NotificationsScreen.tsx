@@ -6,11 +6,11 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell, MessageCircle } from 'lucide-react-native';
-import { notificationApi, Notification } from '../api/notifications';
-import { getToken } from '../api/client';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, EmptyState, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { notificationApi, Notification } from '@/api/notifications';
+import { getToken } from '@/api/client';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, EmptyState, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type NotifProps = NativeStackScreenProps<RootStackParamList, 'Notifications'>;

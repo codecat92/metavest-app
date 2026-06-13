@@ -6,10 +6,10 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Clock } from 'lucide-react-native';
-import { newsApi, Article } from '../api/news';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { newsApi, Article } from '@/api/news';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const categories = ['All', 'Market', 'Education'];

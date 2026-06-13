@@ -6,13 +6,13 @@ import { useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Shield } from 'lucide-react-native';
-import { useAuth } from '../context/AuthContext';
-import { useCustomAlert } from '../context/AlertContext';
-import { authApi } from '../api/auth';
-import { otpApi } from '../api/otp';
-import { colors, space, radius, typography } from '../theme';
-import { AppButton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useCustomAlert } from '@/context/AlertContext';
+import { authApi } from '@/api/auth';
+import { otpApi } from '@/api/otp';
+import { colors, space, radius, typography } from '@/theme';
+import { AppButton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function OTPScreen() {

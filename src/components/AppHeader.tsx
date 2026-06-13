@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, type ViewStyle } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, space, typography } from '../theme';
+import { colors, space, typography } from '@/theme';
 
 interface AppHeaderProps {
   title: string;

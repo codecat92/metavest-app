@@ -6,10 +6,10 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Calendar, Star, Globe } from 'lucide-react-native';
-import { api, ApiResponse } from '../api/client';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Badge, EmptyState } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { api, ApiResponse } from '@/api/client';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Badge, EmptyState } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 interface EconEvent {

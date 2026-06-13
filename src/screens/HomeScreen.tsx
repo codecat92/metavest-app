@@ -6,12 +6,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { useAuth } from '../context/AuthContext';
-import { forexApi, ForexCurrency, ForexQuote } from '../api/forex';
-import { newsApi } from '../api/news';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton, Skeleton } from '../components';
-import type { TabParamList, RootStackParamList } from '../types/navigation';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '@/context/AuthContext';
+import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
+import { newsApi } from '@/api/news';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton, Skeleton } from '@/components';
+import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -225,17 +226,19 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
           key={f.label}
           onPress={() => onNavigate(f.screen)}
           activeOpacity={0.8}
-          style={fcStyles.card}
+          style={{ flex: 1 }}
         >
-          <View style={fcStyles.iconWrap}>
-            <f.Icon size={28} color={colors.accent.gold} strokeWidth={1.5} />
-          </View>
-          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
-            {f.label}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
-            {f.desc}
-          </Text>
+          <GlassCard elevation={2} style={{ alignItems: 'center' }}>
+            <View style={fcStyles.iconWrap}>
+              <f.Icon size={28} color={colors.accent.gold} strokeWidth={1.5} />
+            </View>
+            <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              {f.label}
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
+              {f.desc}
+            </Text>
+          </GlassCard>
         </TouchableOpacity>
       ))}
     </View>
@@ -263,8 +266,8 @@ const tagColors: Record<string, string> = {
 
 function AcademyCard({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={acStyles.card}>
-      <View style={acStyles.inner}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
+      <GlassCard elevation={3} style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.25)' }}>
         <View style={acStyles.iconWrap}>
           <GraduationCap size={24} color={colors.accent.gold} strokeWidth={1.5} />
         </View>
@@ -277,7 +280,7 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
           </Text>
         </View>
         <AppButton title="Explore" variant="secondary" size="md" />
-      </View>
+      </GlassCard>
     </TouchableOpacity>
   );
 }
@@ -353,6 +356,7 @@ const newsStyles = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'flex-start', gap: space.md,
     padding: space.md, borderRadius: radius.lg, height: 72,
+    marginBottom: space.sm,
     backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.border,
   },
@@ -418,6 +422,7 @@ export default function HomeScreen() {
         </View>
 
         <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+          <View style={styles.portfolioAccentBar} />
           <Text style={[typography.caption, { color: colors.text.muted }]}>Total Portfolio</Text>
           <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold', marginTop: space.xs }]}>
             $0.00
@@ -474,13 +479,19 @@ export default function HomeScreen() {
           <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
         </View>
       </ScrollView>
+      <ExpoLinearGradient
+        colors={['rgba(14,20,57,0)', 'rgba(14,20,57,0.95)']}
+        locations={[0, 1]}
+        style={styles.bottomFade}
+        pointerEvents="none"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 72 },
+  scroll: { paddingBottom: 100 },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -497,8 +508,19 @@ const styles = StyleSheet.create({
   bellBtn: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.glass.g1,
-    borderWidth: 1, borderColor: colors.glass.border,
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.20)',
     alignItems: 'center', justifyContent: 'center',
+  },
+
+  portfolioAccentBar: {
+    height: 3,
+    backgroundColor: colors.accent.gold,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
 
   portfolioChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
@@ -529,20 +551,22 @@ const styles = StyleSheet.create({
   marketCard: {
     width: CARD_WIDTH, borderRadius: radius.lg, padding: space.md,
     marginRight: CARD_GAP,
-    backgroundColor: colors.glass.g1,
+    backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.border,
   },
   marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
+  bottomFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
 });
 
 const fcStyles = StyleSheet.create({
   row: {
     flexDirection: 'row', gap: space.md, paddingHorizontal: space['2xl'], marginBottom: 28,
-  },
-  card: {
-    flex: 1, padding: space.xl, borderRadius: radius.lg, alignItems: 'center',
-    backgroundColor: colors.glass.g2,
-    borderWidth: 1, borderColor: colors.glass.border,
   },
   iconWrap: {
     width: 56, height: 56, borderRadius: radius.xl,
@@ -552,12 +576,6 @@ const fcStyles = StyleSheet.create({
 });
 
 const acStyles = StyleSheet.create({
-  card: {
-    marginHorizontal: space['2xl'], marginBottom: 28, borderRadius: radius.xl, overflow: 'hidden',
-    backgroundColor: 'rgba(212,175,55,0.08)',
-    borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
-  },
-  inner: { padding: space.xl },
   iconWrap: {
     width: 48, height: 48, borderRadius: radius.lg, marginBottom: space.md,
     backgroundColor: 'rgba(212,175,55,0.15)',

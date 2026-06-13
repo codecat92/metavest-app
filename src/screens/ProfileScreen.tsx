@@ -10,13 +10,13 @@ import {
   Shield, Bell, LogOut,
   Star, Award, Mail, Phone, Hash, Camera
 } from 'lucide-react-native';
-import { useAuth } from '../context/AuthContext';
-import { useCustomAlert } from '../context/AlertContext';
-import { profileApi } from '../api/profile';
-import { getToken } from '../api/client';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton } from '../components';
-import type { RootStackParamList, TabParamList } from '../types/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useCustomAlert } from '@/context/AlertContext';
+import { profileApi } from '@/api/profile';
+import { getToken } from '@/api/client';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton } from '@/components';
+import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';

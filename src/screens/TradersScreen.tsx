@@ -6,11 +6,11 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Shield, Star } from 'lucide-react-native';
-import { followApi, UserTrader } from '../api/follow';
-import { getToken } from '../api/client';
-import { useCustomAlert } from '../context/AlertContext';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, EmptyState, Skeleton, Badge } from '../components';
+import { followApi, UserTrader } from '@/api/follow';
+import { getToken } from '@/api/client';
+import { useCustomAlert } from '@/context/AlertContext';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
 
 const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
 

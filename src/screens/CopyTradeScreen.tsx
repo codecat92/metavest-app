@@ -9,12 +9,12 @@ import {
   ArrowLeft, Server, Key, User, Zap, Activity,
   TrendingUp, Shield, Trash2
 } from 'lucide-react-native';
-import { copytradeApi, Mt5Account } from '../api/copytrade';
-import { getToken } from '../api/client';
-import { useCustomAlert } from '../context/AlertContext';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton, AppInput, Badge, EmptyState } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { copytradeApi, Mt5Account } from '@/api/copytrade';
+import { getToken } from '@/api/client';
+import { useCustomAlert } from '@/context/AlertContext';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton, AppInput, Badge, EmptyState } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type CopyTradeProps = NativeStackScreenProps<RootStackParamList, 'CopyTrade'>;

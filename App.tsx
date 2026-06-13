@@ -3,37 +3,37 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { AlertProvider } from './src/context/AlertContext';
-import { colors, space } from './src/theme';
-import type { RootStackParamList, TabParamList } from './src/types/navigation';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AlertProvider } from '@/context/AlertContext';
+import { colors } from '@/theme';
+import type { RootStackParamList, TabParamList } from '@/types/navigation';
 
-import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import SignalScreen from './src/screens/SignalScreen';
-import TradersScreen from './src/screens/TradersScreen';
-import PortfolioScreen from './src/screens/PortfolioScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
-import PAMMScreen from './src/screens/PAMMScreen';
-import NewsScreen from './src/screens/NewsScreen';
-import RegisterScreen from './src/screens/RegisterScreen';
-import SignalDetailScreen from './src/screens/SignalDetailScreen';
-import ForumScreen from './src/screens/ForumScreen';
-import CopyTradeScreen from './src/screens/CopyTradeScreen';
-import MarketScreen from './src/screens/MarketScreen';
-import AcademyScreen from './src/screens/AcademyScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import EditProfileScreen from './src/screens/EditProfileScreen';
-import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
-import EconomicsCalendarScreen from './src/screens/EconomicsCalendarScreen';
-import NotificationsScreen from './src/screens/NotificationsScreen';
-import BrokersScreen from './src/screens/BrokersScreen';
-import OTPScreen from './src/screens/OTPScreen';
+import LoginScreen from '@/screens/LoginScreen';
+import HomeScreen from '@/screens/HomeScreen';
+import SignalScreen from '@/screens/SignalScreen';
+import TradersScreen from '@/screens/TradersScreen';
+import PortfolioScreen from '@/screens/PortfolioScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
+import PAMMScreen from '@/screens/PAMMScreen';
+import NewsScreen from '@/screens/NewsScreen';
+import RegisterScreen from '@/screens/RegisterScreen';
+import SignalDetailScreen from '@/screens/SignalDetailScreen';
+import ForumScreen from '@/screens/ForumScreen';
+import CopyTradeScreen from '@/screens/CopyTradeScreen';
+import MarketScreen from '@/screens/MarketScreen';
+import AcademyScreen from '@/screens/AcademyScreen';
+import ForgotPasswordScreen from '@/screens/ForgotPasswordScreen';
+import EditProfileScreen from '@/screens/EditProfileScreen';
+import ArticleDetailScreen from '@/screens/ArticleDetailScreen';
+import EconomicsCalendarScreen from '@/screens/EconomicsCalendarScreen';
+import NotificationsScreen from '@/screens/NotificationsScreen';
+import BrokersScreen from '@/screens/BrokersScreen';
+import OTPScreen from '@/screens/OTPScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -46,8 +46,10 @@ function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.bg.primary,
-          borderTopColor: colors.glass.border,
+          backgroundColor: 'rgba(14,20,57,0.92)',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
           height: 68,
           paddingBottom: 10,
           paddingTop: 8,

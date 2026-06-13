@@ -7,10 +7,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react-native';
-import { forexApi } from '../api/forex';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { forexApi } from '@/api/forex';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const PAIRS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'USD/CHF', 'USD/NZD'];

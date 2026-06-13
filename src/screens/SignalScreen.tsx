@@ -9,11 +9,11 @@ import {
   Clock, Shield, Copy, Eye
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { signalsApi, Signal } from '../api/signals';
-import { getToken } from '../api/client';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, Badge, EmptyState, Skeleton } from '../components';
-import type { RootStackParamList, TabParamList } from '../types/navigation';
+import { signalsApi, Signal } from '@/api/signals';
+import { getToken } from '@/api/client';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
+import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';

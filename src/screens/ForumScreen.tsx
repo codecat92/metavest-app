@@ -8,12 +8,12 @@ import {
   MessageCircle, Heart, Share2, Plus, Send, User
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { forumApi, ForumPost, ForumComment } from '../api/forum';
-import { getToken } from '../api/client';
-import { useCustomAlert } from '../context/AlertContext';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { forumApi, ForumPost, ForumComment } from '@/api/forum';
+import { getToken } from '@/api/client';
+import { useCustomAlert } from '@/context/AlertContext';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type ForumProps = NativeStackScreenProps<RootStackParamList, 'Forum'>;

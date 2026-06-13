@@ -5,8 +5,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Clock, User, FileText } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { colors, space, radius, typography } from '../theme';
-import type { RootStackParamList } from '../types/navigation';
+import { colors, space, radius, typography } from '@/theme';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';

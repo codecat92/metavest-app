@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi } from '../api';
-import { hasStoredToken, api, clearToken } from '../api/client';
+import { authApi } from '@/api';
+import { hasStoredToken, api, clearToken } from '@/api/client';
 
 interface User {
   id_user: string;

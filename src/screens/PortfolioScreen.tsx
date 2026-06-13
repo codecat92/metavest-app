@@ -6,14 +6,14 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus, Wallet as WalletIcon } from 'lucide-react-native';
-import { walletApi, Wallet, WalletHistoryItem } from '../api/wallet';
-import { followApi, UserTrader } from '../api/follow';
-import { getToken } from '../api/client';
-import { useCustomAlert } from '../context/AlertContext';
-import { useAuth } from '../context/AuthContext';
-import { otpApi } from '../api/otp';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton, AppInput, EmptyState } from '../components';
+import { walletApi, Wallet, WalletHistoryItem } from '@/api/wallet';
+import { followApi, UserTrader } from '@/api/follow';
+import { getToken } from '@/api/client';
+import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
+import { otpApi } from '@/api/otp';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
 
 export default function PortfolioScreen() {
   const alert = useCustomAlert();

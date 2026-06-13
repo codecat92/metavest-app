@@ -8,13 +8,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Building2, Shield, CheckCircle, Plus
 } from 'lucide-react-native';
-import { pammApi, PAMMEntry } from '../api/pamm';
-import { getToken } from '../api/client';
-import { useCustomAlert } from '../context/AlertContext';
-import { useAuth } from '../context/AuthContext';
-import { colors, space, radius, typography } from '../theme';
-import { GlassCard, AppButton, AppInput, EmptyState, Badge, Skeleton } from '../components';
-import type { RootStackParamList } from '../types/navigation';
+import { pammApi, PAMMEntry } from '@/api/pamm';
+import { getToken } from '@/api/client';
+import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
+import { colors, space, radius, typography } from '@/theme';
+import { GlassCard, AppButton, AppInput, EmptyState, Badge, Skeleton } from '@/components';
+import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
