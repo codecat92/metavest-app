@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base API client — staging backend on Render.com
-const BASE_URL = 'https://metavest-backend.onrender.com/api';
+// Base API client — staging backend on Railway
+const BASE_URL = 'https://metavest-backend.up.railway.app/api';
 
 const TOKEN_KEY = 'metavest_auth_token';
 
