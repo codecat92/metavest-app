@@ -16,18 +16,30 @@ export default function TradersScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
+  const [followMap, setFollowMap] = useState<Record<string, number>>({}); // trader_id → follow_id
   const alert = useCustomAlert();
 
   const loadTraders = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const response = await followApi.getActive(1);
-      setTraders(response.data ?? []);
+      const [activeRes, followedRes] = await Promise.all([
+        followApi.getActive(1),
+        followApi.getFollowed(1),
+      ]);
+      setTraders(activeRes.data ?? []);
+
       const followed = new Set<string>();
-      (response.data ?? []).forEach(t => {
+      (activeRes.data ?? []).forEach(t => {
         if (t.follow_status === '1') followed.add(t.id);
       });
       setFollowedSet(followed);
+
+      // Map trader_id → follow_id for unfollow
+      const map: Record<string, number> = {};
+      (followedRes.data ?? []).forEach((f: any) => {
+        if (f.trader_id) map[f.trader_id] = f.id;
+      });
+      setFollowMap(map);
     } catch (e) {
       console.log('Failed to load traders:', e);
     } finally {
@@ -44,8 +56,23 @@ export default function TradersScreen() {
       await followApi.follow(traderId);
       setFollowedSet(prev => { const n = new Set(prev); n.add(traderId); return n; });
       alert.showAlert({ title: 'Success', message: 'You are now following this trader', type: 'success' });
+      // Reload to get updated follow IDs
+      setTimeout(() => loadTraders(), 500);
     } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed to follow', type: 'error' });
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+    }
+  };
+
+  const handleUnfollow = async (traderId: string) => {
+    const followId = followMap[traderId];
+    if (!followId) return;
+    try {
+      await followApi.unfollow(followId, traderId);
+      setFollowedSet(prev => { const n = new Set(prev); n.delete(traderId); return n; });
+      alert.showAlert({ title: 'Done', message: 'Unfollowed this trader', type: 'success' });
+      setTimeout(() => loadTraders(), 500);
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
   };
 
@@ -107,9 +134,8 @@ export default function TradersScreen() {
                       ) : null}
                     </View>
                     <TouchableOpacity
-                      onPress={() => !isFollowed && handleFollow(trader.id)}
+                      onPress={() => isFollowed ? handleUnfollow(trader.id) : handleFollow(trader.id)}
                       style={[styles.followBtn, isFollowed && styles.followBtnActive]}
-                      disabled={isFollowed}
                     >
                       <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
                         {isFollowed ? 'Following' : 'Follow'}
