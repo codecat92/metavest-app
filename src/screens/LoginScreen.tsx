@@ -3,12 +3,14 @@ import {
   StyleSheet, Image, KeyboardAvoidingView,
   Platform, ScrollView, ActivityIndicator
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
 import { otpApi } from '../api/otp';
 import { useCustomAlert } from '../context/AlertContext';
+
+const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,6 +20,13 @@ export default function LoginScreen() {
   const navigation = useNavigation<any>();
   const { login } = useAuth();
   const alert = useCustomAlert();
+
+  // Pre-warm Railway server (cold start mitigation)
+  useEffect(() => {
+    fetch(`${BASE_URL}/forex/curr`)
+      .then(() => console.log('Server warmed up'))
+      .catch(() => {});
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
