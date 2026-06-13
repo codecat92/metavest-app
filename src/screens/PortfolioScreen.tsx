@@ -9,10 +9,17 @@ import { walletApi, Wallet, WalletHistoryItem } from '../api/wallet';
 import { followApi, UserTrader } from '../api/follow';
 import { getToken } from '../api/client';
 import { useCustomAlert } from '../context/AlertContext';
+import { useAuth } from '../context/AuthContext';
+import { otpApi } from '../api/otp';
 
 export default function PortfolioScreen() {
   const alert = useCustomAlert();
+  const { user } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [otpId, setOtpId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
+  const [pendingAmount, setPendingAmount] = useState(0);
   const [history, setHistory] = useState<WalletHistoryItem[]>([]);
   const [followed, setFollowed] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,19 +143,61 @@ export default function PortfolioScreen() {
                     keyboardType="numeric"
                   />
                 </View>
-                <TouchableOpacity onPress={async () => {
-                  const val = Number(amount);
-                  if (!val || val <= 0) { alert.showAlert({ title: 'Error', message: 'Enter a valid amount', type: 'error' }); return; }
-                  setSubmitting(true);
-                  try {
-                    await walletApi.withdraw(val);
-                    alert.showAlert({ title: 'Success', message: 'Withdrawal request submitted', type: 'success' });
-                    setShowWithdraw(false); setAmount(''); loadData();
-                  } catch (e: any) { alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' }); }
-                  finally { setSubmitting(false); }
-                }} style={[styles.formBtn, { backgroundColor: '#FF4B6E' }, submitting && { opacity: 0.6 }]} disabled={submitting}>
-                  <Text style={styles.formBtnText}>{submitting ? 'Processing...' : 'Confirm Withdraw'}</Text>
-                </TouchableOpacity>
+
+                {showOtp ? (
+                  <>
+                    <Text style={styles.otpLabel}>
+                      OTP sent to {user?.phone_number || 'your phone'}. Enter the code:
+                    </Text>
+                    <View style={styles.formInputBox}>
+                      <TextInput
+                        style={styles.formInput}
+                        value={otpCode}
+                        onChangeText={setOtpCode}
+                        placeholder="Enter OTP code"
+                        placeholderTextColor="#8899AA"
+                        keyboardType="numeric"
+                        maxLength={6}
+                      />
+                    </View>
+                    <TouchableOpacity onPress={async () => {
+                      if (!otpCode.trim()) { alert.showAlert({ title: 'Error', message: 'Enter OTP code', type: 'error' }); return; }
+                      setSubmitting(true);
+                      try {
+                        await otpApi.verifyOtp(otpId, otpCode.trim());
+                        await walletApi.withdraw(pendingAmount);
+                        alert.showAlert({ title: 'Success', message: 'Withdrawal request submitted', type: 'success' });
+                        setShowWithdraw(false); setShowOtp(false); setAmount('');
+                        setOtpCode(''); setOtpId('');
+                        loadData();
+                      } catch (e: any) { alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' }); }
+                      finally { setSubmitting(false); }
+                    }} style={[styles.formBtn, { backgroundColor: '#FF4B6E' }, submitting && { opacity: 0.6 }]} disabled={submitting}>
+                      <Text style={styles.formBtnText}>{submitting ? 'Verifying...' : 'Verify & Withdraw'}</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity onPress={async () => {
+                    const val = Number(amount);
+                    if (!val || val <= 0) { alert.showAlert({ title: 'Error', message: 'Enter a valid amount', type: 'error' }); return; }
+                    setPendingAmount(val);
+                    setSubmitting(true);
+                    try {
+                      if (user?.phone_number) {
+                        const otpRes = await otpApi.sendOtp(user.phone_number, 0, 'user');
+                        const otpData = otpRes.data ?? {};
+                        setOtpId(otpData.id ?? otpData.otp_id ?? '');
+                        setShowOtp(true);
+                      } else {
+                        alert.showAlert({ title: 'Phone Required', message: 'Add a phone number in Edit Profile first', type: 'error' });
+                      }
+                    } catch (e: any) {
+                      alert.showAlert({ title: 'Error', message: e.message || 'Failed to send OTP', type: 'error' });
+                    } finally { setSubmitting(false); }
+                  }} style={[styles.formBtn, { backgroundColor: '#FF4B6E' }, submitting && { opacity: 0.6 }]} disabled={submitting}>
+                    <Text style={styles.formBtnText}>{submitting ? 'Sending OTP...' : 'Confirm Withdraw'}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -315,4 +364,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#2FEFC4',
   },
   formBtnText: { fontSize: 15, fontWeight: '700', color: '#0E1439' },
+  otpLabel: { fontSize: 13, color: '#8899AA', marginBottom: 10, textAlign: 'center' },
 });
