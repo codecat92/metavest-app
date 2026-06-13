@@ -2,7 +2,8 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, Image
 } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Shield, Bell, LogOut,
@@ -16,8 +17,12 @@ import { getToken } from '../api/client';
 const SERVER_HOST = 'http://192.168.1.24:8000';
 
 export default function ProfileScreen({ navigation }: any) {
-  const { logout, user } = useAuth();
+  const { logout, user, refreshUser } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
+
+  useFocusEffect(
+    useCallback(() => { refreshUser(); }, [])
+  );
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [uploading, setUploading] = useState(false);
   const alert = useCustomAlert();

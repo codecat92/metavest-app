@@ -11,7 +11,7 @@ import { profileApi } from '../api/profile';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const alert = useCustomAlert();
 
   const [name, setName] = useState(user?.name ?? '');
@@ -40,6 +40,7 @@ export default function EditProfileScreen() {
     setSaving(true);
     try {
       await profileApi.editProfile(fields);
+      await refreshUser();
       alert.showAlert({ title: 'Saved', message: 'Profile updated successfully', type: 'success' });
       navigation.goBack();
     } catch (e: any) {
