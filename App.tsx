@@ -29,6 +29,7 @@ import EditProfileScreen from './src/screens/EditProfileScreen';
 import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
 import EconomicsCalendarScreen from './src/screens/EconomicsCalendarScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import BrokersScreen from './src/screens/BrokersScreen';
 
 
 
@@ -106,6 +107,7 @@ function RootNavigator() {
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
       <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Brokers" component={BrokersScreen} />
     </Stack.Navigator>
   );
 }

@@ -90,6 +90,9 @@ export default function PAMMScreen({ navigation }: any) {
                 placeholderTextColor="#8899AA"
               />
             </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Brokers')} style={{ marginBottom: 12, marginTop: -4 }}>
+              <Text style={{ fontSize: 12, color: '#AB4BFF', fontWeight: '600' }}>View available brokers →</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={handleAdd}
               style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
