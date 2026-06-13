@@ -1,9 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base API client — auto-detect environment
-// Production/Staging: Railway backend URL
-// Development: local machine IP
-const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
+// Base API client — staging backend on Render.com
+const BASE_URL = 'https://metavest-backend.onrender.com/api';
 
 const TOKEN_KEY = 'metavest_auth_token';
 
