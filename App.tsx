@@ -28,6 +28,7 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import ArticleDetailScreen from './src/screens/ArticleDetailScreen';
 import EconomicsCalendarScreen from './src/screens/EconomicsCalendarScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 
 
 
@@ -104,6 +105,7 @@ function RootNavigator() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
       <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 }

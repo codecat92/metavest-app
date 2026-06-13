@@ -10,3 +10,4 @@ export { pammApi } from './pamm';
 export { forumApi } from './forum';
 export { copytradeApi } from './copytrade';
 export { academyApi } from './academy';
+export { notificationApi } from './notifications';

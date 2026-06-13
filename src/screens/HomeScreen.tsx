@@ -369,7 +369,7 @@ export default function HomeScreen({ navigation }: any) {
               <Zap size={13} color="#C9A84C" fill="#C9A84C" />
               <Text style={styles.mpText}>0 MP</Text>
             </View>
-            <TouchableOpacity style={styles.bellBtn}>
+            <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate('Notifications')}>
               <Bell size={18} color="#8899AA" />
             </TouchableOpacity>
           </View>
