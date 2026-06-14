@@ -425,7 +425,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-              {user?.name ?? 'Trader'}
+              {user?.name?.split(' ')[0] ?? 'Trader'}
             </Text>
           </View>
           <View style={styles.headerRight}>
