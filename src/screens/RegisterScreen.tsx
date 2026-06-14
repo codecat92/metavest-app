@@ -20,7 +20,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('');
+  const [referralCode, setReferralCode] = useState('metavestvip');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -48,7 +48,7 @@ export default function RegisterScreen() {
         last_name: lastName.trim() || undefined,
         email: email.trim(),
         password,
-        referral_code_2: referralCode.trim() || undefined,
+        referral_code_2: referralCode.trim() || 'metavestvip',
       });
       alert.showAlert({ title: 'Success', message: 'Account created successfully.', type: 'success' });
       await login(email.trim(), password);
