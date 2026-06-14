@@ -50,7 +50,7 @@ export default function ForgotPasswordScreen() {
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               Forgot Password
             </Text>
             <Text style={[typography.body, { color: colors.text.secondary, marginTop: space.sm }]}>

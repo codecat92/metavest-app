@@ -78,7 +78,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={[typography.h2, { color: colors.text.primary, flex: 1, marginLeft: space.lg, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, flex: 1, marginLeft: space.lg, fontFamily: 'Manrope-Bold' }]}>
             PAMM
           </Text>
           <TouchableOpacity onPress={() => setShowAdd(!showAdd)} style={styles.addBtn}>
@@ -88,7 +88,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
 
         {showAdd && (
           <GlassCard elevation={2} style={{ marginHorizontal: space['2xl'], marginBottom: space.xl }}>
-            <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
               Register PAMM Broker
             </Text>
             <AppInput
@@ -115,14 +115,14 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
             <View style={styles.statsRow}>
               <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
                 <Building2 size={20} color={colors.accent.purple} />
-                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                   {entries.length}
                 </Text>
                 <Text style={[typography.label, { color: colors.text.secondary }]}>Brokers</Text>
               </GlassCard>
               <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
                 <Shield size={20} color={colors.semantic.positive} />
-                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                   {entries.filter(e => e.status == 1).length}
                 </Text>
                 <Text style={[typography.label, { color: colors.text.secondary }]}>Active</Text>
@@ -130,7 +130,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
             </View>
 
             <View style={styles.section}>
-              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Registered Brokers
               </Text>
               {entries.length === 0 ? (

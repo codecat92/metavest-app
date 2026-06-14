@@ -130,7 +130,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Market
           </Text>
         </View>
@@ -162,7 +162,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
                 <Text style={[typography.caption, { color: colors.text.secondary, fontWeight: '600' }]}>
                   {pair}
                 </Text>
-                <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                   {price?.toFixed(4) ?? '-.--'}
                 </Text>
               </View>
@@ -227,7 +227,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
                   <Text style={[typography.label, { color: colors.text.secondary }]}>
                     {s.label}
                   </Text>
-                  <Text style={[typography.captionBold, { color: s.color, marginTop: space.xs, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                  <Text style={[typography.captionBold, { color: s.color, marginTop: space.xs, fontFamily: 'Manrope-Bold' }]}>
                     {s.value}
                   </Text>
                 </View>

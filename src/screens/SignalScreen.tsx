@@ -101,7 +101,7 @@ export default function SignalScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               Signals
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -193,7 +193,7 @@ export default function SignalScreen() {
                         <Text style={[typography.label, { color: colors.text.secondary }]}>
                           TRADING PAIR
                         </Text>
-                        <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                        <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                           {pairName}
                         </Text>
                       </View>
@@ -289,7 +289,7 @@ export default function SignalScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
+  scroll: { },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.purple,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 12, fontWeight: '800', color: '#fff', fontFamily: 'SpaceGrotesk-Bold' },
+  avatarText: { fontSize: 12, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
 
   pairRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: space.md },
 

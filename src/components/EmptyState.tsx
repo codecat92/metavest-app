@@ -23,7 +23,7 @@ export default function EmptyState({ icon, title, subtitle, action }: EmptyState
       <Text
         style={[
           typography.h4,
-          { color: colors.text.secondary, marginTop: space.md, textAlign: 'center', fontFamily: 'SpaceGrotesk-Bold' },
+          { color: colors.text.secondary, marginTop: space.md, textAlign: 'center', fontFamily: 'Manrope-Bold' },
         ]}
       >
         {title}

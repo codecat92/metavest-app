@@ -198,7 +198,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
                           </View>
                         </View>
                       </View>
-                      <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                      <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'Manrope-Bold' }]}>
                         {post.title}
                       </Text>
                       <Text
@@ -275,7 +275,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                 New Post
               </Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>

@@ -13,7 +13,7 @@ const createStyle = (
 });
 
 export const fonts = {
-  heading: 'SpaceGrotesk',
+  heading: 'Manrope',
   body: 'DMSans',
 };
 

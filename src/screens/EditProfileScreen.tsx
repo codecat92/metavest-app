@@ -83,7 +83,7 @@ export default function EditProfileScreen() {
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
 
-          <Text style={[typography.h2, { color: colors.text.primary, marginBottom: space.xl, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, marginBottom: space.xl, fontFamily: 'Manrope-Bold' }]}>
             Edit Profile
           </Text>
 
@@ -97,7 +97,7 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[typography.h4, { color: colors.accent.gold, marginBottom: space.lg, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h4, { color: colors.accent.gold, marginBottom: space.lg, fontFamily: 'Manrope-Bold' }]}>
               Change Password
             </Text>
             <AppInput label="CURRENT PASSWORD" value={oldPass} onChangeText={setOldPass} placeholder="Current password" secureTextEntry />

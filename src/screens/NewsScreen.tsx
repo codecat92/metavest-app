@@ -66,7 +66,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <View>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               News & Education
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>

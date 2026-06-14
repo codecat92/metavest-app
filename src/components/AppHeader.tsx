@@ -48,7 +48,7 @@ export default function AppHeader({ title, subtitle, onBack, right, style }: App
           </TouchableOpacity>
         )}
         <View>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             {title}
           </Text>
           {subtitle && (

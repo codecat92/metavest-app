@@ -68,7 +68,7 @@ export default function ArticleDetailScreen() {
             </Text>
           </View>
 
-          <Text style={[typography.h2, { color: colors.text.primary, lineHeight: 32, marginBottom: space.lg, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, lineHeight: 32, marginBottom: space.lg, fontFamily: 'Manrope-Bold' }]}>
             {article.title}
           </Text>
           <Text style={[typography.body, { color: colors.text.muted, lineHeight: 25 }]}>

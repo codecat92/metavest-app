@@ -75,7 +75,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Economic Calendar
           </Text>
         </View>
@@ -92,7 +92,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
           ))}
         </ScrollView>
 
-        <Text style={[typography.h3, { color: colors.text.primary, paddingHorizontal: space['2xl'], marginBottom: space.xl, fontFamily: 'SpaceGrotesk-Bold' }]}>
+        <Text style={[typography.h3, { color: colors.text.primary, paddingHorizontal: space['2xl'], marginBottom: space.xl, fontFamily: 'Manrope-Bold' }]}>
           {monthNames[selectedMonth]} {selectedYear}
         </Text>
 
@@ -107,7 +107,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
                 <View key={date} style={styles.dayGroup}>
                   <View style={styles.dayHeader}>
                     <View style={styles.dayBadge}>
-                      <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                      <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                         {day}
                       </Text>
                       <Text style={[typography.label, { color: colors.text.secondary }]}>{weekday}</Text>

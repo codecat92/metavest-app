@@ -70,7 +70,7 @@ export default function RegisterScreen() {
           <View style={styles.glow} />
 
           <View style={[styles.welcomeContainer, { marginTop: space['3xl'] }]}>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               Create account
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>

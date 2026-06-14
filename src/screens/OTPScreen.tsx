@@ -66,7 +66,7 @@ export default function OTPScreen() {
         <View style={styles.iconWrap}>
           <Shield size={32} color={colors.accent.purple} />
         </View>
-        <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+        <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
           Verification Required
         </Text>
         <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginTop: space.sm }]}>
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   codeInput: {
     fontSize: 28, fontWeight: '800', color: colors.text.primary,
     letterSpacing: 8, textAlign: 'center', width: '100%',
-    fontFamily: 'SpaceGrotesk-Bold',
+    fontFamily: 'Manrope-Bold',
   },
   resendBtn: { alignItems: 'center', paddingVertical: space.sm },
 });

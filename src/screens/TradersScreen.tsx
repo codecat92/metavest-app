@@ -95,7 +95,7 @@ export default function TradersScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               Traders
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -166,7 +166,7 @@ export default function TradersScreen() {
                     ].map((s) => (
                       <View key={s.label} style={styles.statBox}>
                         <Text style={[typography.label, { color: colors.text.secondary }]}>{s.label}</Text>
-                        <Text style={[typography.captionBold, { color: s.color, marginTop: 2, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                        <Text style={[typography.captionBold, { color: s.color, marginTop: 2, fontFamily: 'Manrope-Bold' }]}>
                           {s.value}
                         </Text>
                       </View>
@@ -187,7 +187,7 @@ export default function TradersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
+  scroll: { },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: colors.glass.border,
   },
-  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: 'SpaceGrotesk-Bold' },
+  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.xs },
   bio: { fontSize: 12, color: colors.text.muted, lineHeight: 17, marginTop: 2, fontFamily: 'DMSans' },
 

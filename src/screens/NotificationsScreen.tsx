@@ -50,7 +50,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Notifications
           </Text>
         </View>

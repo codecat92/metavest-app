@@ -17,7 +17,7 @@ export default function MetavestAlert({ visible, title, message, type = 'info', 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={[typography.h3, { color: accentColor, textAlign: 'center', fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h3, { color: accentColor, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
             {title}
           </Text>
           <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginBottom: space['2xl'] }]}>

@@ -29,7 +29,7 @@ export default function AppInput({
   return (
     <View style={[{ marginBottom: space.lg }, containerStyle]}>
       {label && (
-        <Text style={typography.label}>{label}</Text>
+        <Text style={[typography.label, { color: colors.text.secondary }]}>{label}</Text>
       )}
       <View style={[
         {

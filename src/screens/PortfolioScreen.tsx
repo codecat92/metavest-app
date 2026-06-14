@@ -69,7 +69,7 @@ export default function PortfolioScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Portfolio
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -83,7 +83,7 @@ export default function PortfolioScreen() {
           <>
             <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
               <Text style={[typography.caption, { color: colors.text.muted }]}>Wallet Balance</Text>
-              <Text style={[typography.h1, { color: colors.text.primary, marginTop: space.xs, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              <Text style={[typography.h1, { color: colors.text.primary, marginTop: space.xs, fontFamily: 'Manrope-Bold' }]}>
                 {formatBalance(balance)}
               </Text>
               <View style={styles.walletIdRow}>
@@ -113,7 +113,7 @@ export default function PortfolioScreen() {
 
             {showTopUp && (
               <GlassCard elevation={2} style={{ marginHorizontal: space['2xl'], marginBottom: space.xl }}>
-                <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                   Top Up Wallet
                 </Text>
                 <AppInput
@@ -142,7 +142,7 @@ export default function PortfolioScreen() {
 
             {showWithdraw && (
               <GlassCard elevation={2} style={{ marginHorizontal: space['2xl'], marginBottom: space.xl }}>
-                <Text style={[typography.h4, { color: colors.semantic.negative, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h4, { color: colors.semantic.negative, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                   Withdraw
                 </Text>
                 <AppInput
@@ -211,7 +211,7 @@ export default function PortfolioScreen() {
             )}
 
             <View style={styles.section}>
-              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Followed Traders
               </Text>
               {followed.length === 0 ? (
@@ -252,7 +252,7 @@ export default function PortfolioScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'SpaceGrotesk-Bold' }]}>
+              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Recent Transactions
               </Text>
               {history.length === 0 ? (
@@ -280,7 +280,7 @@ export default function PortfolioScreen() {
                           </View>
                           <Text style={[typography.bodyBold, {
                             color: isCredit ? colors.semantic.positive : colors.semantic.negative,
-                            fontFamily: 'SpaceGrotesk-Bold',
+                            fontFamily: 'Manrope-Bold',
                           }]}>
                             {isCredit ? '+' : '-'}{formatBalance(Math.abs(item.amount ?? 0))}
                           </Text>
@@ -300,7 +300,7 @@ export default function PortfolioScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
+  scroll: { },
 
   header: { paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.sm },
 
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
-  followAvatarText: { fontSize: 12, fontWeight: '800', color: '#fff', fontFamily: 'SpaceGrotesk-Bold' },
+  followAvatarText: { fontSize: 12, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
 
   txIcon: {
     width: 40, height: 40, borderRadius: 20,

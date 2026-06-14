@@ -131,7 +131,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                 )}
               </TouchableOpacity>
               <View>
-                <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+                <Text style={[typography.h3, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                   {user?.name ?? 'Trader'}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -218,7 +218,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
+  scroll: { },
 
   avatarRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.xl },
   avatarBtn: { position: 'relative' },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent.purple, alignItems: 'center', justifyContent: 'center',
   },
   avatarImg: { width: 72, height: 72, borderRadius: 36 },
-  avatarText: { fontSize: 24, fontWeight: '800', color: '#fff', fontFamily: 'SpaceGrotesk-Bold' },
+  avatarText: { fontSize: 24, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
   cameraBadge: {
     position: 'absolute', bottom: 0, right: 0,
     width: 28, height: 28, borderRadius: 14,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
 
   statsRow: { flexDirection: 'row', gap: space['2xl'], marginBottom: space.sm },
-  statValue: { fontSize: 18, fontWeight: '800', color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' },
+  statValue: { fontSize: 18, fontWeight: '800', color: colors.text.primary, fontFamily: 'Manrope-Bold' },
   statLabel: { fontSize: 11, color: colors.text.secondary, marginTop: 2, fontFamily: 'DMSans' },
 
   section: { paddingHorizontal: space['2xl'], marginBottom: space['2xl'] },

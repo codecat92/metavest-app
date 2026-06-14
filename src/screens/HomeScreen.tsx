@@ -6,12 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
 import { newsApi } from '@/api/news';
 import { colors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Skeleton } from '@/components';
+import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -27,6 +26,7 @@ function getGreeting(): { text: string; Icon: React.ComponentType<{ size: number
   return { text: 'Good evening', Icon: Moon };
 }
 
+// KOMPONEN: Sparkline — Grafik mini SVG di dalam kartu pasar forex
 function Sparkline({ up, id }: { up: boolean; id: string }) {
   const data = up
     ? [{ x: 1, y: 40 }, { x: 2, y: 55 }, { x: 3, y: 48 }, { x: 4, y: 70 }, { x: 5, y: 65 }, { x: 6, y: 80 }, { x: 7, y: 75 }, { x: 8, y: 90 }]
@@ -73,6 +73,7 @@ interface MarketItem {
   up: boolean;
 }
 
+// KOMPONEN: MarqueeMarkets — Karusel kartu pasar forex yang bergerak otomatis
 function MarqueeMarkets() {
   const [items, setItems] = useState<MarketItem[]>(majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true })));
   const translateX = useRef(new Animated.Value(0)).current;
@@ -139,7 +140,7 @@ function MarqueeMarkets() {
             <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
               {m.pair}
             </Text>
-            <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               {m.price}
             </Text>
             <View style={styles.marketChangeRow}>
@@ -159,6 +160,7 @@ function MarqueeMarkets() {
   );
 }
 
+// KOMPONEN: QuickActions — Grid 4 tombol aksi cepat dengan animasi glow
 function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
 
@@ -203,6 +205,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   );
 }
 
+// KOMPONEN: FeatureCards — Dua kartu fitur (Copy Trading + PAMM)
 function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
   const features = [
     {
@@ -228,13 +231,15 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
           activeOpacity={0.8}
           style={{ flex: 1 }}
         >
-          <GlassCard elevation={2} style={{ alignItems: 'center' }}>
+          <GlassCard elevation={2} style={fcStyles.card}>
             <View style={fcStyles.iconWrap}>
-              <f.Icon size={28} color={colors.accent.gold} strokeWidth={1.5} />
+              <f.Icon size={28} color={colors.accent.purple} strokeWidth={1.5} />
             </View>
-            <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
-              {f.label}
-            </Text>
+            <View style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold', color: colors.text.primary, textAlign: 'center' }}>
+                {f.label}
+              </Text>
+            </View>
             <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
               {f.desc}
             </Text>
@@ -264,6 +269,7 @@ const tagColors: Record<string, string> = {
   Market: colors.accent.purple,
 };
 
+// KOMPONEN: AcademyCard — Kartu promo Metavest Academy dengan tombol CTA
 function AcademyCard({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
@@ -272,11 +278,11 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
           <GraduationCap size={24} color={colors.accent.gold} strokeWidth={1.5} />
         </View>
         <View style={acStyles.textWrap}>
-          <Text style={[typography.h3, { color: colors.accent.goldLight, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h3, { color: colors.accent.goldLight, fontFamily: 'Manrope-Bold' }]}>
             Metavest Academy
           </Text>
           <Text style={[typography.body, { color: 'rgba(208,200,160,0.7)', marginTop: space.sm }]}>
-            Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro — learn at your own pace.
+            Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro, learn at your own pace!
           </Text>
         </View>
         <AppButton title="Explore" variant="secondary" size="md" />
@@ -285,6 +291,7 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
   );
 }
 
+// KOMPONEN: AnimatedNewsFeed — Daftar berita dengan animasi scroll vertikal otomatis
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const translateY = useRef(new Animated.Value(0)).current;
   const [items, setItems] = useState<{ title: string; time: string; tag: string }[]>([]);
@@ -298,7 +305,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
           tag: detectTag(a.title ?? ''),
         }));
         setItems(latest);
-      }).catch(() => {});
+      }).catch(() => { });
     }, [])
   );
 
@@ -306,7 +313,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
     { title: 'Fed holds rates steady — dollar weakens', time: '', tag: 'Macro' },
   ];
 
-  const VISIBLE_COUNT = 3;
+  const VISIBLE_COUNT = 4;
   const ITEM_HEIGHT = 72;
   const totalHeight = VISIBLE_COUNT * ITEM_HEIGHT;
 
@@ -352,6 +359,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   );
 }
 
+// STYLE: newsStyles — Gaya untuk setiap item kartu berita
 const newsStyles = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'flex-start', gap: space.md,
@@ -393,11 +401,13 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <BackgroundGlow />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent.purple} />}
       >
+        {/* ── HEADER: Sapaan + Nama User + MP Badge + Tombol Notifikasi ── */}
         <View style={styles.header}>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
@@ -406,7 +416,7 @@ export default function HomeScreen() {
                 {greeting.text}
               </Text>
             </View>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               {user?.name ?? 'Trader'}
             </Text>
           </View>
@@ -421,10 +431,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ── PORTOFOLIO CARD: Total Saldo + Perubahan Hari Ini + Statistik (Following / Win Rate / Signals) ── */}
         <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
-          <View style={styles.portfolioAccentBar} />
           <Text style={[typography.caption, { color: colors.text.muted }]}>Total Portfolio</Text>
-          <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold', marginTop: space.xs }]}>
+          <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
             $0.00
           </Text>
           <View style={styles.portfolioChangeRow}>
@@ -446,10 +456,12 @@ export default function HomeScreen() {
           </View>
         </GlassCard>
 
+        {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Portfolio / Forum) ── */}
         <QuickActions onNavigate={onNavigate} />
 
+        {/* ── SECTION HEADER: Markets + Link Calendar / See all ── */}
         <View style={styles.sectionHeader}>
-          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Markets
           </Text>
           <View style={{ flexDirection: 'row', gap: space.lg }}>
@@ -461,37 +473,37 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {/* ── MARKET CAROUSEL: Kartu Forex berjalan horizontal (EUR/USD, GBP/USD, dll) ── */}
         <MarqueeMarkets />
 
+        {/* ── FEATURE CARDS: Kartu Copy Trading + PAMM ── */}
         <FeatureCards onNavigate={onNavigate} />
 
+        {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
         <AcademyCard onPress={() => navigation.navigate('Academy')} />
 
+        {/* ── SECTION HEADER: Latest News + Ikon Panah Kanan ── */}
         <View style={styles.sectionHeader}>
-          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+          <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
             Latest News
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('News')}>
             <ChevronRight size={18} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
+        {/* ── NEWS FEED: Daftar Berita Animasi Scroll Vertikal ── */}
         <View style={{ paddingHorizontal: space['2xl'] }}>
           <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
         </View>
       </ScrollView>
-      <ExpoLinearGradient
-        colors={['rgba(14,20,57,0)', 'rgba(14,20,57,0.95)']}
-        locations={[0, 1]}
-        style={styles.bottomFade}
-        pointerEvents="none"
-      />
     </View>
   );
 }
 
+// STYLE: styles — Gaya utama untuk container, header, kartu, tombol, section
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
+  scroll: { },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -512,21 +524,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  portfolioAccentBar: {
-    height: 3,
-    backgroundColor: colors.accent.gold,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-  },
-
   portfolioChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
   portfolioStats: { flexDirection: 'row', gap: space['2xl'], marginTop: space.lg },
   statLabel: { fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' },
-  statValue: { fontSize: 16, fontWeight: '700', color: colors.text.primary, marginTop: 2, fontFamily: 'SpaceGrotesk-Bold' },
+  statValue: { fontSize: 16, fontWeight: '700', color: colors.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' },
 
   quickActions: {
     flexDirection: 'row', paddingHorizontal: space['2xl'],
@@ -555,26 +556,28 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.glass.border,
   },
   marketChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
-  bottomFade: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-  },
 });
 
+// STYLE: fcStyles — Gaya untuk komponen FeatureCards (Copy Trading + PAMM)
 const fcStyles = StyleSheet.create({
   row: {
     flexDirection: 'row', gap: space.md, paddingHorizontal: space['2xl'], marginBottom: 28,
+    alignItems: 'stretch',
+  },
+  card: {
+    flex: 1,
+    minHeight: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iconWrap: {
     width: 56, height: 56, borderRadius: radius.xl,
     backgroundColor: 'rgba(212,175,55,0.15)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: space.md,
+    alignItems: 'center', justifyContent: 'center',
   },
 });
 
+// STYLE: acStyles — Gaya untuk komponen AcademyCard
 const acStyles = StyleSheet.create({
   iconWrap: {
     width: 48, height: 48, borderRadius: radius.lg, marginBottom: space.md,

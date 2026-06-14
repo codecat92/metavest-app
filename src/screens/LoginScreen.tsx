@@ -79,7 +79,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.welcomeContainer}>
-            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'SpaceGrotesk-Bold' }]}>
+            <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               Welcome back
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
