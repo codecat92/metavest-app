@@ -313,7 +313,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
     { title: 'Fed holds rates steady — dollar weakens', time: '', tag: 'Macro' },
   ];
 
-  const VISIBLE_COUNT = 4;
+  const VISIBLE_COUNT = 3;
   const ITEM_HEIGHT = 72;
   const totalHeight = VISIBLE_COUNT * ITEM_HEIGHT;
 
@@ -364,7 +364,6 @@ const newsStyles = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'flex-start', gap: space.md,
     padding: space.md, borderRadius: radius.lg, height: 72,
-    marginBottom: space.sm,
     backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.border,
   },
