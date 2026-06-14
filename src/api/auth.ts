@@ -120,7 +120,7 @@ export const authApi = {
       phone_number: payload.phone_number ?? undefined,
     });
 
-    const token = response.data.access_token;
+    const token = (response as any).access_token || response.data?.access_token;
     setToken(token);
 
     // Fetch user profile with the new token
