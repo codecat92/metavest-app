@@ -309,8 +309,9 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
     }, [])
   );
 
-  const displayItems = items.length > 0 ? items : [
-    { title: 'Fed holds rates steady — dollar weakens', time: '', tag: 'Macro' },
+  const hasArticles = items.length > 0;
+  const displayItems = hasArticles ? items : [
+    { title: 'No articles available', time: '', tag: 'Market' },
   ];
 
   const VISIBLE_COUNT = 4;
@@ -318,6 +319,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const totalHeight = VISIBLE_COUNT * ITEM_HEIGHT;
 
   useEffect(() => {
+    if (!hasArticles) return;
     const anim = Animated.loop(
       Animated.timing(translateY, {
         toValue: -totalHeight,
@@ -328,32 +330,38 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
     );
     anim.start();
     return () => anim.stop();
-  }, [totalHeight]);
+  }, [totalHeight, hasArticles]);
 
   const doubled = [...displayItems, ...displayItems];
+
+  const renderItem = (item: { title: string; time: string; tag: string }, key: number) => {
+    const tagColor = tagColors[item.tag] ?? colors.text.secondary;
+    return (
+      <View key={key} style={newsStyles.item}>
+        <View style={[newsStyles.tag, {
+          backgroundColor: `${tagColor}18`,
+          borderColor: `${tagColor}44`,
+        }]}>
+          <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={newsStyles.title} numberOfLines={2}>{item.title}</Text>
+          <Text style={newsStyles.time}>{item.time}</Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
       <View style={{ height: totalHeight, overflow: 'hidden', position: 'relative' }}>
-        <Animated.View style={{ transform: [{ translateY }] }}>
-          {doubled.map((item, i) => {
-            const tagColor = tagColors[item.tag] ?? colors.text.secondary;
-            return (
-              <View key={i} style={newsStyles.item}>
-                <View style={[newsStyles.tag, {
-                  backgroundColor: `${tagColor}18`,
-                  borderColor: `${tagColor}44`,
-                }]}>
-                  <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={newsStyles.title} numberOfLines={2}>{item.title}</Text>
-                  <Text style={newsStyles.time}>{item.time}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </Animated.View>
+        {hasArticles ? (
+          <Animated.View style={{ transform: [{ translateY }] }}>
+            {doubled.map((item, i) => renderItem(item, i))}
+          </Animated.View>
+        ) : (
+          renderItem(displayItems[0], 0)
+        )}
       </View>
     </TouchableOpacity>
   );
