@@ -54,8 +54,7 @@ export const forumApi = {
     api.post<ApiResponse<ForumComment>>('/forums/users/comments/create', {
       post_id: postId,
       content,
-      poster_id: '',
-      poster_type: 1,
+      commenter_type: 1,
       comment_id: null,
     }),
 
