@@ -30,6 +30,7 @@ import AcademyScreen from '@/screens/AcademyScreen';
 import ForgotPasswordScreen from '@/screens/ForgotPasswordScreen';
 import EditProfileScreen from '@/screens/EditProfileScreen';
 import ArticleDetailScreen from '@/screens/ArticleDetailScreen';
+import WebViewScreen from '@/screens/WebViewScreen';
 import EconomicsCalendarScreen from '@/screens/EconomicsCalendarScreen';
 import NotificationsScreen from '@/screens/NotificationsScreen';
 import BrokersScreen from '@/screens/BrokersScreen';
@@ -112,6 +113,7 @@ function RootNavigator() {
       <Stack.Screen name="Academy" component={AcademyScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
+      <Stack.Screen name="WebView" component={WebViewScreen} />
       <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Brokers" component={BrokersScreen} />

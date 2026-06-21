@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
+import type { Article } from '@/api/news';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -16,7 +17,8 @@ export type RootStackParamList = {
   Market: undefined;
   Academy: undefined;
   EditProfile: undefined;
-  ArticleDetail: undefined;
+  ArticleDetail: { article: Article };
+  WebView: { url: string; title?: string };
   EconomicsCalendar: undefined;
   Notifications: undefined;
   Brokers: undefined;

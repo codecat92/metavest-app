@@ -12,25 +12,46 @@ import { GlassCard, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-const categories = ['All', 'Market', 'Education'];
+const categories = ['All', 'Market', 'Education', 'Global News'];
 
 type NewsProps = NativeStackScreenProps<RootStackParamList, 'News'>;
 
 export default function NewsScreen({ navigation }: NewsProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [academy, setAcademy] = useState<Article[]>([]);
+  const [globalNews, setGlobalNews] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
 
   const loadNews = useCallback(async () => {
     try {
-      const [articleRes, academyRes] = await Promise.all([
+      const [articleRes, academyRes, globalNewsRes] = await Promise.allSettled([
         newsApi.getArticles(),
         newsApi.getAcademy(),
+        newsApi.getGlobalNews(),
       ]);
-      setArticles(articleRes.data ?? []);
-      setAcademy(academyRes.data ?? []);
+
+      if (articleRes.status === 'fulfilled') {
+        setArticles(articleRes.value.data ?? []);
+      } else {
+        console.log('Market news failed:', articleRes.reason);
+        setArticles([]);
+      }
+
+      if (academyRes.status === 'fulfilled') {
+        setAcademy(academyRes.value.data ?? []);
+      } else {
+        console.log('Academy news failed:', academyRes.reason);
+        setAcademy([]);
+      }
+
+      if (globalNewsRes.status === 'fulfilled') {
+        setGlobalNews(globalNewsRes.value.data ?? []);
+      } else {
+        console.log('Global news failed:', globalNewsRes.reason);
+        setGlobalNews([]);
+      }
     } catch (e) {
       console.log('News load failed:', e);
     } finally {
@@ -45,6 +66,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
   const allItems: (Article & { tag: string })[] = [
     ...articles.map(a => ({ ...a, tag: 'Market' })),
     ...academy.map(a => ({ ...a, tag: 'Education' })),
+    ...globalNews.map(a => ({ ...a, tag: 'Global News' })),
   ];
 
   const filtered = allItems.filter(item => {
@@ -56,6 +78,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
   const tagColors: Record<string, string> = {
     Market: colors.accent.purple,
     Education: colors.semantic.positive,
+    'Global News': colors.semantic.info,
   };
 
   return (
@@ -119,7 +142,13 @@ export default function NewsScreen({ navigation }: NewsProps) {
                 <TouchableOpacity
                   key={`${article.tag}-${article.id}`}
                   activeOpacity={0.85}
-                  onPress={() => navigation.navigate('ArticleDetail', { article })}
+                  onPress={() => {
+                    if (article.tag === 'Global News' && article.media_link) {
+                      navigation.navigate('WebView', { url: article.media_link, title: article.title });
+                    } else {
+                      navigation.navigate('ArticleDetail', { article });
+                    }
+                  }}
                   style={{ borderRadius: radius.lg, overflow: 'hidden' }}
                 >
                   <GlassCard elevation={2}>

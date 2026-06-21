@@ -6,6 +6,7 @@ export interface Article {
   content: string;
   image_src?: string | null;
   writer_id?: number;
+  writer_name?: string;
   created_at: string;
   media_src?: string | null;
   media_link?: string | null;
@@ -25,4 +26,7 @@ export const newsApi = {
 
   getAcademy: () =>
     api.get<ArticleListResponse>('/academy-article?page=1'),
+
+  getGlobalNews: () =>
+    api.get<ArticleListResponse>('/news'),
 };
