@@ -34,6 +34,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, ForumComment[]>>({});
   const [commentStates, setCommentStates] = useState<Record<number, PostCommentState>>({});
+  const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
 
   const loadPosts = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -99,6 +100,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
     try {
       await forumApi.likePost(postId);
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: (p.likes ?? 0) + 1 } : p));
+      setLikedPostIds(prev => new Set(prev).add(postId));
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
@@ -180,6 +182,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
                 const expanded = expandedId === post.id;
                 const postComments = comments[post.id] ?? [];
                 const commentState = commentStates[post.id] ?? { text: '', replyToId: null };
+                const isLiked = likedPostIds.has(post.id);
                 return (
                   <GlassCard key={post.id} elevation={2}>
                     <TouchableOpacity onPress={() => handleExpand(post.id)} activeOpacity={0.8}>
@@ -209,7 +212,11 @@ export default function ForumScreen({ navigation }: ForumProps) {
                       </Text>
                       <View style={styles.cardFooter}>
                         <TouchableOpacity onPress={() => handleLike(post.id)} style={styles.footerBtn}>
-                          <Heart size={14} color={colors.text.secondary} />
+                          <Heart
+                            size={14}
+                            color={isLiked ? colors.semantic.negative : colors.text.secondary}
+                            fill={isLiked ? colors.semantic.negative : 'transparent'}
+                          />
                           <Text style={[typography.label, { color: colors.text.secondary }]}>
                             {post.likes ?? 0}
                           </Text>
