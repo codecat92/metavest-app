@@ -25,6 +25,7 @@ export default function OTPScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [devOtpCodeState, setDevOtpCodeState] = useState(devOtpCode ?? null);
   const [showDevOtp, setShowDevOtp] = useState(!!devOtpCode);
   const inputRef = useRef<TextInput>(null);
 
@@ -48,7 +49,12 @@ export default function OTPScreen() {
   const handleResend = async () => {
     setResending(true);
     try {
-      await otpApi.sendOtp(email, 0, type ?? 'user');
+      const res = await otpApi.sendOtp(email, 0, type ?? 'user');
+      const newCode = res?.data?.otp_code ?? null;
+      if (newCode) {
+        setDevOtpCodeState(newCode);
+        setShowDevOtp(true);
+      }
       alert.showAlert({ title: 'OTP Sent', message: 'A new code has been sent to your email', type: 'success' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed to resend', type: 'error' });
@@ -116,7 +122,7 @@ export default function OTPScreen() {
             <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
               Your OTP Code:
             </Text>
-            <Text style={styles.modalCode}>{devOtpCode}</Text>
+            <Text style={styles.modalCode}>{devOtpCodeState}</Text>
             <TouchableOpacity onPress={() => setShowDevOtp(false)} style={styles.modalBtn}>
               <Text style={styles.modalBtnText}>Got it, Close</Text>
             </TouchableOpacity>
