@@ -5,11 +5,13 @@
 // Ditempatkan sebelum ScrollView agar berada di belakang semua konten UI
 // pointerEvents="none" agar tidak memblokir sentuhan/scroll
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 
 export default function BackgroundGlow() {
+  const { width, height } = useWindowDimensions();
+
   return (
-    <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
         <RadialGradient id="glowTopRight" cx="100%" cy="0%" r="60%">
           <Stop offset="0%" stopColor="rgba(42,14,66,0.35)" stopOpacity="1" />
@@ -20,8 +22,8 @@ export default function BackgroundGlow() {
           <Stop offset="70%" stopColor="rgba(42,14,66,0)" stopOpacity="0" />
         </RadialGradient>
       </Defs>
-      <Rect width="100%" height="100%" fill="url(#glowTopRight)" />
-      <Rect width="100%" height="100%" fill="url(#glowBottomLeft)" />
+      <Rect width={width} height={height} fill="url(#glowTopRight)" />
+      <Rect width={width} height={height} fill="url(#glowBottomLeft)" />
     </Svg>
   );
 }
