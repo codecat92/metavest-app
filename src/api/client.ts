@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Base API client — staging backend on metavest server
-const BASE_URL = 'http://157.66.4.40:8081/api';
+export const BASE_URL = 'http://157.66.4.40:8081/api';
 
 const TOKEN_KEY = 'metavest_auth_token';
 
