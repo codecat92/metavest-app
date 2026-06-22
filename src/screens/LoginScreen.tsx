@@ -45,11 +45,12 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const step1 = await authApi.loginStep1(email, password);
-      await otpApi.sendOtp(step1.email, 0, step1.type);
+      const otpRes = await otpApi.sendOtp(step1.email, 0, step1.type);
       navigation.navigate('OTP', {
         userId: step1.userId,
         email: step1.email,
         type: step1.type,
+        otpCode: otpRes?.data?.otp_code ?? null,
       });
     } catch (error: any) {
       alert.showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password.', type: 'error' });

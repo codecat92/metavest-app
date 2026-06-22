@@ -1,6 +1,6 @@
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator
+  StyleSheet, ActivityIndicator, Modal as RNModal
 } from 'react-native';
 import { useRef, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -21,10 +21,11 @@ export default function OTPScreen() {
   const alert = useCustomAlert();
   const { login } = useAuth();
 
-  const { userId, email, type } = route.params;
+  const { userId, email, type, otpCode: devOtpCode } = route.params;
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [showDevOtp, setShowDevOtp] = useState(!!devOtpCode);
   const inputRef = useRef<TextInput>(null);
 
   const handleVerify = async () => {
@@ -102,6 +103,26 @@ export default function OTPScreen() {
           {resending ? 'Sending...' : 'Resend code'}
         </Text>
       </TouchableOpacity>
+
+      <RNModal visible={showDevOtp} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalBadge}>
+              <Text style={styles.modalBadgeText}>⚠️ ONLY FOR STAGING</Text>
+            </View>
+            <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.md }]}>
+              This OTP is shown because the app is in staging mode.
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
+              Your OTP Code:
+            </Text>
+            <Text style={styles.modalCode}>{devOtpCode}</Text>
+            <TouchableOpacity onPress={() => setShowDevOtp(false)} style={styles.modalBtn}>
+              <Text style={styles.modalBtnText}>Got it, Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </RNModal>
     </SafeAreaView>
   );
 }
@@ -132,4 +153,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
   },
   resendBtn: { alignItems: 'center', paddingVertical: space.sm },
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.70)',
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: space['2xl'],
+  },
+  modalCard: {
+    width: '100%', borderRadius: radius.xl, padding: space.xl,
+    backgroundColor: colors.glass.g2,
+    borderWidth: 1, borderColor: colors.glass.borderStrong,
+    alignItems: 'center',
+  },
+  modalBadge: {
+    backgroundColor: 'rgba(247,201,72,0.15)',
+    borderWidth: 1, borderColor: 'rgba(247,201,72,0.35)',
+    borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.xs,
+  },
+  modalBadgeText: {
+    fontSize: 12, fontWeight: '800', color: '#F7C948',
+    fontFamily: 'DMSans-Bold', letterSpacing: 0.5,
+  },
+  modalCode: {
+    fontSize: 40, fontWeight: '800', color: colors.text.primary,
+    fontFamily: 'Manrope-Bold', letterSpacing: 6,
+    marginTop: space.md, marginBottom: space.lg,
+  },
+  modalBtn: {
+    width: '100%', paddingVertical: space.md, borderRadius: radius.sm,
+    backgroundColor: colors.accent.purple, alignItems: 'center',
+  },
+  modalBtnText: {
+    fontSize: 14, fontWeight: '700', color: colors.text.primary, fontFamily: 'DMSans-Bold',
+  },
 });

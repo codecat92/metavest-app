@@ -7,7 +7,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  OTP: { userId: string; email: string; type: string };
+  OTP: { userId: string; email: string; type: string; otpCode?: string | null };
   Tabs: undefined;
   PAMM: undefined;
   News: undefined;
