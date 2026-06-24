@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking
+  TouchableOpacity, ActivityIndicator, Linking, Image
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +19,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type Props = NativeStackScreenProps<RootStackParamList, 'PAMMDetail'>;
 
 export default function PAMMDetailScreen({ navigation, route }: Props) {
+  const STAGING_HOST = 'http://157.66.4.40:8081';
   const { brokerId } = route.params;
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +94,15 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
         {/* Logo & Name */}
         <View style={styles.heroSection}>
           <View style={styles.heroAvatar}>
-            <Building2 size={40} color={colors.accent.purple} />
+            {detail.logo_url ? (
+              <Image
+                source={{ uri: STAGING_HOST + detail.logo_url }}
+                style={styles.heroLogo}
+                resizeMode="contain"
+              />
+            ) : (
+              <Building2 size={40} color={colors.accent.purple} />
+            )}
           </View>
           <Text style={[typography.h3, { color: colors.text.primary, marginTop: space.md, fontFamily: 'Manrope-Bold' }]}>
             {broker.name}
@@ -229,6 +238,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139,92,246,0.12)',
     borderWidth: 2, borderColor: 'rgba(139,92,246,0.25)',
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  heroLogo: {
+    width: 80, height: 80, borderRadius: 40,
   },
 
   infoRow: {

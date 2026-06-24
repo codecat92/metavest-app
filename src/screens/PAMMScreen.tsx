@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, useWindowDimensions
+  TouchableOpacity, ActivityIndicator, useWindowDimensions, Image
 } from 'react-native';
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,6 +16,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
 
 export default function PAMMScreen({ navigation }: PAMMProps) {
+  const STAGING_HOST = 'http://157.66.4.40:8081';
   const { width: screenWidth } = useWindowDimensions();
   const [banners, setBanners] = useState<PammBanner[]>([]);
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
@@ -81,9 +82,17 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                 >
                   {activeBanners.map((b, i) => (
                     <View key={b.id} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
-                      <View style={styles.bannerPlaceholder}>
-                        <Building2 size={48} color="rgba(139,92,246,0.3)" />
-                      </View>
+                      {b.image_url ? (
+                        <Image
+                          source={{ uri: STAGING_HOST + b.image_url }}
+                          style={styles.bannerImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.bannerPlaceholder}>
+                          <Building2 size={48} color="rgba(139,92,246,0.3)" />
+                        </View>
+                      )}
                       {b.title ? (
                         <Text style={styles.bannerTitle}>{b.title}</Text>
                       ) : null}
@@ -115,7 +124,15 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                     <GlassCard elevation={2}>
                       <View style={styles.brokerRow}>
                         <View style={styles.brokerAvatar}>
-                          <Building2 size={22} color={colors.accent.purple} />
+                          {broker.detail?.logo_url ? (
+                            <Image
+                              source={{ uri: STAGING_HOST + broker.detail.logo_url }}
+                              style={styles.brokerLogo}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Building2 size={22} color={colors.accent.purple} />
+                          )}
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
@@ -166,6 +183,10 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
   },
+  bannerImage: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.xl,
+  },
   bannerTitle: {
     fontSize: 16, fontWeight: '800', color: colors.text.primary,
     fontFamily: 'Manrope-Bold', position: 'absolute', bottom: space.md, left: space.md,
@@ -186,5 +207,9 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  brokerLogo: {
+    width: 44, height: 44, borderRadius: 22,
   },
 });
