@@ -266,7 +266,7 @@ export default function SignalScreen() {
                       </View>
                     )}
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.md }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.xl }}>
                       <TouchableOpacity
                         onPress={() => Linking.openURL(tradeUrl)}
                         activeOpacity={0.8}
