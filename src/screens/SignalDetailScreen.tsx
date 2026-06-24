@@ -185,9 +185,9 @@ export default function SignalDetailScreen() {
         {/* Notes */}
         {signal.notes ? (
           <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>Trader Notes</Text>
-            <View style={styles.notesCard}>
-              <Text style={styles.notesText}>{signal.notes}</Text>
+            <Text style={[styles.notesTitle, { color: colors.text.primary }]}>Trader Notes</Text>
+            <View style={[styles.notesCard, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
+              <Text style={[styles.notesText, { color: colors.text.secondary }]}>{signal.notes}</Text>
             </View>
           </View>
         ) : null}
@@ -199,7 +199,7 @@ export default function SignalDetailScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.glass.g3, borderTopColor: colors.glass.borderStrong }]}>
         <TouchableOpacity onPress={handleLike} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
           <Heart size={20} color={liked ? colors.semantic.negative : colors.text.secondary} fill={liked ? colors.semantic.negative : 'none'} />
           <Text style={[styles.actionText, liked && { color: colors.semantic.negative }, !liked && { color: colors.text.secondary }]}>
