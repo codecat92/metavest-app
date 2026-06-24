@@ -57,12 +57,12 @@ const light = {
     info: '#818CF8',
   },
   glass: {
-    g1: '#0E1439',
-    g2: '#0E1439',
-    g3: '#0E1439',
-    g4: '#0E1439',
-    border: 'rgba(255,255,255,0.10)',
-    borderStrong: 'rgba(255,255,255,0.16)',
+    g1: '#3B1F6B',
+    g2: '#3B1F6B',
+    g3: '#3B1F6B',
+    g4: '#3B1F6B',
+    border: 'rgba(255,255,255,0.08)',
+    borderStrong: 'rgba(255,255,255,0.14)',
   },
   overlay: {
     modal: 'rgba(6,9,16,0.85)',
