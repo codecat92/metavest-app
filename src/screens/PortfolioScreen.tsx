@@ -35,14 +35,17 @@ export default function PortfolioScreen() {
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const [walletRes, historyRes, followRes] = await Promise.all([
+      const [walletRes, historyRes, activeRes, followRes] = await Promise.all([
         walletApi.getById(),
         walletApi.getHistory(1),
+        followApi.getActive(1),
         followApi.getFollowed(1),
       ]);
       setWallet(walletRes.data ?? null);
       setHistory(historyRes.data ?? []);
-      setFollowed(followRes.data ?? []);
+      // Filter active traders to only followed ones
+      const followedIds = new Set((followRes.data ?? []).map(f => f.trader_id));
+      setFollowed((activeRes.data ?? []).filter(t => followedIds.has(t.id)));
     } catch (e) {
       console.log('Portfolio load failed:', e);
     } finally {
