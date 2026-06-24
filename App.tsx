@@ -91,13 +91,16 @@ function RootNavigator() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg.primary, alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar style={isDark ? "light" : "dark"} />
         <ActivityIndicator size="large" color={colors.accent.purple} />
       </View>
     );
   }
 
   return (
-    <Stack.Navigator
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Stack.Navigator
       initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}
       screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg.primary } }}
     >
@@ -121,6 +124,7 @@ function RootNavigator() {
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Brokers" component={BrokersScreen} />
     </Stack.Navigator>
+    </>
   );
 }
 
@@ -153,7 +157,6 @@ export default function App() {
           <ThemeProvider>
           <AuthProvider>
             <NavigationContainer>
-              <StatusBar style={isDark ? "light" : "dark"} />
               <RootNavigator />
             </NavigationContainer>
           </AuthProvider>
