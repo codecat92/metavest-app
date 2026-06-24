@@ -236,7 +236,7 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
         >
           <GlassCard elevation={2} style={fcStyles.card}>
             <View style={[fcStyles.iconWrap, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-              <f.Icon size={28} color="#FFFFFF" strokeWidth={1.5} />
+              <f.Icon size={28} color="#8B5CF6" strokeWidth={1.5} />
             </View>
             <View style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold', color: c.text.primary, textAlign: 'center' }}>
