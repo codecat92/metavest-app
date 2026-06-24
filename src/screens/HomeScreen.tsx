@@ -9,7 +9,7 @@ import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
 import { newsApi } from '@/api/news';
-import { colors, useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -388,6 +388,7 @@ const newsStyles = StyleSheet.create({
 export default function HomeScreen() {
   const { user } = useAuth();
   const colors = useColors();
+  const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<any>();
 
@@ -410,7 +411,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
-      <BackgroundGlow />
+      {isDark && <BackgroundGlow />}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
