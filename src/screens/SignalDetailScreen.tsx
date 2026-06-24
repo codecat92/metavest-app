@@ -1,15 +1,16 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, Linking
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
-  Share2, Zap, Clock, Shield, Target, Eye
+  Share2, Zap, Clock, Shield, Target, Eye, ExternalLink
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '@/api/signals';
+import { settingsApi } from '@/api/settings';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
@@ -38,6 +39,13 @@ export default function SignalDetailScreen() {
   const [liked, setLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(0);
   const [executing, setExecuting] = useState(false);
+  const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
+
+  useEffect(() => {
+    settingsApi.getTradeUrl().then(res => {
+      if (res.data?.url) setTradeUrl(res.data.url);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -209,6 +217,13 @@ export default function SignalDetailScreen() {
         <TouchableOpacity onPress={handleShare} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
           <Share2 size={20} color={colors.text.secondary} />
           <Text style={[styles.actionText, { color: colors.text.secondary }]}>Share</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => Linking.openURL(tradeUrl)}
+          style={[styles.actionBtn, { backgroundColor: colors.accent.gold }]}
+        >
+          <ExternalLink size={16} color="#1A1A2E" />
+          <Text style={[styles.actionText, { color: '#1A1A2E' }]}>Trade Now</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleExecute}

@@ -1,15 +1,16 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, Linking
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
-  Clock, Shield, Copy, Eye
+  Clock, Shield, Copy, Eye, ExternalLink
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
+import { settingsApi } from '@/api/settings';
 import { getToken } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
@@ -43,6 +44,7 @@ export default function SignalScreen() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
 
   const loadSignals = useCallback(async () => {
     try {
@@ -64,6 +66,9 @@ export default function SignalScreen() {
     useCallback(() => {
       setLoading(true);
       loadSignals();
+      settingsApi.getTradeUrl().then(res => {
+        if (res.data?.url) setTradeUrl(res.data.url);
+      }).catch(() => {});
     }, [loadSignals])
   );
 
@@ -260,6 +265,24 @@ export default function SignalScreen() {
                         ) : null}
                       </View>
                     )}
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.md }}>
+                      <TouchableOpacity
+                        onPress={() => Linking.openURL(tradeUrl)}
+                        activeOpacity={0.8}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', gap: 6,
+                          backgroundColor: colors.accent.gold,
+                          paddingHorizontal: space.md, paddingVertical: space.sm,
+                          borderRadius: radius.sm,
+                        }}
+                      >
+                        <ExternalLink size={13} color="#1A1A2E" />
+                        <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1A2E', fontFamily: 'Manrope-Bold' }}>
+                          Trade Now
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   <TouchableOpacity
