@@ -138,18 +138,18 @@ function MarqueeMarkets() {
       }}>
         {doubled.map((m, idx) => (
           <View key={`${m.pair}-${idx}`} style={[styles.marketCard, { backgroundColor: c.glass.g2, borderColor: c.glass.border }]}>
-            <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
+            <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-Bold' }]}>
               {m.pair}
             </Text>
-            <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
+            <Text style={[typography.priceSmall, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>
               {m.price}
             </Text>
             <View style={styles.marketChangeRow}>
               {m.up
-                ? <TrendingUp size={12} color={colors.semantic.positive} />
-                : <TrendingDown size={12} color={colors.semantic.negative} />
+                ? <TrendingUp size={12} color={c.semantic.positive} />
+                : <TrendingDown size={12} color={c.semantic.negative} />
               }
-              <Text style={[typography.caption, { color: m.up ? colors.semantic.positive : colors.semantic.negative, fontWeight: '700' }]}>
+              <Text style={[typography.caption, { color: m.up ? c.semantic.positive : c.semantic.negative, fontWeight: '700' }]}>
                 {m.change}
               </Text>
             </View>
@@ -209,6 +209,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
 
 // KOMPONEN: FeatureCards — Dua kartu fitur (Copy Trading + PAMM)
 function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
+  const c = useColors();
   const features = [
     {
       label: 'Copy Trading',
@@ -235,14 +236,14 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
         >
           <GlassCard elevation={2} style={fcStyles.card}>
             <View style={fcStyles.iconWrap}>
-              <f.Icon size={28} color={colors.accent.purple} strokeWidth={1.5} />
+              <f.Icon size={28} color={c.accent.purple} strokeWidth={1.5} />
             </View>
             <View style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold', color: colors.text.primary, textAlign: 'center' }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold', color: c.text.primary, textAlign: 'center' }}>
                 {f.label}
               </Text>
             </View>
-            <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
+            <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
               {f.desc}
             </Text>
           </GlassCard>
@@ -295,6 +296,7 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
 
 // KOMPONEN: AnimatedNewsFeed — Daftar berita dengan animasi scroll vertikal otomatis
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
+  const d = useColors();
   const translateY = useRef(new Animated.Value(0)).current;
   const [items, setItems] = useState<{ title: string; time: string; tag: string }[]>([]);
 
@@ -337,7 +339,7 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const doubled = [...displayItems, ...displayItems];
 
   const renderItem = (item: { title: string; time: string; tag: string }, key: number) => {
-    const tagColor = tagColors[item.tag] ?? colors.text.secondary;
+    const tagColor = tagColors[item.tag] ?? d.text.secondary;
     return (
       <View key={key} style={newsStyles.item}>
         <View style={[newsStyles.tag, {
@@ -347,8 +349,8 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
           <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={newsStyles.title} numberOfLines={2}>{item.title}</Text>
-          <Text style={newsStyles.time}>{item.time}</Text>
+          <Text style={[newsStyles.title, { color: d.text.primary }]} numberOfLines={2}>{item.title}</Text>
+          <Text style={[newsStyles.time, { color: d.text.secondary }]}>{item.time}</Text>
         </View>
       </View>
     );
@@ -461,8 +463,8 @@ export default function HomeScreen() {
               { label: 'SIGNALS', value: '0 Active' },
             ].map((s) => (
               <View key={s.label}>
-                <Text style={styles.statLabel}>{s.label}</Text>
-                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={[styles.statLabel, { color: colors.text.muted }]}>{s.label}</Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
               </View>
             ))}
           </View>
