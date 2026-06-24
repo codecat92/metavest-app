@@ -65,6 +65,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     });
     loopRef.current = anim;
     anim.start(() => {
+      if (isDragging.current) return;
       offsetRef.current = fromOffset - remaining;
       startScroll(offsetRef.current);
     });
@@ -95,18 +96,20 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     onPanResponderGrant: () => {
       isDragging.current = true;
       if (loopRef.current) loopRef.current.stop();
-      translateX.extractOffset();
+      offsetRef.current = Number(JSON.stringify(translateX));
     },
     onPanResponderMove: (_, g) => {
-      const newX = Math.max(-(totalBanners * 2 - 1) * cardWidth, Math.min(cardWidth, g.dx));
-      translateX.setValue(newX);
+      const newX = offsetRef.current + g.dx;
+      const clamped = Math.max(
+        -(totalBanners * 2 - 1) * cardWidth,
+        Math.min(0, newX)
+      );
+      translateX.setValue(clamped);
     },
-    onPanResponderRelease: (_, g) => {
-      translateX.flattenOffset();
+    onPanResponderRelease: () => {
       isDragging.current = false;
-      const currentOffset = Number(JSON.stringify(translateX));
-      offsetRef.current = currentOffset;
-      startScroll(currentOffset, 0.3);
+      offsetRef.current = Number(JSON.stringify(translateX));
+      startScroll(offsetRef.current, 0.3);
     },
   })).current;
 
