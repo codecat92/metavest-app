@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { authApi } from '@/api/auth';
 import { otpApi } from '@/api/otp';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';

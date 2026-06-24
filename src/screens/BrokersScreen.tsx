@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Globe, Shield, ExternalLink } from 'lucide-react-native';
 import { brokerApi, Broker } from '@/api/brokers';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton, EmptyState } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

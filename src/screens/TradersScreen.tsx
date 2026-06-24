@@ -9,7 +9,7 @@ import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
 
 const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];

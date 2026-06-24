@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
 import { getToken } from '@/api/client';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';

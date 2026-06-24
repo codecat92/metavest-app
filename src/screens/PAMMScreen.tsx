@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Building2, ChevronRight } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail, PammBanner } from '@/api/pamm';
 import { getToken } from '@/api/client';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

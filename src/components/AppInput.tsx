@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
-import { useColors, radius, space, typography } from '@/theme';
+import { colors, useColors, radius, space, typography } from '@/theme';
 
 interface AppInputProps extends TextInputProps {
   label?: string;

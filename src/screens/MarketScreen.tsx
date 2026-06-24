@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { forexApi } from '@/api/forex';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

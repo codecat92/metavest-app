@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { profileApi } from '@/api/profile';
 import { getToken } from '@/api/client';
-import { useColors, useTheme, space, radius, typography } from '@/theme';
+import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';

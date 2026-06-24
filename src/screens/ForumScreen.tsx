@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { forumApi, ForumPost, ForumComment } from '@/api/forum';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

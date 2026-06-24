@@ -12,7 +12,7 @@ import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
-import { useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
 
 export default function PortfolioScreen() {

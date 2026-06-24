@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { useColors, radius, space, typography } from '@/theme';
+import { colors, useColors, radius, space, typography } from '@/theme';
 
 interface Props {
   visible: boolean;
