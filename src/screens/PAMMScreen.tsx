@@ -74,6 +74,15 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     return () => { if (loopRef.current) loopRef.current.stop(); };
   }, [totalBanners, startScroll]);
 
+  // Restart animation when returning to this screen
+  useFocusEffect(
+    useCallback(() => {
+      if (totalBanners <= 1) return;
+      const currentOffset = Number(JSON.stringify(translateX));
+      startScroll(currentOffset);
+    }, [totalBanners, startScroll, translateX])
+  );
+
   // Track which dot is active
   useEffect(() => {
     const id = translateX.addListener(({ value }) => {
