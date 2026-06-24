@@ -162,7 +162,7 @@ export default function SignalScreen() {
                   key={signal.id}
                   activeOpacity={0.9}
                   onPress={() => navigation.navigate('SignalDetail', { signalId: signal.id })}
-                  style={[styles.cardOuter, expanded && { borderColor: colors.glass.borderStrong }]}
+                  style={[styles.cardOuter, { borderColor: colors.glass.borderStrong }, expanded && { borderColor: colors.glass.borderStrong }]}
                 >
                   <View style={styles.cardInner}>
                     <View style={styles.traderRow}>
