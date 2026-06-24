@@ -274,17 +274,18 @@ const tagColors: Record<string, string> = {
 
 // KOMPONEN: AcademyCard — Kartu promo Metavest Academy dengan tombol CTA
 function AcademyCard({ onPress }: { onPress: () => void }) {
+  const c = useColors();
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
-      <GlassCard elevation={3} style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.25)' }}>
-        <View style={acStyles.iconWrap}>
-          <GraduationCap size={24} color={colors.accent.gold} strokeWidth={1.5} />
+      <GlassCard elevation={3} style={{ backgroundColor: c.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }}>
+        <View style={[acStyles.iconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+          <GraduationCap size={24} color="#FFFFFF" strokeWidth={1.5} />
         </View>
         <View style={acStyles.textWrap}>
-          <Text style={[typography.h3, { color: colors.accent.goldLight, fontFamily: 'Manrope-Bold' }]}>
+          <Text style={[typography.h3, { color: c.bg.primary, fontFamily: 'Manrope-Bold' }]}>
             Metavest Academy
           </Text>
-          <Text style={[typography.body, { color: 'rgba(208,200,160,0.7)', marginTop: space.sm }]}>
+          <Text style={[typography.body, { color: c.bg.primary, marginTop: space.sm, opacity: 0.8 }]}>
             Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro, learn at your own pace!
           </Text>
         </View>
@@ -595,7 +596,6 @@ const fcStyles = StyleSheet.create({
 const acStyles = StyleSheet.create({
   iconWrap: {
     width: 48, height: 48, borderRadius: radius.lg, marginBottom: space.md,
-    backgroundColor: 'rgba(212,175,55,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
   textWrap: { marginBottom: space.lg },
