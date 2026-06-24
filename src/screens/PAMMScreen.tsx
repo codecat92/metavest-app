@@ -50,6 +50,9 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
+  const activeBanners = banners.filter(b => b.is_active == 1);
+  const totalBanners = activeBanners.length;
+
   // Auto-scroll effect
   useEffect(() => {
     if (totalBanners <= 1) return;
@@ -96,8 +99,6 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
       }).start();
     },
   })).current;
-
-  const activeBanners = banners.filter(b => b.is_active == 1);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
