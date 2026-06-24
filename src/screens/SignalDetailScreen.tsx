@@ -149,7 +149,7 @@ export default function SignalDetailScreen() {
         </View>
 
         {/* Price Card */}
-        <View style={styles.priceCard}>
+        <View style={[styles.priceCard, { backgroundColor: colors.glass.g2, borderColor: colors.glass.borderStrong }]}>
           <View style={styles.priceRow}>
             {[
               { label: 'Entry', value: signal.open_price ?? '-', color: colors.text.primary },
@@ -157,7 +157,7 @@ export default function SignalDetailScreen() {
               { label: 'Stop Loss', value: signal.stop_loss ?? '-', color: colors.semantic.negative },
             ].map((p) => (
               <View key={p.label} style={styles.priceItem}>
-                <Text style={styles.priceLabel}>{p.label}</Text>
+                <Text style={[styles.priceLabel, { color: colors.text.secondary }]}>{p.label}</Text>
                 <Text style={[styles.priceValue, { color: p.color }]}>{p.value}</Text>
               </View>
             ))}
@@ -174,9 +174,9 @@ export default function SignalDetailScreen() {
             { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: colors.text.secondary },
             { icon: Clock, label: 'Risk/Trade', value: `${signal.risk_per_one_trade ?? '-'}%`, color: '#F7C948' },
           ].map((s) => (
-            <View key={s.label} style={styles.statItem}>
+            <View key={s.label} style={[styles.statItem, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
               <s.icon size={14} color={s.color} />
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
             </View>
           ))}
