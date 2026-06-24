@@ -10,7 +10,7 @@ import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AlertProvider } from '@/context/AlertContext';
-import { colors } from '@/theme';
+import { ThemeProvider, colors } from '@/theme';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 
 import LoginScreen from '@/screens/LoginScreen';
@@ -149,12 +149,14 @@ export default function App() {
     <View style={styles.root} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <AlertProvider>
+          <ThemeProvider>
           <AuthProvider>
             <NavigationContainer>
               <StatusBar style="light" />
               <RootNavigator />
             </NavigationContainer>
           </AuthProvider>
+          </ThemeProvider>
         </AlertProvider>
       </SafeAreaProvider>
     </View>

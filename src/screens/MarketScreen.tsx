@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Rect, Text as SvgText } from 'react-native-svg';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { forexApi } from '@/api/forex';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -28,6 +28,7 @@ type MarketProps = NativeStackScreenProps<RootStackParamList, 'Market'>;
 
 export default function MarketScreen({ navigation }: MarketProps) {
   const { width: screenWidth } = useWindowDimensions();
+  const colors = useColors();
   const chartW = screenWidth - space['2xl'] * 2 - space.md * 2;
   const chartH = 200;
   const cw = chartW - CHART_PADDING.L - CHART_PADDING.R;
@@ -124,7 +125,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
   })).current;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, type ViewStyle } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, space, typography } from '@/theme';
+import { useColors, space, typography } from '@/theme';
 
 interface AppHeaderProps {
   title: string;
@@ -13,6 +13,7 @@ interface AppHeaderProps {
 
 export default function AppHeader({ title, subtitle, onBack, right, style }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
+  const colors = useColors();
 
   return (
     <View

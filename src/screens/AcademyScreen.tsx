@@ -9,7 +9,7 @@ import {
   ArrowLeft, Book, Play, FileText, ChevronRight, GraduationCap
 } from 'lucide-react-native';
 import { academyApi, Academy, AcademyClass, AcademyArticle, AcademyLivestream } from '@/api/academy';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ type AcademyProps = NativeStackScreenProps<RootStackParamList, 'Academy'>;
 
 export default function AcademyScreen({ navigation }: AcademyProps) {
   const [academies, setAcademies] = useState<Academy[]>([]);
+  const colors = useColors();
   const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [articles, setArticles] = useState<AcademyArticle[]>([]);
   const [livestreams, setLivestreams] = useState<AcademyLivestream[]>([]);
@@ -55,7 +56,7 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

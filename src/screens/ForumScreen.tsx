@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { forumApi, ForumPost, ForumComment } from '@/api/forum';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,6 +25,7 @@ interface PostCommentState {
 
 export default function ForumScreen({ navigation }: ForumProps) {
   const alert = useCustomAlert();
+  const colors = useColors();
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -133,7 +134,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
 
   if (!getToken()) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <AppHeader title="Forum" onBack={() => navigation.goBack()} />
         <EmptyState
           icon={<MessageCircle size={40} color={colors.text.secondary} />}
@@ -145,7 +146,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <AppHeader
           title="Forum"

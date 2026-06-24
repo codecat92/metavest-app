@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail } from '@/api/pamm';
 import { getToken } from '@/api/client';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -20,6 +20,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PAMMDetail'>;
 
 export default function PAMMDetailScreen({ navigation, route }: Props) {
   const STAGING_HOST = 'http://157.66.4.40:8081';
+  const colors = useColors();
   const { brokerId } = route.params;
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
@@ -59,7 +60,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
 
   if (!broker) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ArrowLeft size={20} color={colors.text.secondary} />
@@ -80,7 +81,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const description = detail.description ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

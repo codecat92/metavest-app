@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Clock, User, FileText } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -13,12 +13,13 @@ const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 
 export default function ArticleDetailScreen() {
   const route = useRoute<any>();
+  const colors = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const article = route.params?.article;
 
   if (!article) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: 200, textAlign: 'center' }]}>
           Article not found
         </Text>
@@ -33,7 +34,7 @@ export default function ArticleDetailScreen() {
     : null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

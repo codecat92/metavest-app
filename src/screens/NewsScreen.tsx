@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Search, Clock } from 'lucide-react-native';
 import { newsApi, Article } from '@/api/news';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ type NewsProps = NativeStackScreenProps<RootStackParamList, 'News'>;
 
 export default function NewsScreen({ navigation }: NewsProps) {
   const [articles, setArticles] = useState<Article[]>([]);
+  const colors = useColors();
   const [academy, setAcademy] = useState<Article[]>([]);
   const [globalNews, setGlobalNews] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +83,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

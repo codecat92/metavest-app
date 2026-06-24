@@ -1,5 +1,5 @@
 import { View, Text, type ViewStyle } from 'react-native';
-import { colors, radius, space } from '@/theme';
+import { useColors, radius, space } from '@/theme';
 
 type BadgeVariant = 'success' | 'danger' | 'warning' | 'info' | 'neutral';
 
@@ -20,6 +20,7 @@ const variantStyles: Record<BadgeVariant, { bg: string; border: string; text: st
 
 export default function Badge({ label, variant = 'neutral', icon, style }: BadgeProps) {
   const s = variantStyles[variant];
+  const colors = useColors();
 
   return (
     <View

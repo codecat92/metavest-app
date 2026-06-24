@@ -10,13 +10,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { authApi } from '@/api/auth';
 import { otpApi } from '@/api/otp';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function OTPScreen() {
   const route = useRoute<any>();
+  const colors = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const { login } = useAuth();
@@ -64,7 +65,7 @@ export default function OTPScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
         <ArrowLeft size={20} color={colors.text.secondary} />
       </TouchableOpacity>

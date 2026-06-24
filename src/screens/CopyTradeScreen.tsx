@@ -12,7 +12,7 @@ import {
 import { copytradeApi, Mt5Account } from '@/api/copytrade';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, Badge, EmptyState } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -21,6 +21,7 @@ type CopyTradeProps = NativeStackScreenProps<RootStackParamList, 'CopyTrade'>;
 
 export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const alert = useCustomAlert();
+  const colors = useColors();
   const [subscriber, setSubscriber] = useState<Mt5Account | null>(null);
   const [mt5Account, setMt5Account] = useState<any>(null);
   const [positions, setPositions] = useState<any>(null);
@@ -93,14 +94,14 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
 
   if (!getToken()) {
     return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <View style={styles.center}><Text style={styles.centerText}>Login to use Copy Trading</Text></View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

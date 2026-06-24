@@ -9,13 +9,14 @@ import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
 
 const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
 
 export default function TradersScreen() {
   const [traders, setTraders] = useState<UserTrader[]>([]);
+  const colors = useColors();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
@@ -84,14 +85,14 @@ export default function TradersScreen() {
 
   if (!getToken()) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <EmptyState icon={<Search size={40} color={colors.text.secondary} />} title="Login to see traders" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>

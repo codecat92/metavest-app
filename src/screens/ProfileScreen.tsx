@@ -8,13 +8,13 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker';
 import {
   Shield, Bell, LogOut,
-  Star, Award, Mail, Phone, Hash, Camera
+  Star, Award, Mail, Phone, Hash, Camera, Sun, Moon
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { profileApi } from '@/api/profile';
 import { getToken } from '@/api/client';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -30,6 +30,8 @@ const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 
 export default function ProfileScreen({ navigation }: { navigation: ProfileNavProp }) {
   const { logout, user, refreshUser } = useAuth();
+  const colors = useColors();
+  const { isDark, toggle: toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
   const [uploading, setUploading] = useState(false);
   const alert = useCustomAlert();
@@ -108,7 +110,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={{ paddingHorizontal: space['2xl'], paddingTop: space['2xl'] }}>
           <GlassCard elevation={3}>
@@ -164,6 +166,33 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
         </View>
 
         <View style={styles.section}>
+          <TouchableOpacity onPress={toggleTheme} activeOpacity={0.7} style={{ marginBottom: space.xl }}>
+            <GlassCard elevation={2}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <View style={styles.settingsIconWrap}>
+                  {isDark
+                    ? <Moon size={15} color={colors.accent.purple} />
+                    : <Sun size={15} color={colors.accent.purple} />
+                  }
+                </View>
+                <Text style={[typography.body, { color: colors.text.primary, flex: 1, fontFamily: 'DMSans-SemiBold' }]}>
+                  Appearance
+                </Text>
+                <View style={{
+                  width: 52, height: 28, borderRadius: 14,
+                  backgroundColor: isDark ? colors.accent.purple : 'rgba(0,0,0,0.12)',
+                  justifyContent: 'center', paddingHorizontal: 3,
+                }}>
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 11,
+                    backgroundColor: '#fff',
+                    alignSelf: isDark ? 'flex-end' : 'flex-start',
+                  }} />
+                </View>
+              </View>
+            </GlassCard>
+          </TouchableOpacity>
+
           {settingsGroups.map((group) => (
             <View key={group.title} style={{ marginBottom: space.lg }}>
               <Text style={[typography.label, { color: colors.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-Bold' }]}>

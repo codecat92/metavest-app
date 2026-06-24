@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { colors, radius, space, typography } from '@/theme';
+import { useColors, radius, space, typography } from '@/theme';
 
 interface Props {
   visible: boolean;
@@ -12,6 +12,7 @@ interface Props {
 
 export default function MetavestAlert({ visible, title, message, type = 'info', onClose }: Props) {
   const accentColor = type === 'success' ? colors.semantic.positive : type === 'error' ? colors.semantic.negative : colors.accent.purple;
+  const colors = useColors();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

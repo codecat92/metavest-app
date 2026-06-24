@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '@/api/signals';
 import { useCustomAlert } from '@/context/AlertContext';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +29,7 @@ const signalTypeNames: Record<number, string> = {
 
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
+  const colors = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const signalId: number = route.params?.signalId;
@@ -97,7 +98,7 @@ export default function SignalDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 200 }} />
       </SafeAreaView>
     );
@@ -105,7 +106,7 @@ export default function SignalDetailScreen() {
 
   if (!signal) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <View style={{ marginTop: 200, alignItems: 'center' }}>
           <Text style={{ color: colors.text.secondary }}>Signal not found</Text>
         </View>
@@ -120,7 +121,7 @@ export default function SignalDetailScreen() {
     : parseFloat(signal.risk_per_one_trade ?? '0') <= 1 ? 'Medium' : 'High';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>

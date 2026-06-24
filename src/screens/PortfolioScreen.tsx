@@ -12,11 +12,12 @@ import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
 
 export default function PortfolioScreen() {
   const alert = useCustomAlert();
+  const colors = useColors();
   const { user } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [otpId, setOtpId] = useState('');
@@ -59,14 +60,14 @@ export default function PortfolioScreen() {
 
   if (!getToken()) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <EmptyState icon={<WalletIcon size={40} color={colors.text.secondary} />} title="Login to see portfolio" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>

@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Building2, ChevronRight } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail, PammBanner } from '@/api/pamm';
 import { getToken } from '@/api/client';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
 
 export default function PAMMScreen({ navigation }: PAMMProps) {
   const STAGING_HOST = 'http://157.66.4.40:8081';
+  const colors = useColors();
   const { width: screenWidth } = useWindowDimensions();
   const [banners, setBanners] = useState<PammBanner[]>([]);
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
@@ -105,7 +106,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   }, [startScroll, translateX]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

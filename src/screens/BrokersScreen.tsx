@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Globe, Shield, ExternalLink } from 'lucide-react-native';
 import { brokerApi, Broker } from '@/api/brokers';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton, EmptyState } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -16,6 +16,7 @@ type BrokersProps = NativeStackScreenProps<RootStackParamList, 'Brokers'>;
 
 export default function BrokersScreen({ navigation }: BrokersProps) {
   const [brokers, setBrokers] = useState<Broker[]>([]);
+  const colors = useColors();
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -34,7 +35,7 @@ export default function BrokersScreen({ navigation }: BrokersProps) {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { colors, space, typography } from '@/theme';
+import { useColors, space, typography } from '@/theme';
 import AppButton from './AppButton';
 
 interface EmptyStateProps {

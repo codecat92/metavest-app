@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Calendar, Star, Globe } from 'lucide-react-native';
 import { api, ApiResponse } from '@/api/client';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,6 +27,7 @@ type EconProps = NativeStackScreenProps<RootStackParamList, 'EconomicsCalendar'>
 
 export default function EconomicsCalendarScreen({ navigation }: EconProps) {
   const [events, setEvents] = useState<EconEvent[]>([]);
+  const colors = useColors();
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -69,7 +70,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

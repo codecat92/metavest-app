@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bell, MessageCircle } from 'lucide-react-native';
 import { notificationApi, Notification } from '@/api/notifications';
 import { getToken } from '@/api/client';
-import { colors, space, radius, typography } from '@/theme';
+import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +17,7 @@ type NotifProps = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
 export default function NotificationsScreen({ navigation }: NotifProps) {
   const [notifs, setNotifs] = useState<Notification[]>([]);
+  const colors = useColors();
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -37,14 +38,14 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
 
   if (!getToken()) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
         <EmptyState icon={<Bell size={40} color={colors.text.secondary} />} title="Login to see notifications" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
