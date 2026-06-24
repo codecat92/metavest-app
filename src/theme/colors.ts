@@ -36,8 +36,8 @@ const dark = {
 
 const light = {
   bg: {
-    primary: '#F5F5F7',
-    deep: '#E8E8ED',
+    primary: '#F0F4FF',
+    deep: '#E8EDF8',
     elevated: '#FFFFFF',
   },
   accent: {
@@ -46,27 +46,27 @@ const light = {
     purple: '#8B5CF6',
   },
   text: {
-    primary: '#1D1D1F',
-    secondary: '#6E6E73',
-    muted: '#86868B',
+    primary: '#0E1439',
+    secondary: '#475569',
+    muted: '#94A3B8',
   },
   semantic: {
-    positive: '#22C55E',
+    positive: '#15803D',
     negative: '#DC2626',
-    warning: '#D97706',
-    info: '#3B82F6',
+    warning: '#B45309',
+    info: '#1D4ED8',
   },
   glass: {
     g1: '#FFFFFF',
     g2: '#FFFFFF',
     g3: '#FFFFFF',
     g4: '#FFFFFF',
-    border: '#E8E8ED',
-    borderStrong: '#D2D2D7',
+    border: 'rgba(14,20,57,0.08)',
+    borderStrong: 'rgba(14,20,57,0.15)',
   },
   overlay: {
-    modal: 'rgba(0,0,0,0.40)',
-    backdrop: 'rgba(0,0,0,0.25)',
+    modal: 'rgba(14,20,57,0.65)',
+    backdrop: 'rgba(14,20,57,0.45)',
   },
 };
 

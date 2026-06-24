@@ -43,12 +43,13 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function TabNavigator() {
+  const { isDark } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'rgba(14,20,57,0.92)',
+          backgroundColor: isDark ? 'rgba(14,20,57,0.92)' : '#E8EDF8',
           borderTopWidth: 0,
           elevation: 0,
           shadowOpacity: 0,

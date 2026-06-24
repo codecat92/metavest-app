@@ -25,11 +25,12 @@ export default function AppInput({
   ...rest
 }: AppInputProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const c = useColors();
 
   return (
     <View style={[{ marginBottom: space.lg }, containerStyle]}>
       {label && (
-        <Text style={[typography.label, { color: colors.text.secondary }]}>{label}</Text>
+        <Text style={[typography.label, { color: c.text.secondary }]}>{label}</Text>
       )}
       <View style={[
         {
@@ -38,9 +39,9 @@ export default function AppInput({
           height: 52,
           borderRadius: radius.md,
           paddingHorizontal: space.lg,
-          backgroundColor: colors.glass.g1,
+          backgroundColor: c.glass.g1,
           borderWidth: 1,
-          borderColor: error ? colors.semantic.negative : colors.glass.border,
+          borderColor: error ? c.semantic.negative : c.glass.borderStrong,
           marginTop: label ? space.sm : 0,
         },
       ]}>
@@ -48,28 +49,28 @@ export default function AppInput({
           style={[
             {
               flex: 1,
-              color: colors.text.primary,
+              color: c.text.primary,
               fontSize: 15,
               fontFamily: 'DMSans',
             },
             style,
           ]}
-          placeholderTextColor={colors.text.secondary}
+          placeholderTextColor={c.text.secondary}
           secureTextEntry={secureTextEntry ? showPassword : false}
           {...rest}
         />
         {secureTextEntry && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             {showPassword ? (
-              <EyeOff size={18} color={colors.text.secondary} />
+              <EyeOff size={18} color={c.text.secondary} />
             ) : (
-              <Eye size={18} color={colors.text.secondary} />
+              <Eye size={18} color={c.text.secondary} />
             )}
           </TouchableOpacity>
         )}
       </View>
       {error && (
-        <Text style={{ color: colors.semantic.negative, fontSize: 12, marginTop: 4 }}>
+        <Text style={{ color: c.semantic.negative, fontSize: 12, marginTop: 4 }}>
           {error}
         </Text>
       )}

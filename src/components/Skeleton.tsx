@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Animated, type ViewStyle } from 'react-native';
-import { radius } from '@/theme';
+import { useColors, radius } from '@/theme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -10,6 +10,7 @@ interface SkeletonProps {
 }
 
 export default function Skeleton({ width = '100%', height = 20, borderRadius: br = radius.md, style }: SkeletonProps) {
+  const c = useColors();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function Skeleton({ width = '100%', height = 20, borderRadius: br
           width: width as ViewStyle['width'],
           height,
           borderRadius: br,
-          backgroundColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: c.glass.g2,
           opacity,
         },
         style,
