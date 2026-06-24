@@ -1,8 +1,9 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, useWindowDimensions, Image
+  TouchableOpacity, ActivityIndicator, useWindowDimensions, Image,
+  Animated, PanResponder
 } from 'react-native';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Building2, ChevronRight } from 'lucide-react-native';
@@ -22,7 +23,12 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerIdx, setBannerIdx] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
+  const cardWidth = screenWidth - space['2xl'] * 2 + space.md;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isDragging = useRef(false);
+  const autoInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentIdx = useRef(0);
+  const dragStartX = useRef(0);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -43,6 +49,53 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   useFocusEffect(
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (totalBanners <= 1) return;
+    if (autoInterval.current) clearInterval(autoInterval.current);
+    autoInterval.current = setInterval(() => {
+      if (!isDragging.current) {
+        const next = (currentIdx.current + 1) % totalBanners;
+        currentIdx.current = next;
+        setBannerIdx(next);
+        Animated.timing(translateX, {
+          toValue: -next * cardWidth,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }
+    }, 3000);
+    return () => { if (autoInterval.current) clearInterval(autoInterval.current); };
+  }, [totalBanners, cardWidth]);
+
+  const panResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10,
+    onPanResponderGrant: () => {
+      isDragging.current = true;
+      translateX.extractOffset();
+      dragStartX.current = Number(JSON.stringify(translateX));
+    },
+    onPanResponderMove: (_, g) => {
+      const newX = Math.max(-(totalBanners - 1) * cardWidth, Math.min(0, g.dx));
+      translateX.setValue(newX);
+    },
+    onPanResponderRelease: (_, g) => {
+      translateX.flattenOffset();
+      isDragging.current = false;
+      const clamped = Math.max(0, Math.min(totalBanners - 1, Math.round(Math.abs(g.dx) > 50
+        ? (g.dx < 0 ? currentIdx.current + 1 : currentIdx.current - 1)
+        : currentIdx.current)));
+      currentIdx.current = clamped;
+      setBannerIdx(clamped);
+      Animated.timing(translateX, {
+        toValue: -clamped * cardWidth,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    },
+  })).current;
 
   const activeBanners = banners.filter(b => b.is_active == 1);
 
@@ -69,36 +122,31 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
             {/* Banner Carousel */}
             {activeBanners.length > 0 && (
               <View style={styles.carouselWrap}>
-                <ScrollView
-                  ref={scrollRef}
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  onMomentumScrollEnd={(e) => {
-                    const idx = Math.round(e.nativeEvent.contentOffset.x / (screenWidth - space['2xl'] * 2));
-                    setBannerIdx(idx % activeBanners.length);
-                  }}
-                  style={styles.carousel}
-                >
-                  {activeBanners.map((b, i) => (
-                    <View key={b.id} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
-                      {b.image_url ? (
-                        <Image
-                          source={{ uri: STAGING_HOST + b.image_url }}
-                          style={styles.bannerImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles.bannerPlaceholder}>
-                          <Building2 size={48} color="rgba(139,92,246,0.3)" />
-                        </View>
-                      )}
-                      {b.title ? (
-                        <Text style={styles.bannerTitle}>{b.title}</Text>
-                      ) : null}
-                    </View>
-                  ))}
-                </ScrollView>
+                <View style={{ overflow: 'hidden', paddingLeft: space['2xl'] }}>
+                  <Animated.View
+                    style={[styles.carouselTrack, { transform: [{ translateX }] }]}
+                    {...panResponder.panHandlers}
+                  >
+                    {activeBanners.map((b) => (
+                      <View key={b.id} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
+                        {b.image_url ? (
+                          <Image
+                            source={{ uri: STAGING_HOST + b.image_url }}
+                            style={styles.bannerImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles.bannerPlaceholder}>
+                            <Building2 size={48} color="rgba(139,92,246,0.3)" />
+                          </View>
+                        )}
+                        {b.title ? (
+                          <Text style={styles.bannerTitle}>{b.title}</Text>
+                        ) : null}
+                      </View>
+                    ))}
+                  </Animated.View>
+                </View>
                 {activeBanners.length > 1 && (
                   <View style={styles.dots}>
                     {activeBanners.map((_, i) => (
@@ -172,7 +220,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   carouselWrap: { marginBottom: space['2xl'] },
-  carousel: { paddingLeft: space['2xl'] },
+  carouselTrack: {
+    flexDirection: 'row',
+  },
   bannerCard: {
     height: 180, borderRadius: radius.xl, marginRight: space.md,
     backgroundColor: colors.glass.g2,
