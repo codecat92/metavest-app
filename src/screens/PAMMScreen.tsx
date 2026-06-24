@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bannerCard: {
-    height: 180, borderRadius: radius.xl, marginRight: space.md,
+    height: 220, borderRadius: 15, marginRight: space.md,
     backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.borderStrong,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
