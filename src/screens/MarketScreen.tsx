@@ -180,7 +180,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
               </View>
             </View>
 
-            <View style={styles.chartWrap} {...panResponder.panHandlers}>
+            <View style={[styles.chartWrap, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]} {...panResponder.panHandlers}>
               <Svg width={chartW} height={chartH}>
                 <Defs>
                   <LinearGradient id="mktGrad" x1="0" y1="0" x2="0" y2="1">
@@ -224,7 +224,7 @@ export default function MarketScreen({ navigation }: MarketProps) {
                 { label: 'Low', value: l.toFixed(4), color: colors.semantic.negative },
                 { label: 'Close', value: c.toFixed(4), color: accent },
               ].map(s => (
-                <View key={s.label} style={styles.statItem}>
+                <View key={s.label} style={[styles.statItem, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
                   <Text style={[typography.label, { color: colors.text.secondary }]}>
                     {s.label}
                   </Text>

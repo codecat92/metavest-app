@@ -75,6 +75,7 @@ interface MarketItem {
 
 // KOMPONEN: MarqueeMarkets — Karusel kartu pasar forex yang bergerak otomatis
 function MarqueeMarkets() {
+  const c = useColors();
   const [items, setItems] = useState<MarketItem[]>(majorPairs.map(p => ({ pair: p, price: '-.--', change: '--', up: true })));
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -136,7 +137,7 @@ function MarqueeMarkets() {
         paddingLeft: space['2xl'],
       }}>
         {doubled.map((m, idx) => (
-          <View key={`${m.pair}-${idx}`} style={styles.marketCard}>
+          <View key={`${m.pair}-${idx}`} style={[styles.marketCard, { backgroundColor: c.glass.g2, borderColor: c.glass.border }]}>
             <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
               {m.pair}
             </Text>
@@ -163,6 +164,7 @@ function MarqueeMarkets() {
 // KOMPONEN: QuickActions — Grid 4 tombol aksi cepat dengan animasi glow
 function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
+  const c = useColors();
 
   useEffect(() => {
     const len = actions.length;
@@ -188,11 +190,11 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
             key={a.label}
             onPress={() => onNavigate(a.screen)}
             activeOpacity={0.8}
-            style={[styles.actionBtn, isGlowing && styles.actionBtnGlow]}
+            style={[styles.actionBtn, { backgroundColor: c.glass.g1, borderColor: c.glass.border }, isGlowing && styles.actionBtnGlow]}
           >
             <a.Icon size={20} color={isGlowing ? colors.accent.gold : colors.accent.purple} strokeWidth={1.8} />
             <Text style={[typography.label, {
-              color: isGlowing ? colors.accent.gold : colors.text.secondary,
+              color: isGlowing ? colors.accent.gold : c.text.secondary,
               marginTop: space.xs,
               fontFamily: 'DMSans-SemiBold',
             }]}>
