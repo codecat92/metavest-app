@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, Linking
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +21,7 @@ interface EconEvent {
   actual?: string;
   previous?: string;
   forecast?: string;
+  url?: string;
 }
 
 type EconProps = NativeStackScreenProps<RootStackParamList, 'EconomicsCalendar'>;
@@ -116,7 +117,13 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
                     <View style={styles.dayLine} />
                   </View>
                   {items.map((ev, idx) => (
-                    <GlassCard key={idx} elevation={2} style={{ marginBottom: 6 }}>
+                    <TouchableOpacity
+                      key={idx}
+                      activeOpacity={0.7}
+                      onPress={() => ev.url && Linking.openURL(ev.url)}
+                      style={{ marginBottom: 6 }}
+                    >
+                      <GlassCard elevation={2}>
                       <View style={{ flexDirection: 'row', gap: space.md }}>
                         <View style={{ alignItems: 'center', gap: 6, width: 52 }}>
                           <Text style={[typography.label, { color: colors.text.secondary }]}>
@@ -160,6 +167,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
                         </View>
                       </View>
                     </GlassCard>
+                    </TouchableOpacity>
                   ))}
                 </View>
               );
