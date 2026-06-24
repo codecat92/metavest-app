@@ -53,26 +53,23 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const totalWidth = totalBanners * cardWidth;
 
   // Start smooth auto-scroll (like MarqueeMarkets)
-  const startScroll = useCallback((fromOffset: number, durMultiplier = 1) => {
+  const startScroll = useCallback((fromOffset: number) => {
     if (loopRef.current) loopRef.current.stop();
-    const remaining = totalWidth - Math.abs(fromOffset % totalWidth);
-    const nextOffset = fromOffset - remaining;
-    const anim = Animated.timing(translateX, {
-      toValue: nextOffset,
-      duration: Math.max(remaining / cardWidth * 4000 * durMultiplier, 1000),
-      easing: Easing.linear,
-      useNativeDriver: true,
-    });
+    translateX.setValue(fromOffset);
+    const anim = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: fromOffset - totalWidth,
+        duration: (totalWidth / cardWidth) * 4000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
     loopRef.current = anim;
-    anim.start(() => {
-      if (pausedRef.current) return;
-      startScroll(nextOffset);
-    });
+    anim.start();
   }, [totalWidth, cardWidth, translateX]);
 
   useEffect(() => {
     if (totalBanners <= 1) return;
-    translateX.setValue(0);
     startScroll(0);
     return () => { if (loopRef.current) loopRef.current.stop(); };
   }, [totalBanners, startScroll]);
@@ -95,7 +92,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const handleTouchEnd = useCallback(() => {
     pausedRef.current = false;
     const currentOffset = Number(JSON.stringify(translateX));
-    startScroll(currentOffset, 0.3);
+    startScroll(currentOffset);
   }, [startScroll, translateX]);
 
   return (
