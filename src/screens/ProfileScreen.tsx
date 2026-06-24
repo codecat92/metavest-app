@@ -165,7 +165,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           </GlassCard>
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: space['2xl'] }]}>
           <TouchableOpacity onPress={toggleTheme} activeOpacity={0.7} style={{ marginBottom: space.xl }}>
             <GlassCard elevation={2}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
