@@ -57,7 +57,7 @@ function TabNavigator() {
           paddingBottom: 10,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: colors.accent.gold,
+        tabBarActiveTintColor: colors.accent.purple,
         tabBarInactiveTintColor: colors.text.secondary,
         tabBarLabelStyle: {
           fontSize: 11,
