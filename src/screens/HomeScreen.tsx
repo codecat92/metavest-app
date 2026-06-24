@@ -216,7 +216,7 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
     },
     {
       label: 'PAMM',
-      desc: 'Register broker for PAMM verification',
+      desc: 'Explore PAMM brokers',
       screen: 'pamm',
       Icon: Wallet,
     },

@@ -1,38 +1,37 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, TextInput
+  TouchableOpacity, ActivityIndicator, useWindowDimensions
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ArrowLeft, Building2, Shield, CheckCircle, Plus
-} from 'lucide-react-native';
-import { pammApi, PAMMEntry } from '@/api/pamm';
+import { ArrowLeft, Building2, ChevronRight } from 'lucide-react-native';
+import { pammApi, BrokerWithDetail, PammBanner } from '@/api/pamm';
 import { getToken } from '@/api/client';
-import { useCustomAlert } from '@/context/AlertContext';
-import { useAuth } from '@/context/AuthContext';
 import { colors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, AppInput, EmptyState, Badge, Skeleton } from '@/components';
+import { GlassCard, Skeleton, AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
 
 export default function PAMMScreen({ navigation }: PAMMProps) {
-  const { user } = useAuth();
-  const alert = useCustomAlert();
-  const [entries, setEntries] = useState<PAMMEntry[]>([]);
+  const { width: screenWidth } = useWindowDimensions();
+  const [banners, setBanners] = useState<PammBanner[]>([]);
+  const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [brokerId, setBrokerId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const res = await pammApi.getAll();
-      setEntries(res.data ?? []);
+      const [bRes, brRes] = await Promise.all([
+        pammApi.getBanners(),
+        pammApi.getBrokers(),
+      ]);
+      setBanners(bRes.data ?? []);
+      setBrokers(brRes.data ?? []);
     } catch (e) {
       console.log('PAMM load failed:', e);
     } finally {
@@ -44,32 +43,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
-  const handleAdd = async () => {
-    if (!brokerId.trim()) {
-      alert.showAlert({ title: 'Error', message: 'Broker ID is required', type: 'error' });
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await pammApi.create(brokerId.trim(), user?.name ?? '', 1);
-      alert.showAlert({ title: 'Success', message: 'PAMM broker registered', type: 'success' });
-      setShowAdd(false);
-      setBrokerId('');
-      loadData();
-    } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (!getToken()) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <EmptyState icon={<Shield size={40} color={colors.text.secondary} />} title="Login to see PAMM" />
-      </SafeAreaView>
-    );
-  }
+  const activeBanners = banners.filter(b => b.is_active == 1);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -79,91 +53,86 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <Text style={[typography.h2, { color: colors.text.primary, flex: 1, marginLeft: space.lg, fontFamily: 'Manrope-Bold' }]}>
-            PAMM
+            Trade Menu
           </Text>
-          <TouchableOpacity onPress={() => setShowAdd(!showAdd)} style={styles.addBtn}>
-            <Plus size={18} color={showAdd ? colors.accent.gold : colors.accent.purple} />
-          </TouchableOpacity>
         </View>
 
-        {showAdd && (
-          <GlassCard elevation={2} style={{ marginHorizontal: space['2xl'], marginBottom: space.xl }}>
-            <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
-              Register PAMM Broker
-            </Text>
-            <AppInput
-              value={brokerId}
-              onChangeText={setBrokerId}
-              placeholder="Enter broker ID"
-            />
-            <TouchableOpacity onPress={() => navigation.navigate('Brokers')} style={{ marginBottom: space.md, marginTop: -space.sm }}>
-              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>
-                View available brokers
-              </Text>
-            </TouchableOpacity>
-            <AppButton title="Register" onPress={handleAdd} loading={submitting} />
-          </GlassCard>
-        )}
-
         {loading ? (
-          <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
+          <View style={{ paddingHorizontal: space['2xl'], gap: space.lg }}>
+            <Skeleton height={180} borderRadius={radius.xl} />
             <Skeleton height={80} borderRadius={radius.lg} />
             <Skeleton height={80} borderRadius={radius.lg} />
           </View>
         ) : (
           <>
-            <View style={styles.statsRow}>
-              <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <Building2 size={20} color={colors.accent.purple} />
-                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-                  {entries.length}
-                </Text>
-                <Text style={[typography.label, { color: colors.text.secondary }]}>Brokers</Text>
-              </GlassCard>
-              <GlassCard elevation={2} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-                <Shield size={20} color={colors.semantic.positive} />
-                <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-                  {entries.filter(e => e.status == 1).length}
-                </Text>
-                <Text style={[typography.label, { color: colors.text.secondary }]}>Active</Text>
-              </GlassCard>
-            </View>
+            {/* Banner Carousel */}
+            {activeBanners.length > 0 && (
+              <View style={styles.carouselWrap}>
+                <ScrollView
+                  ref={scrollRef}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={(e) => {
+                    const idx = Math.round(e.nativeEvent.contentOffset.x / (screenWidth - space['2xl'] * 2));
+                    setBannerIdx(idx % activeBanners.length);
+                  }}
+                  style={styles.carousel}
+                >
+                  {activeBanners.map((b, i) => (
+                    <View key={b.id} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
+                      <View style={styles.bannerPlaceholder}>
+                        <Building2 size={48} color="rgba(139,92,246,0.3)" />
+                      </View>
+                      {b.title ? (
+                        <Text style={styles.bannerTitle}>{b.title}</Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </ScrollView>
+                {activeBanners.length > 1 && (
+                  <View style={styles.dots}>
+                    {activeBanners.map((_, i) => (
+                      <View key={i} style={[styles.dot, i === bannerIdx && styles.dotActive]} />
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
 
+            {/* Broker List */}
             <View style={styles.section}>
               <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
-                Registered Brokers
+                Available Brokers
               </Text>
-              {entries.length === 0 ? (
-                <EmptyState
-                  icon={<Building2 size={40} color={colors.text.secondary} />}
-                  title="No PAMM registrations yet"
-                />
-              ) : (
-                <View style={{ gap: space.sm }}>
-                  {entries.map((entry) => (
-                    <GlassCard key={entry.id} elevation={2}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                        <View style={styles.entryAvatar}>
-                          <Building2 size={20} color={colors.accent.purple} />
+              <View style={{ gap: space.sm }}>
+                {brokers.map((broker) => (
+                  <TouchableOpacity
+                    key={broker.id}
+                    onPress={() => navigation.navigate('PAMMDetail', { brokerId: broker.id })}
+                    activeOpacity={0.8}
+                  >
+                    <GlassCard elevation={2}>
+                      <View style={styles.brokerRow}>
+                        <View style={styles.brokerAvatar}>
+                          <Building2 size={22} color={colors.accent.purple} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                            {entry.broker_name ?? `Broker #${entry.id_broker}`}
+                            {broker.name}
                           </Text>
-                          <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                            by {entry.user_name ?? 'Unknown'}
-                          </Text>
+                          {broker.detail ? (
+                            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                              {broker.detail.platform} · {broker.detail.spread_forex}
+                            </Text>
+                          ) : null}
                         </View>
-                        <Badge
-                          label={entry.status == 1 ? 'Active' : 'Pending'}
-                          variant={entry.status == 1 ? 'success' : 'warning'}
-                          icon={<CheckCircle size={11} color={entry.status == 1 ? colors.semantic.positive : colors.semantic.warning} />}
-                        />
+                        <ChevronRight size={18} color={colors.text.secondary} />
                       </View>
                     </GlassCard>
-                  ))}
-                </View>
-              )}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </>
         )}
@@ -174,10 +143,9 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
-
+  scroll: { paddingBottom: space['3xl'] },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.xl,
   },
   backBtn: {
@@ -186,20 +154,35 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  addBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(139,92,246,0.12)',
-    borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
+  carouselWrap: { marginBottom: space['2xl'] },
+  carousel: { paddingLeft: space['2xl'] },
+  bannerCard: {
+    height: 180, borderRadius: radius.xl, marginRight: space.md,
+    backgroundColor: colors.glass.g2,
+    borderWidth: 1, borderColor: colors.glass.borderStrong,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  bannerPlaceholder: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
   },
-
-  statsRow: {
-    flexDirection: 'row', gap: space.md, paddingHorizontal: space['2xl'], marginBottom: space['2xl'],
+  bannerTitle: {
+    fontSize: 16, fontWeight: '800', color: colors.text.primary,
+    fontFamily: 'Manrope-Bold', position: 'absolute', bottom: space.md, left: space.md,
   },
-
+  dots: {
+    flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: space.md,
+  },
+  dot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: 'rgba(139,92,246,0.2)',
+  },
+  dotActive: {
+    backgroundColor: colors.accent.purple, width: 20,
+  },
   section: { paddingHorizontal: space['2xl'], marginBottom: space['2xl'] },
-
-  entryAvatar: {
+  brokerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  brokerAvatar: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',

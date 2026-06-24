@@ -10,6 +10,7 @@ export type RootStackParamList = {
   OTP: { userId: string; email: string; type: string; otpCode?: string | null };
   Tabs: undefined;
   PAMM: undefined;
+  PAMMDetail: { brokerId: number };
   News: undefined;
   SignalDetail: { signalId: number };
   Forum: undefined;
