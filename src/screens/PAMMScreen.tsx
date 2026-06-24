@@ -23,7 +23,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerIdx, setBannerIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
   const cardWidth = screenWidth - space['2xl'] * 2 + space.md;
   const translateX = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -65,10 +65,10 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     });
     loopRef.current = anim;
     anim.start(() => {
-      if (paused) return;
+      if (pausedRef.current) return;
       startScroll(nextOffset);
     });
-  }, [totalWidth, cardWidth, translateX, paused]);
+  }, [totalWidth, cardWidth, translateX]);
 
   useEffect(() => {
     if (totalBanners <= 1) return;
@@ -89,19 +89,14 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
 
   // Touch: pause on press, resume on release
   const handleTouchStart = useCallback(() => {
-    setPaused(true);
+    pausedRef.current = true;
     if (loopRef.current) loopRef.current.stop();
   }, []);
   const handleTouchEnd = useCallback(() => {
-    setPaused(false);
-  }, []);
-
-  // Restart scroll after unpause
-  useEffect(() => {
-    if (paused || totalBanners <= 1) return;
+    pausedRef.current = false;
     const currentOffset = Number(JSON.stringify(translateX));
     startScroll(currentOffset, 0.3);
-  }, [paused]);
+  }, [startScroll, translateX]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
