@@ -1,7 +1,7 @@
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, ActivityIndicator, useWindowDimensions, Image,
-  Animated, PanResponder, Easing
+  Animated, Easing
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,11 +23,10 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
   const cardWidth = screenWidth - space['2xl'] * 2 + space.md;
   const translateX = useRef(new Animated.Value(0)).current;
-  const isDragging = useRef(false);
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
-  const offsetRef = useRef(0);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -57,24 +56,23 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const startScroll = useCallback((fromOffset: number, durMultiplier = 1) => {
     if (loopRef.current) loopRef.current.stop();
     const remaining = totalWidth - Math.abs(fromOffset % totalWidth);
+    const nextOffset = fromOffset - remaining;
     const anim = Animated.timing(translateX, {
-      toValue: fromOffset - remaining,
+      toValue: nextOffset,
       duration: Math.max(remaining / cardWidth * 4000 * durMultiplier, 1000),
       easing: Easing.linear,
       useNativeDriver: true,
     });
     loopRef.current = anim;
     anim.start(() => {
-      if (isDragging.current) return;
-      offsetRef.current = fromOffset - remaining;
-      startScroll(offsetRef.current);
+      if (paused) return;
+      startScroll(nextOffset);
     });
-  }, [totalWidth, cardWidth, translateX]);
+  }, [totalWidth, cardWidth, translateX, paused]);
 
   useEffect(() => {
     if (totalBanners <= 1) return;
     translateX.setValue(0);
-    offsetRef.current = 0;
     startScroll(0);
     return () => { if (loopRef.current) loopRef.current.stop(); };
   }, [totalBanners, startScroll]);
@@ -89,29 +87,21 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     return () => translateX.removeListener(id);
   }, [totalBanners, totalWidth, cardWidth, translateX]);
 
-  // Touch handler: pause + manual + resume
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => totalBanners > 1,
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10,
-    onPanResponderGrant: () => {
-      isDragging.current = true;
-      if (loopRef.current) loopRef.current.stop();
-      offsetRef.current = Number(JSON.stringify(translateX));
-    },
-    onPanResponderMove: (_, g) => {
-      const newX = offsetRef.current + g.dx;
-      const clamped = Math.max(
-        -(totalBanners * 2 - 1) * cardWidth,
-        Math.min(0, newX)
-      );
-      translateX.setValue(clamped);
-    },
-    onPanResponderRelease: () => {
-      isDragging.current = false;
-      offsetRef.current = Number(JSON.stringify(translateX));
-      startScroll(offsetRef.current, 0.3);
-    },
-  })).current;
+  // Touch: pause on press, resume on release
+  const handleTouchStart = useCallback(() => {
+    setPaused(true);
+    if (loopRef.current) loopRef.current.stop();
+  }, []);
+  const handleTouchEnd = useCallback(() => {
+    setPaused(false);
+  }, []);
+
+  // Restart scroll after unpause
+  useEffect(() => {
+    if (paused || totalBanners <= 1) return;
+    const currentOffset = Number(JSON.stringify(translateX));
+    startScroll(currentOffset, 0.3);
+  }, [paused]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -136,10 +126,13 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
             {/* Banner Carousel */}
             {activeBanners.length > 0 && (
               <View style={styles.carouselWrap}>
-                <View style={{ overflow: 'hidden', paddingLeft: space['2xl'] }}>
+                <View
+                  style={{ overflow: 'hidden', paddingLeft: space['2xl'] }}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
                   <Animated.View
                     style={[styles.carouselTrack, { transform: [{ translateX }] }]}
-                    {...panResponder.panHandlers}
                   >
                     {[...activeBanners, ...activeBanners].map((b, i) => (
                       <View key={`${b.id}-${i}`} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
