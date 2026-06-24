@@ -36,9 +36,9 @@ const dark = {
 
 const light = {
   bg: {
-    primary: '#CEB9F9',
-    deep: '#B89DE0',
-    elevated: '#E4D4FB',
+    primary: '#FFFFFF',
+    deep: '#F3F4F6',
+    elevated: '#F8FAFC',
   },
   accent: {
     gold: '#D4AF37',
@@ -46,9 +46,9 @@ const light = {
     purple: '#7C3AED',
   },
   text: {
-    primary: '#F8FAFC',
-    secondary: '#CBD5E1',
-    muted: '#94A3B8',
+    primary: '#3B1F6B',
+    secondary: '#6D4AA3',
+    muted: '#9B7EC4',
   },
   semantic: {
     positive: '#4ADE80',
@@ -57,16 +57,16 @@ const light = {
     info: '#818CF8',
   },
   glass: {
-    g1: '#3B1F6B',
-    g2: '#3B1F6B',
-    g3: '#3B1F6B',
-    g4: '#3B1F6B',
-    border: 'rgba(255,255,255,0.08)',
-    borderStrong: 'rgba(255,255,255,0.14)',
+    g1: 'rgba(59,31,107,0.06)',
+    g2: 'rgba(59,31,107,0.08)',
+    g3: 'rgba(59,31,107,0.12)',
+    g4: 'rgba(59,31,107,0.15)',
+    border: 'rgba(59,31,107,0.12)',
+    borderStrong: 'rgba(59,31,107,0.18)',
   },
   overlay: {
-    modal: 'rgba(6,9,16,0.85)',
-    backdrop: 'rgba(6,9,16,0.55)',
+    modal: 'rgba(0,0,0,0.50)',
+    backdrop: 'rgba(0,0,0,0.30)',
   },
 };
 
