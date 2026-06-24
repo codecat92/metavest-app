@@ -157,8 +157,8 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                 { label: 'Currency', value: user?.base_currency_name ?? 'USD' },
               ].map((s) => (
                 <View key={s.label}>
-                  <Text style={styles.statValue}>{s.value}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
                 </View>
               ))}
             </View>
