@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: radius.xl,
+    borderRadius: 15,
   },
   bannerTitle: {
     fontSize: 16, fontWeight: '800', color: colors.text.primary,
