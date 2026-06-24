@@ -34,7 +34,7 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
 
   const loadEvents = useCallback(async () => {
     try {
-      const res = await api.get<ApiResponse<EconEvent[]>>('/economics-calendar/all');
+      const res = await api.get<ApiResponse<EconEvent[]>>('/economics-calendar/this-week');
       setEvents(res.data ?? []);
     } catch (e) {
       setEvents([]);
