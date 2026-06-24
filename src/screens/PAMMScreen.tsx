@@ -1,7 +1,7 @@
 import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, ActivityIndicator, useWindowDimensions, Image,
-  Animated, PanResponder
+  Animated, PanResponder, Easing
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,9 +26,8 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const cardWidth = screenWidth - space['2xl'] * 2 + space.md;
   const translateX = useRef(new Animated.Value(0)).current;
   const isDragging = useRef(false);
-  const autoInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentIdx = useRef(0);
-  const dragStartX = useRef(0);
+  const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const offsetRef = useRef(0);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -52,51 +51,62 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
 
   const activeBanners = banners.filter(b => b.is_active == 1);
   const totalBanners = activeBanners.length;
+  const totalWidth = totalBanners * cardWidth;
 
-  // Auto-scroll effect
+  // Start smooth auto-scroll (like MarqueeMarkets)
+  const startScroll = useCallback((fromOffset: number, durMultiplier = 1) => {
+    if (loopRef.current) loopRef.current.stop();
+    const remaining = totalWidth - Math.abs(fromOffset % totalWidth);
+    const anim = Animated.timing(translateX, {
+      toValue: fromOffset - remaining,
+      duration: Math.max(remaining / cardWidth * 4000 * durMultiplier, 1000),
+      easing: Easing.linear,
+      useNativeDriver: true,
+    });
+    loopRef.current = anim;
+    anim.start(() => {
+      offsetRef.current = fromOffset - remaining;
+      startScroll(offsetRef.current);
+    });
+  }, [totalWidth, cardWidth, translateX]);
+
   useEffect(() => {
     if (totalBanners <= 1) return;
-    if (autoInterval.current) clearInterval(autoInterval.current);
-    autoInterval.current = setInterval(() => {
-      if (!isDragging.current) {
-        const next = (currentIdx.current + 1) % totalBanners;
-        currentIdx.current = next;
-        setBannerIdx(next);
-        Animated.timing(translateX, {
-          toValue: -next * cardWidth,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }
-    }, 3000);
-    return () => { if (autoInterval.current) clearInterval(autoInterval.current); };
-  }, [totalBanners, cardWidth]);
+    translateX.setValue(0);
+    offsetRef.current = 0;
+    startScroll(0);
+    return () => { if (loopRef.current) loopRef.current.stop(); };
+  }, [totalBanners, startScroll]);
 
+  // Track which dot is active
+  useEffect(() => {
+    const id = translateX.addListener(({ value }) => {
+      const raw = Math.abs(value) % totalWidth;
+      const idx = Math.floor(raw / cardWidth) % totalBanners;
+      setBannerIdx(idx);
+    });
+    return () => translateX.removeListener(id);
+  }, [totalBanners, totalWidth, cardWidth, translateX]);
+
+  // Touch handler: pause + manual + resume
   const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => totalBanners > 1,
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10,
     onPanResponderGrant: () => {
       isDragging.current = true;
+      if (loopRef.current) loopRef.current.stop();
       translateX.extractOffset();
-      dragStartX.current = Number(JSON.stringify(translateX));
     },
     onPanResponderMove: (_, g) => {
-      const newX = Math.max(-(totalBanners - 1) * cardWidth, Math.min(0, g.dx));
+      const newX = Math.max(-(totalBanners * 2 - 1) * cardWidth, Math.min(cardWidth, g.dx));
       translateX.setValue(newX);
     },
     onPanResponderRelease: (_, g) => {
       translateX.flattenOffset();
       isDragging.current = false;
-      const clamped = Math.max(0, Math.min(totalBanners - 1, Math.round(Math.abs(g.dx) > 50
-        ? (g.dx < 0 ? currentIdx.current + 1 : currentIdx.current - 1)
-        : currentIdx.current)));
-      currentIdx.current = clamped;
-      setBannerIdx(clamped);
-      Animated.timing(translateX, {
-        toValue: -clamped * cardWidth,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      const currentOffset = Number(JSON.stringify(translateX));
+      offsetRef.current = currentOffset;
+      startScroll(currentOffset, 0.3);
     },
   })).current;
 
@@ -128,8 +138,8 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                     style={[styles.carouselTrack, { transform: [{ translateX }] }]}
                     {...panResponder.panHandlers}
                   >
-                    {activeBanners.map((b) => (
-                      <View key={b.id} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
+                    {[...activeBanners, ...activeBanners].map((b, i) => (
+                      <View key={`${b.id}-${i}`} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
                         {b.image_url ? (
                           <Image
                             source={{ uri: STAGING_HOST + b.image_url }}
