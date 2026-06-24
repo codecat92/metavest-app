@@ -125,7 +125,7 @@ export default function SignalDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
             <ArrowLeft size={20} color={colors.text.secondary} />
           </TouchableOpacity>
           <View style={[styles.typeBadge, {
@@ -144,8 +144,8 @@ export default function SignalDetailScreen() {
 
         {/* Pair & Type */}
         <View style={styles.heroSection}>
-          <Text style={styles.pairName}>{pairName}</Text>
-          <Text style={styles.pairType}>{typeName}</Text>
+          <Text style={[styles.pairName, { color: colors.text.primary }]}>{pairName}</Text>
+          <Text style={[styles.pairType, { color: colors.text.secondary }]}>{typeName}</Text>
         </View>
 
         {/* Price Card */}
@@ -200,15 +200,15 @@ export default function SignalDetailScreen() {
 
       {/* Bottom Actions */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity onPress={handleLike} style={styles.actionBtn}>
+        <TouchableOpacity onPress={handleLike} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
           <Heart size={20} color={liked ? colors.semantic.negative : colors.text.secondary} fill={liked ? colors.semantic.negative : 'none'} />
-          <Text style={[styles.actionText, liked && { color: colors.semantic.negative }]}>
+          <Text style={[styles.actionText, liked && { color: colors.semantic.negative }, !liked && { color: colors.text.secondary }]}>
             {liked ? 'Liked' : 'Like'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleShare} style={styles.actionBtn}>
+        <TouchableOpacity onPress={handleShare} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
           <Share2 size={20} color={colors.text.secondary} />
-          <Text style={styles.actionText}>Share</Text>
+          <Text style={[styles.actionText, { color: colors.text.secondary }]}>Share</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleExecute}
