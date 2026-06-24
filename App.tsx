@@ -10,7 +10,7 @@ import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AlertProvider } from '@/context/AlertContext';
-import { ThemeProvider, colors } from '@/theme';
+import { ThemeProvider, colors, useTheme } from '@/theme';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 
 import LoginScreen from '@/screens/LoginScreen';
@@ -86,6 +86,7 @@ function TabNavigator() {
 
 function RootNavigator() {
   const { isLoggedIn, isLoading } = useAuth();
+  const { isDark } = useTheme();
 
   if (isLoading) {
     return (
@@ -152,7 +153,7 @@ export default function App() {
           <ThemeProvider>
           <AuthProvider>
             <NavigationContainer>
-              <StatusBar style="light" />
+              <StatusBar style={isDark ? "light" : "dark"} />
               <RootNavigator />
             </NavigationContainer>
           </AuthProvider>
