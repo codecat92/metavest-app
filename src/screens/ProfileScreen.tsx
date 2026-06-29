@@ -8,14 +8,15 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker';
 import {
   Shield, Bell, LogOut,
-  Star, Award, Mail, Phone, Hash, Camera, Sun, Moon
+  Star, Award, Mail, Phone, Hash, Camera, Sun, Moon, GraduationCap,
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { profileApi } from '@/api/profile';
+import { academyNewApi } from '@/api/academyNew';
 import { getToken } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton } from '@/components';
+import { GlassCard, AppButton, Badge } from '@/components';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -41,6 +42,20 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     useCallback(() => { refreshUser(); }, [])
   );
   const [cacheBuster, setCacheBuster] = useState(Date.now());
+  const [instructorStatus, setInstructorStatus] = useState<string | null>(null);
+
+  const fetchInstructorStatus = useCallback(async () => {
+    try {
+      const res = await academyNewApi.getInstructorProfile();
+      setInstructorStatus(res.data.status);
+    } catch {
+      setInstructorStatus(null);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => { fetchInstructorStatus(); }, [fetchInstructorStatus])
+  );
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -226,6 +241,50 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
             onPress={() => navigation.navigate('EditProfile')}
             style={{ marginBottom: space.md }}
           />
+
+          {/* ── Apply as Instructor ── */}
+          {instructorStatus === null ? (
+            <GlassCard elevation={2} style={{ marginBottom: space.md, borderColor: `${colors.accent.purple}40`, borderWidth: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(139,92,246,0.18)' }]}>
+                  <GraduationCap size={18} color={colors.accent.purple} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                    Become an Instructor
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Share your trading knowledge with others
+                  </Text>
+                </View>
+              </View>
+              <AppButton
+                title="Apply as Instructor"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate('ApplyInstructor')}
+                style={{ marginTop: space.md }}
+              />
+            </GlassCard>
+          ) : instructorStatus === 'pending' ? (
+            <View style={{ marginBottom: space.md }}>
+              <Badge label="Application Pending" variant="warning" style={{ alignSelf: 'center' }} />
+            </View>
+          ) : instructorStatus === 'active' ? (
+            <View style={{ marginBottom: space.md }}>
+              <Badge label="✓ Verified Instructor" variant="success" style={{ alignSelf: 'center' }} />
+            </View>
+          ) : instructorStatus === 'rejected' ? (
+            <GlassCard elevation={2} style={{ marginBottom: space.md }}>
+              <Badge label="Application Rejected" variant="danger" style={{ alignSelf: 'center', marginBottom: space.md }} />
+              <AppButton
+                title="Re-apply"
+                variant="secondary"
+                size="md"
+                onPress={() => navigation.navigate('ApplyInstructor')}
+              />
+            </GlassCard>
+          ) : null}
 
           <TouchableOpacity
             style={styles.logoutBtn}
