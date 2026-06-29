@@ -6,7 +6,7 @@ import { useCallback, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft, GraduationCap, Users,
+  ArrowLeft, GraduationCap, Users, BookOpen, ChevronRight,
 } from 'lucide-react-native';
 import { academyNewApi } from '@/api/academyNew';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -14,6 +14,7 @@ import { GlassCard, Skeleton } from '@/components';
 import CourseCard from '@/components/academy/CourseCard';
 import InstructorCard from '@/components/academy/InstructorCard';
 import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { CourseListItem, InstructorListItem } from '@/types/academy';
@@ -25,9 +26,12 @@ const PER_PAGE = 15;
 export default function AcademyScreen({ navigation }: AcademyProps) {
   const theme = useColors();
   const { showAlert } = useCustomAlert();
+  const { isLoggedIn } = useAuth();
 
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [instructors, setInstructors] = useState<InstructorListItem[]>([]);
+  const [enrollmentTotal, setEnrollmentTotal] = useState(0);
+  const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'courses' | 'instructors'>('courses');
@@ -68,11 +72,23 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
     coursePage.current = 1;
     instructorPage.current = 1;
     try {
-      // Fetch first tab eagerly, second tab lazily on switch
       if (tab === 'courses') {
         await fetchCourses(1);
       } else {
         await fetchInstructors(1);
+      }
+      if (isLoggedIn) {
+        try {
+          const enrollRes = await academyNewApi.getEnrollments();
+          const items = enrollRes.data.items;
+          setEnrollmentTotal(enrollRes.data.pagination.total);
+          const avg = items.length > 0
+            ? items.reduce((sum, e) => sum + e.progress_percentage, 0) / items.length
+            : 0;
+          setEnrollmentProgress(Math.round(avg));
+        } catch {
+          setEnrollmentTotal(0);
+        }
       }
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load');
@@ -81,7 +97,7 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [tab, fetchCourses, fetchInstructors, showAlert]);
+  }, [tab, fetchCourses, fetchInstructors, showAlert, isLoggedIn]);
 
   useFocusEffect(
     useCallback(() => {
@@ -189,6 +205,40 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
     return null;
   }, [tab, theme]);
 
+  // ── My Learning Banner ──
+
+  const showLearningBanner = isLoggedIn && enrollmentTotal > 0 && tab === 'courses';
+
+  const renderLearningBanner = useCallback(() => {
+    if (!showLearningBanner) return null;
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('MyEnrollments')}
+        style={[styles.learningBanner, {
+          backgroundColor: `${theme.accent.purple}14`,
+          borderColor: `${theme.accent.purple}40`,
+        }]}
+      >
+        <View style={[styles.learningIcon, { backgroundColor: `${theme.accent.purple}22` }]}>
+          <BookOpen size={20} color={theme.accent.purple} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[typography.bodyBold, { color: theme.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+            My Learning
+          </Text>
+          <Text style={[typography.caption, { color: theme.text.secondary, marginTop: 2 }]}>
+            {enrollmentTotal} course{enrollmentTotal > 1 ? 's' : ''} enrolled
+          </Text>
+          <View style={[styles.learningProgressTrack, { backgroundColor: theme.glass.g2 }]}>
+            <View style={[styles.learningProgressFill, { backgroundColor: theme.accent.purple, width: `${enrollmentProgress}%` }]} />
+          </View>
+        </View>
+        <ChevronRight size={18} color={theme.text.muted} />
+      </TouchableOpacity>
+    );
+  }, [showLearningBanner, enrollmentTotal, enrollmentProgress, theme, navigation]);
+
   // ── Main render ──
 
   return (
@@ -251,6 +301,7 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
               keyExtractor={item => `${item.id}`}
               renderItem={renderCourseItem}
               contentContainerStyle={styles.listContent}
+              ListHeaderComponent={renderLearningBanner}
               showsVerticalScrollIndicator={false}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.3}
@@ -333,6 +384,30 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#fff' },
 
   listContent: { paddingHorizontal: space['2xl'], paddingBottom: 100, gap: space.sm },
+
+  learningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    height: 96,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  learningIcon: {
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  learningProgressTrack: {
+    height: 4,
+    borderRadius: 2,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  learningProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
 
   centerState: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
