@@ -36,6 +36,7 @@ export type RootStackParamList = {
   Review: { courseId: number };
   AcademyNotifications: undefined;
   InstructorProfile: undefined;
+  ApplyInstructor: undefined;
 };
 
 export type TabParamList = {

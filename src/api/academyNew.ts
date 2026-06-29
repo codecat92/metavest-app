@@ -171,4 +171,22 @@ export const academyNewApi = {
     academyFetch<AcademyApiResponse<InstructorProfile>>(
       '/academy/instructor/profile',
     ),
+
+  /** Apply/update as instructor — multipart FormData */
+  applyAsInstructor: async (formData: FormData) => {
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/academy/instructor/profile`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    const json = await res.json();
+    if (!res.ok || json.success === false) {
+      throw new Error(json.message || 'Failed to apply');
+    }
+    return json as AcademyApiResponse<InstructorProfile>;
+  },
 };
