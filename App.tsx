@@ -36,6 +36,11 @@ import EconomicsCalendarScreen from '@/screens/EconomicsCalendarScreen';
 import NotificationsScreen from '@/screens/NotificationsScreen';
 import BrokersScreen from '@/screens/BrokersScreen';
 import OTPScreen from '@/screens/OTPScreen';
+import CourseDetailScreen from '@/screens/academy/CourseDetailScreen';
+import LessonScreen from '@/screens/academy/LessonScreen';
+import MyEnrollmentsScreen from '@/screens/academy/MyEnrollmentsScreen';
+import ReviewScreen from '@/screens/academy/ReviewScreen';
+import InstructorDetailScreen from '@/screens/academy/InstructorDetailScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -102,29 +107,34 @@ function RootNavigator() {
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack.Navigator
-      initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}
-      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg.primary } }}
-    >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-      <Stack.Screen name="OTP" component={OTPScreen} />
-      <Stack.Screen name="Tabs" component={TabNavigator} />
-      <Stack.Screen name="PAMM" component={PAMMScreen} />
-      <Stack.Screen name="PAMMDetail" component={PAMMDetailScreen} />
-      <Stack.Screen name="News" component={NewsScreen} />
-      <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
-      <Stack.Screen name="Forum" component={ForumScreen} />
-      <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
-      <Stack.Screen name="Market" component={MarketScreen} />
-      <Stack.Screen name="Academy" component={AcademyScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
-      <Stack.Screen name="WebView" component={WebViewScreen} />
-      <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
-      <Stack.Screen name="Brokers" component={BrokersScreen} />
-    </Stack.Navigator>
+        initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg.primary } }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="OTP" component={OTPScreen} />
+        <Stack.Screen name="Tabs" component={TabNavigator} />
+        <Stack.Screen name="PAMM" component={PAMMScreen} />
+        <Stack.Screen name="PAMMDetail" component={PAMMDetailScreen} />
+        <Stack.Screen name="News" component={NewsScreen} />
+        <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
+        <Stack.Screen name="Forum" component={ForumScreen} />
+        <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
+        <Stack.Screen name="Market" component={MarketScreen} />
+        <Stack.Screen name="Academy" component={AcademyScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
+        <Stack.Screen name="WebView" component={WebViewScreen} />
+        <Stack.Screen name="EconomicsCalendar" component={EconomicsCalendarScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Brokers" component={BrokersScreen} />
+        <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+        <Stack.Screen name="Lesson" component={LessonScreen} />
+        <Stack.Screen name="MyEnrollments" component={MyEnrollmentsScreen} />
+        <Stack.Screen name="Review" component={ReviewScreen} />
+        <Stack.Screen name="InstructorDetail" component={InstructorDetailScreen} />
+      </Stack.Navigator>
     </>
   );
 }
@@ -156,11 +166,11 @@ export default function App() {
       <SafeAreaProvider>
         <AlertProvider>
           <ThemeProvider>
-          <AuthProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
-          </AuthProvider>
+            <AuthProvider>
+              <NavigationContainer>
+                <RootNavigator />
+              </NavigationContainer>
+            </AuthProvider>
           </ThemeProvider>
         </AlertProvider>
       </SafeAreaProvider>
