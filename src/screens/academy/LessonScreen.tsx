@@ -2,13 +2,15 @@ import {
   View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, ActivityIndicator,
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Clock, CheckCircle2, ChevronLeft, ChevronRight,
 } from 'lucide-react-native';
 import RenderHtml from 'react-native-render-html';
+import WebView from 'react-native-webview';
 import { academyNewApi } from '@/api/academyNew';
 import { useColors, space, radius, typography } from '@/theme';
 import { AppButton, Skeleton } from '@/components';
@@ -102,11 +104,59 @@ export default function LessonScreen({ route, navigation }: Props) {
 
   // ── Helpers ──
 
+  const contentWidth = Dimensions.get('window').width - space['2xl'] * 2;
+
   const coverSrc = lesson?.cover_image_url
     ? (lesson.cover_image_url.startsWith('http')
         ? lesson.cover_image_url
         : `${STORAGE_HOST}${lesson.cover_image_url}`)
     : null;
+
+  // Parse content: extract iframes, replace with placeholders, split segments
+  const contentSegments = useMemo(() => {
+    const html = lesson?.content ?? '';
+    const videos: string[] = [];
+    const cleaned = html.replace(/<iframe[^>]+src="([^"]+)"[^>]*>\s*<\/iframe>/gi, (_, src) => {
+      videos.push(src);
+      return `{{VIDEO_${videos.length - 1}}}`;
+    });
+
+    const parts: (string | { type: 'video'; src: string })[] = [];
+    const regex = /\{\{VIDEO_(\d+)\}\}/g;
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(cleaned)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(cleaned.slice(lastIdx, match.index));
+      }
+      const videoIdx = parseInt(match[1], 10);
+      parts.push({ type: 'video', src: videos[videoIdx] });
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < cleaned.length) {
+      parts.push(cleaned.slice(lastIdx));
+    }
+
+    return parts.length > 0 ? parts : [html];
+  }, [lesson?.content]);
+
+  const tagsStyles = useMemo(() => ({
+    h1: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 24, marginBottom: space.md },
+    h2: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 20, marginBottom: space.sm },
+    h3: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 18, marginBottom: space.sm },
+    p: { marginBottom: space.lg, color: c.text.secondary },
+    li: { color: c.text.secondary },
+    strong: { color: c.text.primary, fontFamily: 'DMSans-SemiBold' },
+    em: { color: c.text.secondary },
+    a: { color: c.accent.purple },
+    img: { borderRadius: radius.md, marginVertical: space.md },
+    pre: { backgroundColor: c.glass.g2, padding: space.lg, borderRadius: radius.md, marginBottom: space.lg },
+    code: { fontFamily: 'monospace', color: c.accent.purple },
+    table: { borderColor: c.glass.border, borderWidth: 1, marginBottom: space.lg },
+    td: { padding: space.sm, borderColor: c.glass.border, borderWidth: 1, color: c.text.secondary },
+    th: { padding: space.sm, borderColor: c.glass.border, borderWidth: 1, color: c.text.primary },
+  }), [c]);
 
   // ── Loading ──
 
@@ -203,32 +253,38 @@ export default function LessonScreen({ route, navigation }: Props) {
 
         {/* ── Content ── */}
         <View style={{ paddingHorizontal: space['2xl'], paddingTop: space.xl }}>
-          <RenderHtml
-            contentWidth={300}
-            source={{ html: lesson.content }}
-            baseStyle={{
-              color: c.text.primary,
-              fontSize: 15,
-              lineHeight: 24,
-              fontFamily: 'DMSans',
-            }}
-            tagsStyles={{
-              h1: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 24, marginBottom: space.md },
-              h2: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 20, marginBottom: space.sm },
-              h3: { fontFamily: 'Manrope-Bold', color: c.text.primary, fontSize: 18, marginBottom: space.sm },
-              p: { marginBottom: space.lg, color: c.text.secondary },
-              li: { color: c.text.secondary },
-              strong: { color: c.text.primary, fontFamily: 'DMSans-SemiBold' },
-              em: { color: c.text.secondary },
-              a: { color: c.accent.purple },
-              img: { borderRadius: radius.md, marginVertical: space.md },
-              pre: { backgroundColor: c.glass.g2, padding: space.lg, borderRadius: radius.md, marginBottom: space.lg },
-              code: { fontFamily: 'monospace', color: c.accent.purple },
-              table: { borderColor: c.glass.border, borderWidth: 1, marginBottom: space.lg },
-              td: { padding: space.sm, borderColor: c.glass.border, borderWidth: 1, color: c.text.secondary },
-              th: { padding: space.sm, borderColor: c.glass.border, borderWidth: 1, color: c.text.primary },
-            }}
-          />
+          {contentSegments.map((seg, idx) => {
+            if (typeof seg === 'object' && 'type' in seg && seg.type === 'video') {
+              return (
+                <View
+                  key={`video-${idx}`}
+                  style={[styles.videoContainer, { borderRadius: radius.lg }]}
+                >
+                  <WebView
+                    source={{ uri: seg.src }}
+                    style={{ borderRadius: radius.lg }}
+                    allowsFullscreenVideo
+                    javaScriptEnabled
+                  />
+                </View>
+              );
+            }
+
+            return (
+              <RenderHtml
+                key={`html-${idx}`}
+                contentWidth={contentWidth}
+                source={{ html: seg as string }}
+                baseStyle={{
+                  color: c.text.primary,
+                  fontSize: 15,
+                  lineHeight: 24,
+                  fontFamily: 'DMSans',
+                }}
+                tagsStyles={tagsStyles}
+              />
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -312,6 +368,13 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
     borderRadius: radius.lg,
     marginTop: space.sm,
+  },
+
+  videoContainer: {
+    width: '100%',
+    height: 220,
+    marginVertical: space.md,
+    overflow: 'hidden',
   },
 
   bottomBar: {

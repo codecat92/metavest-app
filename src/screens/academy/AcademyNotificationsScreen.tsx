@@ -47,6 +47,7 @@ export default function AcademyNotificationsScreen({ navigation }: Props) {
         academyNewApi.getNotifications(),
         academyNewApi.getUnreadCount(),
       ]);
+      console.log('notifRes:', JSON.stringify(notifRes.data));  // ← NANTI HAPUS
       setNotifications(notifRes.data.items);
       setUnreadCount(countRes.data.count);
     } catch (e: any) {

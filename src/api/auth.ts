@@ -92,6 +92,7 @@ export const authApi = {
     });
     const accessToken = step2.data.access_token;
     setToken(accessToken);
+    console.log('🔑 TOKEN:', accessToken); // ← NANTI DI HAPUS
     const profileResponse = await api.get<User>('/auth-user');
     const user = profileResponse as unknown as User;
     return { token: accessToken, user };

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '@/api';
 import { hasStoredToken, api, clearToken } from '@/api/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TOKEN_KEY } from '@/api/client';
 
 interface User {
   id_user: string;
@@ -44,7 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await authApi.login(email, password);
     setUser(response.user);
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    console.log('🔑 TOKEN:', token);
   };
+
+
 
   const refreshUser = async () => {
     try {

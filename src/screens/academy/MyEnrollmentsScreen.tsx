@@ -118,8 +118,8 @@ export default function MyEnrollmentsScreen({ navigation }: Props) {
     const course = item.course;
     const thumbSrc = course.thumbnail_url
       ? (course.thumbnail_url.startsWith('http')
-          ? course.thumbnail_url
-          : `${STORAGE_HOST}${course.thumbnail_url}`)
+        ? course.thumbnail_url
+        : `${STORAGE_HOST}${course.thumbnail_url}`)
       : null;
 
     return (
@@ -181,15 +181,12 @@ export default function MyEnrollmentsScreen({ navigation }: Props) {
           {/* Continue Button */}
           <View style={{ marginTop: space.md }}>
             <AppButton
-              title="Continue Learning"
-              variant="primary"
+              title={item.progress_percentage === 100 ? 'Review Course' : 'Continue Learning'}
+              variant={item.progress_percentage === 100 ? 'secondary' : 'primary'}
               size="md"
               onPress={() => {
-                navigation.navigate('Lesson', {
+                navigation.navigate('CourseDetail', {
                   courseId: course.id,
-                  chapterId: 0,
-                  lessonId: 0,
-                  allLessons: [],
                 });
               }}
             />

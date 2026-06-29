@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Base API client — staging backend on metavest server
 export const BASE_URL = 'http://157.66.4.40:8081/api';
 
-const TOKEN_KEY = 'metavest_auth_token';
+export const TOKEN_KEY = 'metavest_auth_token';
 
 // Backend response always wraps data in { message, data, data_count? }
 export interface ApiResponse<T> {
@@ -89,3 +89,6 @@ export const api = {
   delete: <T>(endpoint: string) =>
     request<T>(endpoint, { method: 'DELETE' }),
 };
+
+
+
