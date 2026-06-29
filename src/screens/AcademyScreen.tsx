@@ -6,7 +6,7 @@ import { useCallback, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft, GraduationCap, Users, BookOpen, ChevronRight,
+  ArrowLeft, GraduationCap, Users, BookOpen, ChevronRight, Bell,
 } from 'lucide-react-native';
 import { academyNewApi } from '@/api/academyNew';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -32,6 +32,7 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
   const [instructors, setInstructors] = useState<InstructorListItem[]>([]);
   const [enrollmentTotal, setEnrollmentTotal] = useState(0);
   const [enrollmentProgress, setEnrollmentProgress] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'courses' | 'instructors'>('courses');
@@ -79,9 +80,13 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
       }
       if (isLoggedIn) {
         try {
-          const enrollRes = await academyNewApi.getEnrollments();
+          const [enrollRes, unreadRes] = await Promise.all([
+            academyNewApi.getEnrollments(),
+            academyNewApi.getUnreadCount(),
+          ]);
           const items = enrollRes.data.items;
           setEnrollmentTotal(enrollRes.data.pagination.total);
+          setUnreadCount(unreadRes.data.count);
           const avg = items.length > 0
             ? items.reduce((sum, e) => sum + e.progress_percentage, 0) / items.length
             : 0;
@@ -177,9 +182,9 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
     navigation.navigate('CourseDetail', { courseId: course.id });
   }, [navigation]);
 
-  const handleInstructorPress = useCallback((_instructor: InstructorListItem) => {
-    // TODO: navigate to InstructorDetail screen
-  }, []);
+  const handleInstructorPress = useCallback((instructor: InstructorListItem) => {
+    navigation.navigate('InstructorDetail', { instructorId: instructor.id });
+  }, [navigation]);
 
   const renderCourseItem = useCallback(({ item }: { item: CourseListItem }) => (
     <CourseCard
@@ -248,9 +253,18 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={20} color={theme.text.secondary} />
         </TouchableOpacity>
-        <Text style={[typography.h2, { color: theme.text.primary, fontFamily: 'Manrope-Bold' }]}>
+        <Text style={[typography.h2, { color: theme.text.primary, fontFamily: 'Manrope-Bold', flex: 1 }]}>
           Metavest Academy
         </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('AcademyNotifications')}
+          style={[styles.bellBtn, { backgroundColor: theme.glass.g1, borderColor: theme.glass.border }]}
+        >
+          <Bell size={22} color={theme.text.primary} />
+          {unreadCount > 0 && (
+            <View style={[styles.bellBadge, { backgroundColor: theme.semantic.negative }]} />
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}
@@ -367,6 +381,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass.g1,
     borderWidth: 1, borderColor: colors.glass.border,
     alignItems: 'center', justifyContent: 'center',
+  },
+  bellBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: 6, right: 7,
+    width: 8, height: 8, borderRadius: 4,
   },
 
   tabRow: {
