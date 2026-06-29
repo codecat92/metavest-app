@@ -17,7 +17,7 @@ import { useCustomAlert } from '@/context/AlertContext';
 import { BASE_URL } from '@/api/client';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { CourseDetail, CourseLevel } from '@/types/academy';
+import type { CourseDetail, CourseLevel, Review } from '@/types/academy';
 
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
@@ -44,6 +44,8 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
   const [enrolled, setEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewTotal, setReviewTotal] = useState(0);
 
   // ── Fetch course ──
 
@@ -78,12 +80,25 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
     }
   }, [courseId, isLoggedIn]);
 
+  // ── Reviews ──
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await academyNewApi.getCourseReviews(courseId);
+      setReviews(res.data.items.slice(0, 3));
+      setReviewTotal(res.data.pagination.total);
+    } catch {
+      // silently fail — reviews are optional
+    }
+  }, [courseId]);
+
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       loadCourse();
       checkEnrollment();
-    }, [loadCourse, checkEnrollment]),
+      fetchReviews();
+    }, [loadCourse, checkEnrollment, fetchReviews]),
   );
 
   // ── Helpers ──
@@ -373,6 +388,68 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
             </View>
           )}
         </View>
+
+        {/* ── Reviews ── */}
+        {reviews.length > 0 && (
+          <View style={{ paddingHorizontal: space['2xl'], paddingTop: space['3xl'] }}>
+            <View style={styles.reviewsHeader}>
+              <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>
+                Reviews ({reviewTotal})
+              </Text>
+              {enrolled && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Review', { courseId })}
+                  style={[styles.writeReviewBtn, { borderColor: c.accent.purple }]}
+                >
+                  <Text style={[typography.captionBold, { color: c.accent.purple }]}>Write a Review</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={{ gap: space.sm, marginTop: space.md }}>
+              {reviews.map(review => (
+                <View key={review.id} style={[styles.reviewItem, { borderColor: c.glass.border }]}>
+                  <View style={styles.reviewItemHeader}>
+                    <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
+                      <Text style={styles.reviewAvatarText}>
+                        {review.reviewer_name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                        {review.reviewer_name}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <Star key={i} size={11} color={i <= review.rating ? c.accent.gold : c.glass.border} fill={i <= review.rating ? c.accent.gold : 'none'} />
+                        ))}
+                      </View>
+                    </View>
+                    <Text style={[typography.label, { color: c.text.muted }]}>
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  {review.comment ? (
+                    <Text style={[typography.caption, { color: c.text.secondary, marginTop: space.sm, lineHeight: 19 }]} numberOfLines={2}>
+                      {review.comment}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+
+            {reviewTotal > 3 && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Review', { courseId })}
+                style={{ alignItems: 'center', paddingVertical: space.md }}
+              >
+                <Text style={[typography.captionBold, { color: c.accent.purple }]}>
+                  See All {reviewTotal} Reviews
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* ── Sticky CTA ── */}
@@ -486,6 +563,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     marginTop: 3,
+  },
+
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  writeReviewBtn: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+  },
+  reviewItem: {
+    paddingBottom: space.md,
+    borderBottomWidth: 1,
+  },
+  reviewItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  reviewAvatar: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  reviewAvatarText: {
+    fontSize: 11, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold',
   },
 
   ctaBar: {
