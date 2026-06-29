@@ -447,15 +447,15 @@ export default function HomeScreen() {
         </View>
 
         {/* ── PORTOFOLIO CARD: Total Saldo + Perubahan Hari Ini + Statistik (Following / Win Rate / Signals) ── */}
-        <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'], backgroundColor: colors.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }}>
-          <Text style={[typography.caption, { color: 'rgba(255,255,255,0.80)' }]}>Total Portfolio</Text>
-          <Text style={[typography.h1, { color: '#FFFFFF', fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
+        <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+          <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
+          <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
             $0.00
           </Text>
           <View style={styles.portfolioChangeRow}>
             <ArrowUpRight size={14} color={colors.semantic.positive} />
             <Text style={[typography.body, { color: colors.semantic.positive, fontWeight: '700' }]}>--</Text>
-            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.70)' }]}>today</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
           </View>
           <View style={styles.portfolioStats}>
             {[
@@ -464,8 +464,8 @@ export default function HomeScreen() {
               { label: 'SIGNALS', value: '0 Active' },
             ].map((s) => (
               <View key={s.label}>
-                <Text style={[styles.statLabel, { color: 'rgba(255,255,255,0.70)' }]}>{s.label}</Text>
-                <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{s.value}</Text>
+                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
+                <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
               </View>
             ))}
           </View>

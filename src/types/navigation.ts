@@ -23,6 +23,19 @@ export type RootStackParamList = {
   EconomicsCalendar: undefined;
   Notifications: undefined;
   Brokers: undefined;
+  AcademyCatalog: undefined;
+  CourseDetail: { courseId: number };
+  InstructorDetail: { instructorId: number };
+  MyEnrollments: undefined;
+  Lesson: {
+    courseId: number;
+    chapterId: number;
+    lessonId: number;
+    allLessons: { lessonId: number; chapterId: number }[];
+  };
+  Review: { courseId: number };
+  AcademyNotifications: undefined;
+  InstructorProfile: undefined;
 };
 
 export type TabParamList = {

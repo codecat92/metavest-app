@@ -1,180 +1,312 @@
 import {
-  View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator
+  View, Text, StyleSheet, FlatList,
+  TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft, Book, Play, FileText, ChevronRight, GraduationCap
+  ArrowLeft, GraduationCap, Users,
 } from 'lucide-react-native';
-import { academyApi, Academy, AcademyClass, AcademyArticle, AcademyLivestream } from '@/api/academy';
+import { academyNewApi } from '@/api/academyNew';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, Badge, Skeleton } from '@/components';
+import { GlassCard, Skeleton } from '@/components';
+import CourseCard from '@/components/academy/CourseCard';
+import InstructorCard from '@/components/academy/InstructorCard';
+import { useCustomAlert } from '@/context/AlertContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { CourseListItem, InstructorListItem } from '@/types/academy';
 
 type AcademyProps = NativeStackScreenProps<RootStackParamList, 'Academy'>;
 
-export default function AcademyScreen({ navigation }: AcademyProps) {
-  const [academies, setAcademies] = useState<Academy[]>([]);
-  const colors = useColors();
-  const [classes, setClasses] = useState<AcademyClass[]>([]);
-  const [articles, setArticles] = useState<AcademyArticle[]>([]);
-  const [livestreams, setLivestreams] = useState<AcademyLivestream[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'academies' | 'classes' | 'articles' | 'live'>('academies');
+const PER_PAGE = 15;
 
-  const loadData = useCallback(async () => {
-    try {
-      const [a, c, ar, l] = await Promise.all([
-        academyApi.getAcademies(),
-        academyApi.getClasses(),
-        academyApi.getArticles(),
-        academyApi.getLivestreams(),
-      ]);
-      setAcademies(a.data ?? []);
-      setClasses(c.data ?? []);
-      setArticles(ar.data ?? []);
-      setLivestreams(l.data ?? []);
-    } catch (e) {
-      console.log('Academy load failed:', e);
-    } finally {
-      setLoading(false);
+export default function AcademyScreen({ navigation }: AcademyProps) {
+  const theme = useColors();
+  const { showAlert } = useCustomAlert();
+
+  const [courses, setCourses] = useState<CourseListItem[]>([]);
+  const [instructors, setInstructors] = useState<InstructorListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'courses' | 'instructors'>('courses');
+
+  const coursePage = useRef(1);
+  const instructorPage = useRef(1);
+  const hasMoreCourses = useRef(false);
+  const hasMoreInstructors = useRef(false);
+  const loadingMore = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ── Data fetching ──
+
+  const fetchCourses = useCallback(async (page: number) => {
+    const res = await academyNewApi.getCourses(page);
+    const { items, pagination } = res.data;
+    hasMoreCourses.current = pagination.current_page < pagination.last_page;
+    if (page === 1) {
+      setCourses(items);
+    } else {
+      setCourses(prev => [...prev, ...items]);
     }
   }, []);
 
+  const fetchInstructors = useCallback(async (page: number) => {
+    const res = await academyNewApi.getInstructors(page);
+    const { items, pagination } = res.data;
+    hasMoreInstructors.current = pagination.current_page < pagination.last_page;
+    if (page === 1) {
+      setInstructors(items);
+    } else {
+      setInstructors(prev => [...prev, ...items]);
+    }
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setError(null);
+    coursePage.current = 1;
+    instructorPage.current = 1;
+    try {
+      // Fetch first tab eagerly, second tab lazily on switch
+      if (tab === 'courses') {
+        await fetchCourses(1);
+      } else {
+        await fetchInstructors(1);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load');
+      showAlert({ title: 'Error', message: e?.message ?? 'Failed to load data' });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [tab, fetchCourses, fetchInstructors, showAlert]);
+
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadData(); }, [loadData])
+    useCallback(() => {
+      setLoading(true);
+      loadData();
+    }, [loadData]),
   );
 
-  const tabs: { key: typeof tab; label: string; Icon: React.ComponentType<{ size: number; color: string }> }[] = [
-    { key: 'academies', label: 'Academies', Icon: GraduationCap },
-    { key: 'classes', label: 'Classes', Icon: Book },
-    { key: 'articles', label: 'Articles', Icon: FileText },
-    { key: 'live', label: 'Live', Icon: Play },
-  ];
+  // ── Tab switch (lazy load if needed) ──
+
+  const handleTabSwitch = useCallback(async (newTab: 'courses' | 'instructors') => {
+    setTab(newTab);
+    setError(null);
+    const needsLoad =
+      (newTab === 'courses' && courses.length === 0) ||
+      (newTab === 'instructors' && instructors.length === 0);
+    if (!needsLoad) return;
+    try {
+      if (newTab === 'courses') {
+        coursePage.current = 1;
+        await fetchCourses(1);
+      } else {
+        instructorPage.current = 1;
+        await fetchInstructors(1);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  }, [courses.length, instructors.length, fetchCourses, fetchInstructors]);
+
+  // ── Pagination ──
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore.current) return;
+    loadingMore.current = true;
+    try {
+      if (tab === 'courses' && hasMoreCourses.current) {
+        coursePage.current += 1;
+        await fetchCourses(coursePage.current);
+      } else if (tab === 'instructors' && hasMoreInstructors.current) {
+        instructorPage.current += 1;
+        await fetchInstructors(instructorPage.current);
+      }
+    } catch (e: any) {
+      showAlert({ title: 'Error', message: e?.message ?? 'Failed to load more' });
+    } finally {
+      loadingMore.current = false;
+    }
+  }, [tab, fetchCourses, fetchInstructors, showAlert]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setError(null);
+    coursePage.current = 1;
+    instructorPage.current = 1;
+    try {
+      if (tab === 'courses') {
+        await fetchCourses(1);
+      } else {
+        await fetchInstructors(1);
+      }
+    } catch (e: any) {
+      showAlert({ title: 'Error', message: e?.message ?? 'Refresh failed' });
+    } finally {
+      setRefreshing(false);
+    }
+  }, [tab, fetchCourses, fetchInstructors, showAlert]);
+
+  // ── Render item ──
+
+  const listData = tab === 'courses' ? courses : instructors;
+  const isEmpty = !loading && !error && listData.length === 0;
+
+  const handleCoursePress = useCallback((course: CourseListItem) => {
+    navigation.navigate('CourseDetail', { courseId: course.id });
+  }, [navigation]);
+
+  const handleInstructorPress = useCallback((_instructor: InstructorListItem) => {
+    // TODO: navigate to InstructorDetail screen
+  }, []);
+
+  const renderCourseItem = useCallback(({ item }: { item: CourseListItem }) => (
+    <CourseCard
+      course={item}
+      onPress={() => handleCoursePress(item)}
+    />
+  ), [handleCoursePress]);
+
+  const renderInstructorItem = useCallback(({ item }: { item: InstructorListItem }) => (
+    <InstructorCard
+      instructor={item}
+      onPress={() => handleInstructorPress(item)}
+    />
+  ), [handleInstructorPress]);
+
+  const renderFooter = useCallback(() => {
+    if (tab === 'courses' && hasMoreCourses.current) {
+      return <ActivityIndicator style={{ paddingVertical: space.xl }} color={theme.accent.purple} />;
+    }
+    if (tab === 'instructors' && hasMoreInstructors.current) {
+      return <ActivityIndicator style={{ paddingVertical: space.xl }} color={theme.accent.gold} />;
+    }
+    return null;
+  }, [tab, theme]);
+
+  // ── Main render ──
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
-          <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-            Academy
-          </Text>
-        </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg.primary }]} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <ArrowLeft size={20} color={theme.text.secondary} />
+        </TouchableOpacity>
+        <Text style={[typography.h2, { color: theme.text.primary, fontFamily: 'Manrope-Bold' }]}>
+          Metavest Academy
+        </Text>
+      </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
-          {tabs.map(t => (
-            <TouchableOpacity
-              key={t.key}
-              onPress={() => setTab(t.key)}
-              style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]}
-            >
-              <t.Icon size={14} color={tab === t.key ? '#fff' : colors.text.secondary} />
-              <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
-            </TouchableOpacity>
+      {/* Tabs */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          onPress={() => handleTabSwitch('courses')}
+          style={[styles.tabBtn, tab === 'courses' && styles.tabBtnActive]}
+        >
+          <GraduationCap size={14} color={tab === 'courses' ? '#fff' : theme.text.secondary} />
+          <Text style={[styles.tabText, tab === 'courses' && styles.tabTextActive]}>Courses</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleTabSwitch('instructors')}
+          style={[styles.tabBtn, tab === 'instructors' && styles.tabBtnActive]}
+        >
+          <Users size={14} color={tab === 'instructors' ? '#fff' : theme.text.secondary} />
+          <Text style={[styles.tabText, tab === 'instructors' && styles.tabTextActive]}>Instructors</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {loading ? (
+        <View style={{ paddingHorizontal: space['2xl'], gap: space.sm }}>
+          {[1, 2, 3, 4].map(i => (
+            <GlassCard key={i} elevation={2}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <Skeleton height={44} width={44} borderRadius={16} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton height={14} width="70%" />
+                  <Skeleton height={12} width="40%" />
+                </View>
+              </View>
+            </GlassCard>
           ))}
-        </ScrollView>
-
-        {loading ? (
-          <View style={{ paddingHorizontal: space['2xl'], gap: space.sm }}>
-            {[1, 2, 3].map(i => (
-              <GlassCard key={i} elevation={2}>
-                <Skeleton height={44} width={44} borderRadius={16} style={{ marginBottom: space.md }} />
-                <Skeleton height={14} width="60%" style={{ marginBottom: space.sm }} />
-                <Skeleton height={12} width="40%" />
-              </GlassCard>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {tab === 'academies' && academies.map(a => (
-              <GlassCard key={a.id} elevation={2}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                  <View style={styles.cardIcon}><GraduationCap size={22} color={colors.accent.purple} /></View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      {a.name}
-                    </Text>
-                    {a.description ? <Text style={[typography.caption, { color: colors.text.secondary }]}>{a.description}</Text> : null}
-                  </View>
-                  <ChevronRight size={16} color={colors.text.secondary} />
-                </View>
-              </GlassCard>
-            ))}
-            {tab === 'classes' && classes.map(c => (
-              <GlassCard key={c.id} elevation={2}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                  <View style={styles.cardIcon}><Book size={22} color={colors.accent.gold} /></View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      {c.name}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{c.description ?? ''}</Text>
-                  </View>
-                  <Text style={[typography.captionBold, { color: colors.accent.gold, fontFamily: 'DMSans-Bold' }]}>
-                    {c.price > 0 ? `$${c.price}` : 'Free'}
+        </View>
+      ) : error ? (
+        <View style={styles.centerState}>
+          <Text style={[typography.body, { color: theme.text.secondary, textAlign: 'center' }]}>{error}</Text>
+          <TouchableOpacity onPress={loadData} style={styles.retryBtn}>
+            <Text style={[typography.bodyBold, { color: theme.accent.purple }]}>Tap to retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          {tab === 'courses' && (
+            <FlatList<CourseListItem>
+              data={courses}
+              keyExtractor={item => `${item.id}`}
+              renderItem={renderCourseItem}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={renderFooter}
+              ListEmptyComponent={
+                isEmpty ? (
+                  <Text style={[typography.body, { color: theme.text.secondary, textAlign: 'center', paddingVertical: space['3xl'] }]}>
+                    No courses yet
                   </Text>
-                </View>
-              </GlassCard>
-            ))}
-            {tab === 'articles' && articles.map(a => (
-              <GlassCard key={a.id} elevation={2}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                  <View style={styles.cardIcon}><FileText size={22} color={colors.semantic.positive} /></View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      {a.title}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>{a.content}</Text>
-                  </View>
-                  <Text style={[typography.caption, { color: colors.text.secondary, fontWeight: '700' }]}>
-                    Ch.{a.chapter}
+                ) : null
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={theme.accent.purple}
+                  colors={[theme.accent.purple]}
+                />
+              }
+            />
+          )}
+          {tab === 'instructors' && (
+            <FlatList<InstructorListItem>
+              data={instructors}
+              keyExtractor={item => `${item.id}`}
+              renderItem={renderInstructorItem}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={renderFooter}
+              ListEmptyComponent={
+                isEmpty ? (
+                  <Text style={[typography.body, { color: theme.text.secondary, textAlign: 'center', paddingVertical: space['3xl'] }]}>
+                    No instructors yet
                   </Text>
-                </View>
-              </GlassCard>
-            ))}
-            {tab === 'live' && livestreams.map(l => (
-              <GlassCard key={l.id} elevation={2}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                  <View style={[styles.cardIcon, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
-                    <Play size={22} color={colors.semantic.negative} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      {l.title}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.semantic.negative }]} numberOfLines={1}>{l.link}</Text>
-                  </View>
-                  <Badge label="LIVE" variant="danger" />
-                </View>
-              </GlassCard>
-            ))}
-
-            {(
-              (tab === 'academies' && academies.length === 0) ||
-              (tab === 'classes' && classes.length === 0) ||
-              (tab === 'articles' && articles.length === 0) ||
-              (tab === 'live' && livestreams.length === 0)
-            ) && (
-              <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', paddingVertical: space['3xl'] }]}>
-                No {tabs.find(t => t.key === tab)?.label} yet
-              </Text>
-            )}
-          </View>
-        )}
-      </ScrollView>
+                ) : null
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={theme.accent.purple}
+                  colors={[theme.accent.purple]}
+                />
+              }
+            />
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
-  scroll: { paddingBottom: 100 },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: space.lg,
     paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.lg,
@@ -186,7 +318,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  tabRow: { paddingHorizontal: space['2xl'], gap: space.sm, marginBottom: space.xl },
+  tabRow: {
+    flexDirection: 'row', gap: space.sm,
+    paddingHorizontal: space['2xl'], marginBottom: space.lg,
+  },
   tabBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: space.lg, paddingVertical: space.sm, borderRadius: radius.md,
@@ -197,10 +332,15 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 12, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
   tabTextActive: { color: '#fff' },
 
-  list: { paddingHorizontal: space['2xl'], gap: space.sm },
-  cardIcon: {
-    width: 44, height: 44, borderRadius: radius.lg,
-    backgroundColor: 'rgba(139,92,246,0.12)',
-    alignItems: 'center', justifyContent: 'center',
+  listContent: { paddingHorizontal: space['2xl'], paddingBottom: 100, gap: space.sm },
+
+  centerState: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: space['3xl'], gap: space.md,
+  },
+  retryBtn: {
+    paddingHorizontal: space.xl, paddingVertical: space.sm,
+    borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.accent.purple,
   },
 });
