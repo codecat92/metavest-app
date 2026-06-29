@@ -41,6 +41,7 @@ import LessonScreen from '@/screens/academy/LessonScreen';
 import MyEnrollmentsScreen from '@/screens/academy/MyEnrollmentsScreen';
 import ReviewScreen from '@/screens/academy/ReviewScreen';
 import InstructorDetailScreen from '@/screens/academy/InstructorDetailScreen';
+import AcademyNotificationsScreen from '@/screens/academy/AcademyNotificationsScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -134,6 +135,7 @@ function RootNavigator() {
         <Stack.Screen name="MyEnrollments" component={MyEnrollmentsScreen} />
         <Stack.Screen name="Review" component={ReviewScreen} />
         <Stack.Screen name="InstructorDetail" component={InstructorDetailScreen} />
+        <Stack.Screen name="AcademyNotifications" component={AcademyNotificationsScreen} />
       </Stack.Navigator>
     </>
   );
