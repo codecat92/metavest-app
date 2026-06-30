@@ -390,63 +390,69 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
         </View>
 
         {/* ── Reviews ── */}
-        {reviews.length > 0 && (
+        {enrolled && (
           <View style={{ paddingHorizontal: space['2xl'], paddingTop: space['3xl'] }}>
             <View style={styles.reviewsHeader}>
               <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>
                 Reviews ({reviewTotal})
               </Text>
-              {enrolled && (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Review', { courseId })}
-                  style={[styles.writeReviewBtn, { borderColor: c.accent.purple }]}
-                >
-                  <Text style={[typography.captionBold, { color: c.accent.purple }]}>Write a Review</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <View style={{ gap: space.sm, marginTop: space.md }}>
-              {reviews.map(review => (
-                <View key={review.id} style={[styles.reviewItem, { borderColor: c.glass.border }]}>
-                  <View style={styles.reviewItemHeader}>
-                    <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
-                      <Text style={styles.reviewAvatarText}>
-                        {review.reviewer_name.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                        {review.reviewer_name}
-                      </Text>
-                      <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
-                        {[1, 2, 3, 4, 5].map(i => (
-                          <Star key={i} size={11} color={i <= review.rating ? c.accent.gold : c.glass.border} fill={i <= review.rating ? c.accent.gold : 'none'} />
-                        ))}
-                      </View>
-                    </View>
-                    <Text style={[typography.label, { color: c.text.muted }]}>
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  {review.comment ? (
-                    <Text style={[typography.caption, { color: c.text.secondary, marginTop: space.sm, lineHeight: 19 }]} numberOfLines={2}>
-                      {review.comment}
-                    </Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-
-            {reviewTotal > 3 && (
               <TouchableOpacity
                 onPress={() => navigation.navigate('Review', { courseId })}
-                style={{ alignItems: 'center', paddingVertical: space.md }}
+                style={[styles.writeReviewBtn, { borderColor: c.accent.purple }]}
               >
-                <Text style={[typography.captionBold, { color: c.accent.purple }]}>
-                  See All {reviewTotal} Reviews
-                </Text>
+                <Text style={[typography.captionBold, { color: c.accent.purple }]}>Write a Review</Text>
               </TouchableOpacity>
+            </View>
+
+            {reviews.length === 0 ? (
+              <Text style={[typography.caption, { color: c.text.muted, textAlign: 'center', paddingVertical: space.xl }]}>
+                No reviews yet. Be the first to review!
+              </Text>
+            ) : (
+              <>
+                <View style={{ gap: space.sm, marginTop: space.md }}>
+                  {reviews.map(review => (
+                    <View key={review.id} style={[styles.reviewItem, { borderColor: c.glass.border }]}>
+                      <View style={styles.reviewItemHeader}>
+                        <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
+                          <Text style={styles.reviewAvatarText}>
+                            {review.reviewer_name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                            {review.reviewer_name}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                            {[1, 2, 3, 4, 5].map(i => (
+                              <Star key={i} size={11} color={i <= review.rating ? c.accent.gold : c.glass.border} fill={i <= review.rating ? c.accent.gold : 'none'} />
+                            ))}
+                          </View>
+                        </View>
+                        <Text style={[typography.label, { color: c.text.muted }]}>
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      {review.comment ? (
+                        <Text style={[typography.caption, { color: c.text.secondary, marginTop: space.sm, lineHeight: 19 }]} numberOfLines={2}>
+                          {review.comment}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+
+                {reviewTotal > 3 && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Review', { courseId })}
+                    style={{ alignItems: 'center', paddingVertical: space.md }}
+                  >
+                    <Text style={[typography.captionBold, { color: c.accent.purple }]}>
+                      See All {reviewTotal} Reviews
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
             )}
           </View>
         )}
