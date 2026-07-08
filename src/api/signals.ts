@@ -13,6 +13,7 @@ export interface Signal {
   stop_loss: string;
   risk_per_one_trade: string;
   potential_profit: string;
+  risk_reward_ratio: number | null;
   price: number;
   price_value: number;
   price_name: string;

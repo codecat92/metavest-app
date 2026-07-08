@@ -142,9 +142,7 @@ export default function SignalScreen() {
               const buy = isBuy(signal);
               const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
               const typeName = signal.signal_type_name ?? 'SIGNAL';
-              const rr = signal.risk_per_one_trade && signal.potential_profit
-                ? (parseFloat(signal.potential_profit) / parseFloat(signal.risk_per_one_trade)).toFixed(1)
-                : null;
+              const rr = signal.risk_reward_ratio;
 
               return (
                 <TouchableOpacity

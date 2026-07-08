@@ -115,9 +115,7 @@ export default function SignalDetailScreen() {
   const buy = signal.signal_type === 2 || signal.signal_type === 4 || signal.signal_type === 6;
   const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
   const typeName = signal.signal_type_name ?? 'SIGNAL';
-  const rr = signal.risk_per_one_trade && signal.potential_profit
-    ? (parseFloat(signal.potential_profit) / parseFloat(signal.risk_per_one_trade)).toFixed(1)
-    : null;
+  const rt = signal.risk_reward_ratio;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
@@ -166,7 +164,7 @@ export default function SignalDetailScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {[
-            { icon: Target, label: 'Risk/Reward', value: rr ? `1:${rr}` : '-', color: colors.accent.purple },
+            { icon: Target, label: 'Risk/Reward', value: rt ? `1:${rt}` : '-', color: colors.accent.purple },
             { icon: AlertTriangle, label: 'Disclaimer', value: 'Trade at your own risk', color: colors.semantic.warning },
             { icon: Eye, label: 'Clicks', value: String(signal.clicks ?? 0), color: colors.text.secondary },
             { icon: Heart, label: 'Likes', value: String(localLikes), color: colors.semantic.negative },
