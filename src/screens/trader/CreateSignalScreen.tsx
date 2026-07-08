@@ -240,7 +240,7 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
           {/* ── Risk / Profit ── */}
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>RISK / TRADE</Text>
+              <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>RISK (PTS)</Text>
               <TextInput style={[fieldStyle, { borderColor: errors.riskPerTrade ? c.semantic.negative : c.glass.border }]} placeholder="0.00" placeholderTextColor={c.text.muted} keyboardType="decimal-pad" value={riskPerTrade} onChangeText={setRiskPerTrade} />
               {errors.riskPerTrade && <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{errors.riskPerTrade}</Text>}
             </View>
