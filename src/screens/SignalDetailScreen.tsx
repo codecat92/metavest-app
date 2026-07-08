@@ -7,7 +7,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
-  Share2, Zap, Clock, Target, Eye, ExternalLink, AlertTriangle
+  Share2, Zap, Clock, Target, Eye, ExternalLink, AlertTriangle, Tag, Gem
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
@@ -170,7 +170,7 @@ export default function SignalDetailScreen() {
             { icon: Heart, label: 'Likes', value: String(localLikes), color: colors.semantic.negative },
             { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: colors.text.secondary },
             { icon: Clock, label: 'Risk/Trade', value: `${signal.risk_per_one_trade ?? '-'}%`, color: '#F7C948' },
-            { icon: Target, label: 'Price', value: signal.price_value > 0 ? `💰 ${signal.price_name ?? 'PAID'}` : '🆓 FREE', color: signal.price_value > 0 ? colors.accent.gold : colors.semantic.positive },
+            { icon: signal.price_value > 0 ? Gem : Tag, label: 'Price', value: signal.price_value > 0 ? 'PAID' : 'FREE', color: signal.price_value > 0 ? colors.accent.gold : colors.semantic.positive },
           ].map((s) => (
             <View key={s.label} style={[styles.statItem, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
               <s.icon size={14} color={s.color} />
