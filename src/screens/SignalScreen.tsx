@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
-  Clock, Copy, ExternalLink, AlertTriangle
+  Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
@@ -202,29 +202,23 @@ export default function SignalScreen() {
                           {signal.created_at ? new Date(signal.created_at).toLocaleDateString() : 'Recent'}
                         </Text>
                       </View>
-                      {signal.price_value > 0 ? (
-                        <View style={styles.metaItem}>
-                          <Text style={[typography.label, { color: colors.accent.gold, fontWeight: '700' }]}>
-                            💰 {signal.price_name ?? 'PAID'}
-                          </Text>
-                        </View>
-                      ) : (
-                        <View style={styles.metaItem}>
-                          <Text style={[typography.label, { color: colors.semantic.positive, fontWeight: '700' }]}>
-                            🆓 FREE
-                          </Text>
-                        </View>
-                      )}
-                      <View style={styles.metaItem}>
-                        <AlertTriangle size={12} color={colors.semantic.warning} />
-                        <Text style={[typography.label, { color: colors.semantic.warning, fontWeight: '600' }]}>
-                          Trade at your own risk
-                        </Text>
-                      </View>
                       <View style={styles.metaItem}>
                         <Copy size={12} color={colors.text.secondary} />
                         <Text style={[typography.label, { color: colors.text.secondary }]}>
                           {signal.signal_execution || 0} copied
+                        </Text>
+                      </View>
+                      <View style={styles.metaItem}>
+                        {signal.price_value > 0 ? (
+                          <Gem size={12} color={colors.accent.gold} />
+                        ) : (
+                          <Tag size={12} color={colors.semantic.positive} />
+                        )}
+                        <Text style={[typography.label, {
+                          color: signal.price_value > 0 ? colors.accent.gold : colors.semantic.positive,
+                          fontWeight: '600',
+                        }]}>
+                          {signal.price_value > 0 ? 'PAID' : 'FREE'}
                         </Text>
                       </View>
                     </View>
@@ -254,7 +248,13 @@ export default function SignalScreen() {
                       </View>
                     )}
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: space.xl }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space.xl }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <AlertTriangle size={12} color={colors.semantic.warning} />
+                        <Text style={[typography.label, { color: colors.semantic.warning }]}>
+                          Trade at your own risk
+                        </Text>
+                      </View>
                       <TouchableOpacity
                         onPress={() => Linking.openURL(tradeUrl)}
                         activeOpacity={0.8}
