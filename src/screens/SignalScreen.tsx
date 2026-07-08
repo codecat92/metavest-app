@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
-  Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem,
+  Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
@@ -14,6 +14,7 @@ import { settingsApi } from '@/api/settings';
 import { getToken } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
+import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -29,6 +30,8 @@ type TabFilter = 'all' | 'buy' | 'sell';
 export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
   const colors = useColors();
+  const { userType } = useAuth();
+  const isTrader = userType === 'trader';
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
@@ -97,6 +100,12 @@ export default function SignalScreen() {
             </Text>
           </View>
           <View style={styles.headerBtns}>
+            {isTrader && (
+              <TouchableOpacity style={[styles.iconBtn, { width: 'auto', paddingHorizontal: space.md }]} onPress={() => navigation.navigate('MySignals')}>
+                <List size={14} color={colors.accent.purple} />
+                <Text style={[typography.label, { color: colors.accent.purple, marginLeft: 4 }]}>My Signals</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.iconBtn}>
               <Search size={16} color={colors.text.secondary} />
             </TouchableOpacity>
@@ -295,6 +304,16 @@ export default function SignalScreen() {
         )}
 
       </ScrollView>
+
+      {isTrader && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('CreateSignal', {})}
+          activeOpacity={0.85}
+          style={[styles.fab, { backgroundColor: colors.accent.purple }]}
+        >
+          <Plus size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -364,5 +383,13 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm, alignItems: 'center',
     backgroundColor: 'rgba(139,92,246,0.06)',
     borderTopWidth: 1, borderTopColor: colors.glass.border,
+  },
+
+  fab: {
+    position: 'absolute', bottom: 28, right: space['2xl'],
+    width: 56, height: 56, borderRadius: 28,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
 });

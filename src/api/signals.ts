@@ -35,6 +35,33 @@ export interface SignalListResponse {
   data_count: number;
 }
 
+export interface CreateSignalRequest {
+  currency: number;
+  signal_type: number;
+  price: number;
+  price_value?: number | null;
+  open_price: string;
+  take_profit: string;
+  stop_loss: string;
+  risk_per_one_trade: string;
+  potential_profit: string;
+  notes?: string | null;
+}
+
+export interface UpdateSignalRequest {
+  id: number;
+  currency?: number;
+  signal_type?: number;
+  price?: number;
+  price_value?: number | null;
+  open_price?: string;
+  take_profit?: string;
+  stop_loss?: string;
+  risk_per_one_trade?: string;
+  potential_profit?: string;
+  notes?: string | null;
+}
+
 export const signalsApi = {
   getAll: (page = 1) =>
     api.get<SignalListResponse>(`/signals/all?page=${page}`),
@@ -56,4 +83,17 @@ export const signalsApi = {
 
   execute: (id: number) =>
     api.post<ApiResponse<any>>('/signals/execute', { id }),
+
+  // Trader CRUD
+  create: (data: CreateSignalRequest) =>
+    api.post<ApiResponse<Signal>>('/signals/create', data),
+
+  update: (data: UpdateSignalRequest) =>
+    api.post<ApiResponse<Signal>>('/signals/update', data),
+
+  delete: (id: number) =>
+    api.post<ApiResponse<any>>('/signals/delete', { id }),
+
+  getOwn: (page = 1) =>
+    api.get<SignalListResponse>(`/signals/own?page=${page}`),
 };
