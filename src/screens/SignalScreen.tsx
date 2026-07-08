@@ -202,6 +202,19 @@ export default function SignalScreen() {
                           {signal.created_at ? new Date(signal.created_at).toLocaleDateString() : 'Recent'}
                         </Text>
                       </View>
+                      {signal.price_value > 0 ? (
+                        <View style={styles.metaItem}>
+                          <Text style={[typography.label, { color: colors.accent.gold, fontWeight: '700' }]}>
+                            💰 {signal.price_name ?? 'PAID'}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={styles.metaItem}>
+                          <Text style={[typography.label, { color: colors.semantic.positive, fontWeight: '700' }]}>
+                            🆓 FREE
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.metaItem}>
                         <AlertTriangle size={12} color={colors.semantic.warning} />
                         <Text style={[typography.label, { color: colors.semantic.warning, fontWeight: '600' }]}>
