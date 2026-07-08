@@ -7,7 +7,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
-  Share2, Zap, Clock, Shield, Target, Eye, ExternalLink
+  Share2, Zap, Clock, Target, Eye, ExternalLink, AlertTriangle
 } from 'lucide-react-native';
 import { signalsApi, Signal } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
@@ -16,17 +16,6 @@ import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-const currencyNames: Record<number, string> = {
-  1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
-  5: 'AUD/USD', 6: 'USD/CAD', 7: 'XAG/USD', 8: 'GBP/JPY',
-  9: 'NZD/USD', 10: 'USD/CHF', 11: 'EUR/GBP',
-};
-
-const signalTypeNames: Record<number, string> = {
-  1: 'SELL LIMIT', 2: 'BUY LIMIT', 3: 'SELL ORDER',
-  4: 'BUY ORDER', 5: 'SELL STOP', 6: 'BUY STOP',
-};
 
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
@@ -54,6 +43,7 @@ export default function SignalDetailScreen() {
         const s = res.data;
         setSignal(s);
         setLocalLikes(s.likes ?? 0);
+        setLiked(s.is_liked === 1);
         // Track click
         signalsApi.click(signalId).catch(() => {});
       } catch (e: any) {
@@ -123,10 +113,11 @@ export default function SignalDetailScreen() {
   }
 
   const buy = signal.signal_type === 2 || signal.signal_type === 4 || signal.signal_type === 6;
-  const pairName = currencyNames[signal.currency] ?? `Pair #${signal.currency}`;
-  const typeName = signalTypeNames[signal.signal_type] ?? 'SIGNAL';
-  const risk = parseFloat(signal.risk_per_one_trade ?? '0') <= 0.5 ? 'Low'
-    : parseFloat(signal.risk_per_one_trade ?? '0') <= 1 ? 'Medium' : 'High';
+  const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
+  const typeName = signal.signal_type_name ?? 'SIGNAL';
+  const rr = signal.risk_per_one_trade && signal.potential_profit
+    ? (parseFloat(signal.potential_profit) / parseFloat(signal.risk_per_one_trade)).toFixed(1)
+    : null;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
@@ -175,8 +166,8 @@ export default function SignalDetailScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {[
-            { icon: Target, label: 'Risk/Reward', value: signal.potential_profit ? `1:${signal.potential_profit}` : '-', color: colors.accent.purple },
-            { icon: Shield, label: 'Risk Level', value: risk, color: risk === 'Low' ? colors.semantic.positive : risk === 'Medium' ? '#F7C948' : colors.semantic.negative },
+            { icon: Target, label: 'Risk/Reward', value: rr ? `1:${rr}` : '-', color: colors.accent.purple },
+            { icon: AlertTriangle, label: 'Disclaimer', value: 'Trade at your own risk', color: colors.semantic.warning },
             { icon: Eye, label: 'Clicks', value: String(signal.clicks ?? 0), color: colors.text.secondary },
             { icon: Heart, label: 'Likes', value: String(localLikes), color: colors.semantic.negative },
             { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: colors.text.secondary },

@@ -6,7 +6,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Filter, Search, TrendingUp, TrendingDown,
-  Clock, Shield, Copy, Eye, ExternalLink
+  Clock, Copy, ExternalLink, AlertTriangle
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
@@ -23,17 +23,6 @@ type SignalNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Signals'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-const currencyNames: Record<number, string> = {
-  1: 'EUR/USD', 2: 'XAU/USD', 3: 'GBP/USD', 4: 'USD/JPY',
-  5: 'AUD/USD', 6: 'USD/CAD', 7: 'XAG/USD', 8: 'GBP/JPY',
-  9: 'NZD/USD', 10: 'USD/CHF', 11: 'EUR/GBP',
-};
-
-const signalTypeNames: Record<number, string> = {
-  1: 'SELL LIMIT', 2: 'BUY LIMIT', 3: 'SELL ORDER',
-  4: 'BUY ORDER', 5: 'SELL STOP', 6: 'BUY STOP',
-};
 
 type TabFilter = 'all' | 'buy' | 'sell';
 
@@ -71,13 +60,6 @@ export default function SignalScreen() {
       }).catch(() => {});
     }, [loadSignals])
   );
-
-  const riskFromSignal = (s: Signal): string => {
-    const r = parseFloat(s.risk_per_one_trade ?? '0');
-    if (r <= 0.5) return 'Low';
-    if (r <= 1) return 'Medium';
-    return 'High';
-  };
 
   const isBuy = (s: Signal): boolean => {
     const t = s.signal_type;
@@ -158,9 +140,11 @@ export default function SignalScreen() {
             {filtered.map((signal) => {
               const expanded = expandedId === signal.id;
               const buy = isBuy(signal);
-              const pairName = currencyNames[signal.currency] ?? `Pair #${signal.currency}`;
-              const typeName = signalTypeNames[signal.signal_type] ?? 'SIGNAL';
-              const risk = riskFromSignal(signal);
+              const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
+              const typeName = signal.signal_type_name ?? 'SIGNAL';
+              const rr = signal.risk_per_one_trade && signal.potential_profit
+                ? (parseFloat(signal.potential_profit) / parseFloat(signal.risk_per_one_trade)).toFixed(1)
+                : null;
 
               return (
                 <TouchableOpacity
@@ -173,7 +157,7 @@ export default function SignalScreen() {
                     <View style={styles.traderRow}>
                       <View style={styles.avatarCircle}>
                         <Text style={styles.avatarText}>
-                          {signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
+                          {signal.trader_name?.charAt(0).toUpperCase() ?? signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
                         </Text>
                       </View>
                       <View style={{ flex: 1 }}>
@@ -181,7 +165,7 @@ export default function SignalScreen() {
                           {typeName}
                         </Text>
                         <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                          {pairName}
+                          {signal.trader_name ?? 'Trader'}
                         </Text>
                       </View>
                       <Badge
@@ -221,16 +205,9 @@ export default function SignalScreen() {
                         </Text>
                       </View>
                       <View style={styles.metaItem}>
-                        <Shield size={12} color={
-                          risk === 'Low' ? colors.semantic.positive :
-                          risk === 'Medium' ? colors.semantic.warning : colors.semantic.negative
-                        } />
-                        <Text style={[typography.label, {
-                          color: risk === 'Low' ? colors.semantic.positive :
-                                 risk === 'Medium' ? colors.semantic.warning : colors.semantic.negative,
-                          fontWeight: '600',
-                        }]}>
-                          {risk} Risk
+                        <AlertTriangle size={12} color={colors.semantic.warning} />
+                        <Text style={[typography.label, { color: colors.semantic.warning, fontWeight: '600' }]}>
+                          Trade at your own risk
                         </Text>
                       </View>
                       <View style={styles.metaItem}>
@@ -248,7 +225,7 @@ export default function SignalScreen() {
                             { label: 'Entry', value: signal.open_price ?? '-' },
                             { label: 'Take Profit', value: signal.take_profit ?? '-' },
                             { label: 'Stop Loss', value: signal.stop_loss ?? '-' },
-                            { label: 'R:R', value: signal.potential_profit ? `1:${signal.potential_profit}` : '-' },
+                            { label: 'R:R', value: rr ? `1:${rr}` : '-' },
                           ].map((item) => (
                             <View key={item.label} style={{ alignItems: 'center' }}>
                               <Text style={[typography.label, { color: colors.text.secondary }]}>

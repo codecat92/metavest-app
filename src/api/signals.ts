@@ -3,8 +3,11 @@ import { api, ApiResponse } from './client';
 export interface Signal {
   id: number;
   trader_id: string;
+  trader_name: string | null;
   currency: number;
+  currency_name: string;
   signal_type: number;
+  signal_type_name: string;
   open_price: string;
   take_profit: string;
   stop_loss: string;
@@ -12,12 +15,18 @@ export interface Signal {
   potential_profit: string;
   price: number;
   price_value: number;
+  price_name: string;
   signal_execution: number;
   notes: string | null;
   clicks: number;
   likes: number;
   shares: number;
+  is_liked: number;
   created_at: string;
+  created_at_formatted: string;
+  total_signals: number;
+  info: Record<string, any> | null;
+  payment_info: Record<string, any> | null;
 }
 
 export interface SignalListResponse {
