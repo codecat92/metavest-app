@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { profileApi } from '@/api/profile';
 import { academyNewApi } from '@/api/academyNew';
-import { getToken } from '@/api/client';
+import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Badge } from '@/components';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
@@ -30,19 +30,18 @@ type ProfileNavProp = CompositeNavigationProp<
 const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 
 export default function ProfileScreen({ navigation }: { navigation: ProfileNavProp }) {
-  const { logout, user, refreshUser } = useAuth();
+  const { logout, user, refreshUser, userType } = useAuth();
   const colors = useColors();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
+  const [traderProfileImage, setTraderProfileImage] = useState<string | null>(null);
+  const [traderId, setTraderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const alert = useCustomAlert();
   const insets = useSafeAreaInsets();
 
-  useFocusEffect(
-    useCallback(() => { refreshUser(); }, [])
-  );
-  const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [instructorStatus, setInstructorStatus] = useState<string | null>(null);
+  const [cacheBuster, setCacheBuster] = useState(Date.now());
 
   const fetchInstructorStatus = useCallback(async () => {
     try {
@@ -54,7 +53,21 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
   }, []);
 
   useFocusEffect(
-    useCallback(() => { fetchInstructorStatus(); }, [fetchInstructorStatus])
+    useCallback(() => {
+      refreshUser();
+      fetchInstructorStatus();
+      if (userType === 'trader') {
+        fetch(`${BASE_URL}/user-traders/profile`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (res.data?.profile_image_src) setTraderProfileImage(res.data.profile_image_src);
+            if (res.data?.id) setTraderId(res.data.id);
+          })
+          .catch(() => {});
+      }
+    }, [refreshUser, fetchInstructorStatus, userType])
   );
 
   const initials = user?.name
@@ -85,12 +98,33 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     if (!result.canceled && result.assets[0]) {
       setUploading(true);
       try {
-        const response = await profileApi.uploadPhoto(result.assets[0].uri);
-        if (response.data?.profile_image_src) {
-          setProfileImage(response.data.profile_image_src);
-          setCacheBuster(Date.now());
+        if (userType === 'trader') {
+          const formData = new FormData();
+          formData.append('user_id', traderId ?? '');
+          formData.append('profile_image_src', {
+            uri: result.assets[0].uri,
+            name: 'profilepic.jpg',
+            type: 'image/jpeg',
+          } as any);
+          const res = await fetch(`${BASE_URL}/user-traders/update`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${getToken()}` },
+            body: formData,
+          });
+          const json = await res.json();
+          if (json.data?.profile_image_src) {
+            setTraderProfileImage(json.data.profile_image_src);
+            setCacheBuster(Date.now());
+          }
+          alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
+        } else {
+          const response = await profileApi.uploadPhoto(result.assets[0].uri);
+          if (response.data?.profile_image_src) {
+            setProfileImage(response.data.profile_image_src);
+            setCacheBuster(Date.now());
+          }
+          alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
         }
-        alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
       } catch (e: any) {
         alert.showAlert({ title: 'Error', message: e.message || 'Upload failed', type: 'error' });
       } finally {
@@ -99,10 +133,14 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     }
   };
 
-  const imageSrc = profileImage
-    ? (profileImage.startsWith('http')
-        ? profileImage
-        : `${SERVER_HOST}/uploads/profilepic/${profileImage.split(/[\\/]/).pop()}` + `?t=${cacheBuster}`)
+  const activeImage = userType === 'trader'
+    ? traderProfileImage
+    : profileImage;
+
+  const imageSrc = activeImage
+    ? (activeImage.startsWith('http')
+        ? activeImage
+        : `${SERVER_HOST}/uploads/profilepic/${activeImage.split(/[\\/]/).pop()}` + `?t=${cacheBuster}`)
     : null;
 
   const settingsGroups = [
