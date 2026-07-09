@@ -86,14 +86,14 @@ export const signalsApi = {
 
   // Trader CRUD
   create: (data: CreateSignalRequest) =>
-    api.post<ApiResponse<Signal>>('/signals/create', data),
+    api.post<ApiResponse<Signal>>('/user-traders/signals/create', data),
 
   update: (data: UpdateSignalRequest) =>
-    api.post<ApiResponse<Signal>>('/signals/update', data),
+    api.post<ApiResponse<Signal>>('/user-traders/signals/update', data),
 
   delete: (id: number) =>
-    api.post<ApiResponse<any>>('/signals/delete', { id }),
+    api.post<ApiResponse<any>>('/user-traders/signals/delete', { id }),
 
   getOwn: (page = 1) =>
-    api.get<SignalListResponse>(`/signals/own?page=${page}`),
+    api.get<SignalListResponse>(`/user-traders/signals/own?page=${page}`),
 };
