@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking
+  TouchableOpacity, ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
-import { getToken } from '@/api/client';
+import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
 import { useAuth } from '@/context/AuthContext';
@@ -26,6 +26,8 @@ type SignalNavProp = CompositeNavigationProp<
 >;
 
 type TabFilter = 'all' | 'buy' | 'sell';
+
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
@@ -162,11 +164,18 @@ export default function SignalScreen() {
                 >
                   <View style={styles.cardInner}>
                     <View style={styles.traderRow}>
-                      <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarText}>
-                          {signal.trader_name?.charAt(0).toUpperCase() ?? signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
-                        </Text>
-                      </View>
+                      {signal.trader_avatar_url ? (
+                        <Image
+                          source={{ uri: signal.trader_avatar_url.startsWith('http') ? signal.trader_avatar_url : `${STORAGE_HOST}/uploads/profilepic/${signal.trader_avatar_url.split(/[\\/]/).pop()}` }}
+                          style={{ width: 40, height: 40, borderRadius: 20 }}
+                        />
+                      ) : (
+                        <View style={styles.avatarCircle}>
+                          <Text style={styles.avatarText}>
+                            {signal.trader_name?.charAt(0).toUpperCase() ?? signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
+                          </Text>
+                        </View>
+                      )}
                       <View style={{ flex: 1 }}>
                         <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
                           {typeName}

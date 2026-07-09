@@ -4,6 +4,7 @@ export interface Signal {
   id: number;
   trader_id: string;
   trader_name: string | null;
+  trader_avatar_url: string | null;
   currency: number;
   currency_name: string;
   signal_type: number;
