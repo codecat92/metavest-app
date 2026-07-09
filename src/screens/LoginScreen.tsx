@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { login } = useAuth();
+  const { login, setUserType } = useAuth();
   const alert = useCustomAlert();
 
   useEffect(() => { warmServer(); }, []);
@@ -46,12 +46,12 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const step1 = await authApi.loginStep1(email, password);
-      const otpRes = await otpApi.sendOtp(step1.email, 0, step1.type);
+      await setUserType(step1.type);
+      await otpApi.sendOtp(step1.email, 0, step1.type);
       navigation.navigate('OTP', {
         userId: step1.userId,
         email: step1.email,
         type: step1.type,
-        otpCode: otpRes?.data?.otp_code ?? null,
       });
     } catch (error: any) {
       alert.showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password.', type: 'error' });

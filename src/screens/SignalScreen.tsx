@@ -31,8 +31,7 @@ export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
   const colors = useColors();
   const { userType } = useAuth();
-  // TODO: revert after OTP fix — use `userType === 'trader'`
-  const isTrader = true; // TEMP: force show for UI testing
+  const isTrader = userType === 'trader';
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');

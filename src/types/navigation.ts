@@ -7,7 +7,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  OTP: { userId: string; email: string; type: string; otpCode?: string | null };
+  OTP: { userId: string; email: string; type: string };
   Tabs: undefined;
   PAMM: undefined;
   PAMMDetail: { brokerId: number };
