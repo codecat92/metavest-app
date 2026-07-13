@@ -45,6 +45,7 @@ import AcademyNotificationsScreen from '@/screens/academy/AcademyNotificationsSc
 import ApplyInstructorScreen from '@/screens/academy/ApplyInstructorScreen';
 import CreateSignalScreen from '@/screens/trader/CreateSignalScreen';
 import MySignalsScreen from '@/screens/trader/MySignalsScreen';
+import ReferralListScreen from '@/screens/ReferralListScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -142,6 +143,7 @@ function RootNavigator() {
         <Stack.Screen name="ApplyInstructor" component={ApplyInstructorScreen} />
         <Stack.Screen name="CreateSignal" component={CreateSignalScreen} />
         <Stack.Screen name="MySignals" component={MySignalsScreen} />
+        <Stack.Screen name="ReferralList" component={ReferralListScreen} />
       </Stack.Navigator>
     </>
   );

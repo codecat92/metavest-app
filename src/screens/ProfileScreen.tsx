@@ -280,6 +280,28 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           ))}
 
           {referralCount > 0 && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ReferralList' as any)}
+              activeOpacity={0.8}
+            >
+              <GlassCard elevation={2} style={{ marginBottom: space.md }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                  <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(139,92,246,0.18)' }]}>
+                    <Award size={18} color={colors.accent.purple} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      Your Referrals
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                      {referralCount} user{referralCount > 1 ? 's' : ''} joined with your code
+                    </Text>
+                  </View>
+                </View>
+              </GlassCard>
+            </TouchableOpacity>
+          )}
+          {referralCount === 0 && (
             <GlassCard elevation={2} style={{ marginBottom: space.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                 <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(139,92,246,0.18)' }]}>
@@ -290,7 +312,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                     Your Referrals
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {referralCount} user{referralCount > 1 ? 's' : ''} joined with your code
+                    Share your referral code with friends
                   </Text>
                 </View>
               </View>

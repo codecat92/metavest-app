@@ -39,6 +39,7 @@ export type RootStackParamList = {
   ApplyInstructor: undefined;
   CreateSignal: { signalId?: number } | undefined;
   MySignals: undefined;
+  ReferralList: undefined;
 };
 
 export type TabParamList = {
