@@ -23,14 +23,30 @@ export default function ReferralListScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const token = getToken();
-    if (!token) { setLoading(false); return; }
     try {
-      const usersRes = await fetch(`${BASE_URL}/profile/referral-users`, {
+      const token = getToken();
+      if (!token) return;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch(`${BASE_URL}/profile/referral-users`, {
         headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json());
-      setUsers(usersRes.data ?? []);
-    } catch { } finally { setLoading(false); }
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const json = await res.json();
+      setUsers(json.data ?? []);
+    } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        console.log('[ReferralList] Request timed out');
+      } else {
+        console.log('[ReferralList] Load failed:', e?.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => { setLoading(true); loadData(); }, [loadData]));
