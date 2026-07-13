@@ -274,7 +274,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
 
           {/* ── Your Referrals ── */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('ReferralList' as any)}
+            onPress={() => navigation.navigate('ReferralList', { referralCode: user?.referral_code ?? '-' })}
             activeOpacity={0.8}
           >
             <GlassCard elevation={2} style={{ marginBottom: space.md }}>

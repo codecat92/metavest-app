@@ -4,7 +4,7 @@ import {
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Award, Users } from 'lucide-react-native';
+import { ArrowLeft, Award, Users, Copy } from 'lucide-react-native';
 import { useColors, space, radius, typography } from '@/theme';
 import { getToken, BASE_URL } from '@/api/client';
 import { GlassCard, Skeleton, EmptyState } from '@/components';
@@ -13,21 +13,19 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralList'>;
 
-export default function ReferralListScreen({ navigation }: Props) {
+export default function ReferralListScreen({ route, navigation }: Props) {
+  const { referralCode } = route.params;
   const c = useColors();
   const [users, setUsers] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     const token = getToken();
     if (!token) { setLoading(false); return; }
     try {
-      const [statsRes, usersRes] = await Promise.all([
-        fetch(`${BASE_URL}/profile/referral-stats`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-        fetch(`${BASE_URL}/profile/referral-users`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-      ]);
-      setStats(statsRes);
+      const usersRes = await fetch(`${BASE_URL}/profile/referral-users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.json());
       setUsers(usersRes.data ?? []);
     } catch { } finally { setLoading(false); }
   }, []);
@@ -57,6 +55,8 @@ export default function ReferralListScreen({ navigation }: Props) {
     </GlassCard>
   );
 
+  const total = users.length;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
       <View style={styles.header}>
@@ -81,14 +81,20 @@ export default function ReferralListScreen({ navigation }: Props) {
           ListHeaderComponent={
             <View style={{ alignItems: 'center', marginBottom: space.lg }}>
               <Text style={[typography.priceSmall, { color: c.accent.purple, fontFamily: 'Manrope-Bold' }]}>
-                {stats.total_referred ?? 0}
+                {total}
               </Text>
               <Text style={[typography.caption, { color: c.text.secondary }]}>
-                {stats.user_referred ?? 0} users · {stats.trader_referred ?? 0} traders
+                {total === 0 ? 'No referrals yet' : total === 1 ? '1 user joined' : `${total} users joined`}
               </Text>
-              <Text style={[typography.h4, { color: c.text.primary, marginTop: space.md, fontFamily: 'Manrope-Bold' }]}>
-                Code: {stats.referral_code ?? '-'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.md }}>
+                <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                  Your Code
+                </Text>
+                <View style={[styles.codeBadge, { backgroundColor: c.accent.purple }]}>
+                  <Text style={styles.codeText}>{referralCode}</Text>
+                  <Copy size={12} color="rgba(255,255,255,0.7)" />
+                </View>
+              </View>
             </View>
           }
           ListEmptyComponent={
@@ -107,4 +113,6 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
   list: { paddingHorizontal: space['2xl'], paddingBottom: 80, gap: space.sm },
+  codeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.sm },
+  codeText: { fontSize: 13, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
 });
