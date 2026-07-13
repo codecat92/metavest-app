@@ -36,7 +36,6 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
   const [traderProfileImage, setTraderProfileImage] = useState<string | null>(null);
   const [traderId, setTraderId] = useState<string | null>(null);
-  const [referralCount, setReferralCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const alert = useCustomAlert();
   const insets = useSafeAreaInsets();
@@ -57,12 +56,6 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     useCallback(() => {
       refreshUser();
       fetchInstructorStatus();
-      fetch(`${BASE_URL}/profile/referral-stats`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      })
-        .then(r => r.json())
-        .then(res => setReferralCount(res.total_referred ?? 0))
-        .catch(() => {});
       if (userType === 'trader') {
         fetch(`${BASE_URL}/user-traders/profile`, {
           headers: { Authorization: `Bearer ${getToken()}` },
@@ -279,29 +272,11 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
             </View>
           ))}
 
-          {referralCount > 0 && (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ReferralList' as any)}
-              activeOpacity={0.8}
-            >
-              <GlassCard elevation={2} style={{ marginBottom: space.md }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                  <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(139,92,246,0.18)' }]}>
-                    <Award size={18} color={colors.accent.purple} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      Your Referrals
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                      {referralCount} user{referralCount > 1 ? 's' : ''} joined with your code
-                    </Text>
-                  </View>
-                </View>
-              </GlassCard>
-            </TouchableOpacity>
-          )}
-          {referralCount === 0 && (
+          {/* ── Your Referrals ── */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ReferralList' as any)}
+            activeOpacity={0.8}
+          >
             <GlassCard elevation={2} style={{ marginBottom: space.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                 <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(139,92,246,0.18)' }]}>
@@ -317,7 +292,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                 </View>
               </View>
             </GlassCard>
-          )}
+          </TouchableOpacity>
 
           <AppButton
             title="Edit Profile"
@@ -373,8 +348,8 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
 
           <TouchableOpacity
             style={styles.logoutBtn}
-            onPress={async () => {
-              await logout();
+            onPress={() => {
+              logout();
               navigation.replace('Login');
             }}
           >
