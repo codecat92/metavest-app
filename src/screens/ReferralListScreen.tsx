@@ -25,18 +25,23 @@ export default function ReferralListScreen({ route, navigation }: Props) {
   const loadData = useCallback(async () => {
     try {
       const token = getToken();
+      console.log('[ReferralList] token:', token ? 'present' : 'MISSING');
       if (!token) return;
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const res = await fetch(`${BASE_URL}/profile/referral-users`, {
+      const url = `${BASE_URL}/profile/referral-users`;
+      console.log('[ReferralList] fetching:', url);
+
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
       clearTimeout(timeout);
 
       const json = await res.json();
+      console.log('[ReferralList] response:', JSON.stringify(json));
       setUsers(json.data ?? []);
     } catch (e: any) {
       if (e?.name === 'AbortError') {
