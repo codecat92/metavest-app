@@ -5,9 +5,11 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Award, Users, Copy } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useColors, space, radius, typography } from '@/theme';
 import { getToken, BASE_URL } from '@/api/client';
 import { GlassCard, Skeleton, EmptyState } from '@/components';
+import { useCustomAlert } from '@/context/AlertContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -16,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ReferralList'>;
 export default function ReferralListScreen({ route, navigation }: Props) {
   const { referralCode } = route.params;
   const c = useColors();
+  const { showAlert } = useCustomAlert();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,10 +93,18 @@ export default function ReferralListScreen({ route, navigation }: Props) {
                 <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
                   Your Code
                 </Text>
-                <View style={[styles.codeBadge, { backgroundColor: c.accent.purple }]}>
-                  <Text style={styles.codeText}>{referralCode}</Text>
-                  <Copy size={12} color="rgba(255,255,255,0.7)" />
-                </View>
+                <TouchableOpacity
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(referralCode);
+                    showAlert({ title: 'Copied', message: 'Referral code copied to clipboard' });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.codeBadge, { backgroundColor: c.accent.purple }]}>
+                    <Text style={styles.codeText}>{referralCode}</Text>
+                    <Copy size={12} color="rgba(255,255,255,0.7)" />
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
           }
