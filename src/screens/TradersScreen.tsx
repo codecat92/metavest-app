@@ -174,7 +174,7 @@ export default function TradersScreen() {
                     {[
                       { label: 'Status', value: trader.status === 1 ? 'Active' : 'Inactive', color: trader.status === 1 ? colors.semantic.positive : colors.text.secondary },
                       { label: 'Trades', value: '--', color: colors.accent.purple },
-                      { label: 'Followers', value: '--', color: colors.accent.gold },
+                      { label: 'Followers', value: String(trader.follower_count ?? 0), color: colors.accent.gold },
                     ].map((s) => (
                       <View key={s.label} style={styles.statBox}>
                         <Text style={[typography.label, { color: colors.text.secondary }]}>{s.label}</Text>

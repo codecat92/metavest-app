@@ -7,6 +7,7 @@ export interface UserTrader {
   description: string | null;
   profile_image_src: string | null;
   status: number;
+  follower_count?: number;
   follow_status?: string;
   created_at?: string;
 }
