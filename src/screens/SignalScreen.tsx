@@ -9,7 +9,6 @@ import {
   Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SvgXml } from 'react-native-svg';
 import { signalsApi, Signal } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
 import { getToken, BASE_URL } from '@/api/client';
@@ -20,7 +19,6 @@ import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FLAGS } from '@/utils/currencyFlags';
 
 type SignalNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Signals'>,
@@ -30,6 +28,12 @@ type SignalNavProp = CompositeNavigationProp<
 type TabFilter = 'all' | 'buy' | 'sell';
 
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
+
+const getCurrencyBadge = (currencyName: string): { label: string; isGold: boolean } => {
+  const base = currencyName.split('/')[0]?.toUpperCase() ?? '';
+  if (base === 'XAU') return { label: 'GOLD', isGold: true };
+  return { label: base, isGold: false };
+};
 
 export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
@@ -156,8 +160,7 @@ export default function SignalScreen() {
               const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
               const typeName = signal.signal_type_name ?? 'SIGNAL';
               const rr = signal.risk_reward_ratio;
-              const baseCurrency = pairName.split('/')[0]?.toUpperCase() ?? '';
-              const flagSvg = FLAGS[baseCurrency];
+              const currencyBadge = getCurrencyBadge(pairName);
 
               return (
                 <TouchableOpacity
@@ -204,9 +207,13 @@ export default function SignalScreen() {
                           <Text style={[typography.label, { color: colors.text.secondary }]}>
                             TRADING PAIR
                           </Text>
-                          {flagSvg ? (
-                            <SvgXml xml={flagSvg} width={20} height={14} style={styles.flagIcon} />
-                          ) : null}
+                          <Text style={[styles.pairBadge, {
+                            backgroundColor: currencyBadge.isGold ? 'rgba(245,158,11,0.15)' : 'rgba(139,92,246,0.12)',
+                            borderColor: currencyBadge.isGold ? 'rgba(245,158,11,0.30)' : 'rgba(139,92,246,0.25)',
+                            color: currencyBadge.isGold ? colors.accent.gold : colors.accent.purple,
+                          }]}>
+                            {currencyBadge.isGold ? 'GOLD' : currencyBadge.label}
+                          </Text>
                         </View>
                         <Text style={[typography.priceSmall, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
                           {pairName}
@@ -381,7 +388,13 @@ const styles = StyleSheet.create({
 
   pairRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: space.md },
   pairLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  flagIcon: { marginLeft: 6, borderRadius: 2 },
+  pairBadge: {
+    fontSize: 9, fontWeight: '800',
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 4, borderWidth: 1,
+    marginLeft: space.sm, overflow: 'hidden',
+    fontFamily: 'Manrope-Bold',
+  },
 
   metaRow: { flexDirection: 'row', gap: space.md, flexWrap: 'wrap' },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
