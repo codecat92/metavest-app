@@ -31,7 +31,7 @@ const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 const getCurrencyBadge = (currencyName: string): { label: string; isGold: boolean } => {
   const base = currencyName.split('/')[0]?.toUpperCase() ?? '';
-  if (base === 'XAU') return { label: 'GOLD', isGold: true };
+  if (base.includes('XAU')) return { label: 'GOLD', isGold: true };
   return { label: base, isGold: false };
 };
 
