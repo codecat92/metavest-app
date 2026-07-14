@@ -9,6 +9,8 @@ import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
 import { newsApi } from '@/api/news';
+import { followApi } from '@/api/follow';
+import { signalsApi } from '@/api/signals';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -423,7 +425,21 @@ export default function HomeScreen() {
   const colors = useColors();
   const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [followingCount, setFollowingCount] = useState<number | null>(null);
+  const [signalsCount, setSignalsCount] = useState<number | null>(null);
   const navigation = useNavigation<any>();
+
+  useFocusEffect(
+    useCallback(() => {
+      Promise.allSettled([
+        followApi.getFollowed(1),
+        signalsApi.getAll(1),
+      ]).then(([followRes, signalRes]) => {
+        if (followRes.status === 'fulfilled') setFollowingCount(followRes.value.data_count ?? 0);
+        if (signalRes.status === 'fulfilled') setSignalsCount(signalRes.value.data_count ?? 0);
+      });
+    }, [])
+  );
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
@@ -487,9 +503,9 @@ export default function HomeScreen() {
           </View>
           <View style={styles.portfolioStats}>
             {[
-              { label: 'FOLLOWING', value: '0 Traders' },
+              { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
               { label: 'WIN RATE', value: '--' },
-              { label: 'SIGNALS', value: '0 Active' },
+              { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
             ].map((s) => (
               <View key={s.label}>
                 <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
