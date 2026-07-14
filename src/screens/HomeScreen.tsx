@@ -264,6 +264,7 @@ function detectTag(title: string): string {
 }
 
 const tagColors: Record<string, string> = {
+  Global: colors.semantic.info,
   Macro: colors.accent.gold,
   'EUR/USD': colors.accent.purple,
   'XAU/USD': colors.accent.gold,
@@ -296,6 +297,10 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
 }
 
 // KOMPONEN: AnimatedNewsFeed — Daftar berita dengan animasi scroll vertikal otomatis
+let globalNewsCache: { title: string; time: string; tag: string }[] | null = null;
+let globalNewsCacheTime = 0;
+const CACHE_TTL = 15 * 60 * 1000;
+
 function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const d = useColors();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -304,12 +309,35 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   useFocusEffect(
     useCallback(() => {
       newsApi.getArticles().then(res => {
-        const latest = (res.data ?? []).slice(0, 4).map(a => ({
+        const marketArticles = (res.data ?? []).slice(0, 6).map(a => ({
           title: a.title ?? '',
           time: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
           tag: detectTag(a.title ?? ''),
         }));
-        setItems(latest);
+
+        if (marketArticles.length >= 4) {
+          setItems(marketArticles);
+          return;
+        }
+
+        const now = Date.now();
+        if (globalNewsCache && (now - globalNewsCacheTime) < CACHE_TTL) {
+          setItems([...marketArticles, ...globalNewsCache].slice(0, 6));
+          return;
+        }
+
+        newsApi.getGlobalNews().then(globalRes => {
+          const globalArticles = (globalRes.data ?? []).slice(0, 6).map(a => ({
+            title: a.title ?? '',
+            time: 'Global',
+            tag: 'Global',
+          }));
+          globalNewsCache = globalArticles;
+          globalNewsCacheTime = now;
+          setItems([...marketArticles, ...globalArticles].slice(0, 6));
+        }).catch(() => {
+          setItems(marketArticles);
+        });
       }).catch(() => { });
     }, [])
   );
