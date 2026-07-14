@@ -22,6 +22,7 @@ export default function TradersScreen() {
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
   const [followMap, setFollowMap] = useState<Record<string, number>>({});
+  const [brokenAvatars, setBrokenAvatars] = useState<Set<string>>(new Set());
   const alert = useCustomAlert();
 
   const loadTraders = useCallback(async () => {
@@ -131,15 +132,17 @@ export default function TradersScreen() {
           <View style={styles.cardList}>
             {sorted.map((trader, i) => {
               const isFollowed = followedSet.has(trader.id);
+              const isBroken = brokenAvatars.has(trader.id);
               const initials = (trader.name ?? 'TR').substring(0, 2).toUpperCase();
               const avatarColor = avatarColors[i % avatarColors.length];
               return (
                 <GlassCard key={trader.id} elevation={2}>
                   <View style={styles.topRow}>
-                    {trader.profile_image_src ? (
+                    {trader.profile_image_src && !isBroken ? (
                       <Image
                         source={{ uri: trader.profile_image_src.startsWith('http') ? trader.profile_image_src : `${STORAGE_HOST}/uploads/profilepic/${trader.profile_image_src.split(/[\\/]/).pop()}` }}
                         style={styles.avatarImg}
+                        onError={() => setBrokenAvatars(prev => new Set(prev).add(trader.id))}
                       />
                     ) : (
                       <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
