@@ -1,5 +1,5 @@
 import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity,
+  View, Text, FlatList, StyleSheet, TouchableOpacity, Image,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,8 @@ import { GlassCard, Skeleton, EmptyState } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralList'>;
 
@@ -59,9 +61,16 @@ export default function ReferralListScreen({ route, navigation }: Props) {
   const renderItem = ({ item }: { item: any }) => (
     <GlassCard elevation={2}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <View style={[styles.avatar, { backgroundColor: item.type === 'trader' ? c.accent.gold : c.accent.purple }]}>
-          <Text style={styles.avatarText}>{item.name?.charAt(0).toUpperCase() ?? '?'}</Text>
-        </View>
+        {item.profile_image_src ? (
+          <Image
+            source={{ uri: item.profile_image_src.startsWith('http') ? item.profile_image_src : `${STORAGE_HOST}/uploads/profilepic/${item.profile_image_src.split(/[\\/]/).pop()}` }}
+            style={styles.avatarImg}
+          />
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: item.type === 'trader' ? c.accent.gold : c.accent.purple }]}>
+            <Text style={styles.avatarText}>{item.name?.charAt(0).toUpperCase() ?? '?'}</Text>
+          </View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
             {item.name ?? '-'}
@@ -143,6 +152,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space['2xl'], paddingTop: space.xl, paddingBottom: space.lg },
   backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  avatarImg: { width: 40, height: 40, borderRadius: 20 },
   avatarText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
   list: { paddingHorizontal: space['2xl'], paddingBottom: 80, gap: space.sm },
   codeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.sm },
