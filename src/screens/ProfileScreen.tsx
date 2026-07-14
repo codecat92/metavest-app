@@ -260,10 +260,10 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                     <View style={styles.settingsIconWrap}>
                       <item.Icon size={15} color={colors.accent.purple} />
                     </View>
-                    <Text style={[typography.body, { color: colors.text.primary, flex: 1, fontFamily: 'DMSans-SemiBold' }]}>
+                    <Text style={[typography.body, { color: colors.text.primary, flexShrink: 1, fontFamily: 'DMSans-SemiBold' }]}>
                       {item.label}
                     </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, fontFamily: 'DMSans' }]}>
+                    <Text style={[typography.caption, { color: colors.text.secondary, flexShrink: 1, fontFamily: 'DMSans' }]} numberOfLines={1}>
                       {item.value}
                     </Text>
                   </View>
