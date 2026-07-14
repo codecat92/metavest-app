@@ -1,18 +1,19 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator
+  TouchableOpacity, TextInput, ActivityIndicator, Image,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
-import { getToken } from '@/api/client';
+import { getToken, BASE_URL } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
 
 const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 export default function TradersScreen() {
   const [traders, setTraders] = useState<UserTrader[]>([]);
@@ -135,9 +136,16 @@ export default function TradersScreen() {
               return (
                 <GlassCard key={trader.id} elevation={2}>
                   <View style={styles.topRow}>
-                    <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-                      <Text style={styles.avatarText}>{initials}</Text>
-                    </View>
+                    {trader.profile_image_src ? (
+                      <Image
+                        source={{ uri: trader.profile_image_src.startsWith('http') ? trader.profile_image_src : `${STORAGE_HOST}/uploads/profilepic/${trader.profile_image_src.split(/[\\/]/).pop()}` }}
+                        style={styles.avatarImg}
+                      />
+                    ) : (
+                      <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                      </View>
+                    )}
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
                         <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
@@ -212,6 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: colors.glass.border,
   },
+  avatarImg: { width: 52, height: 52, borderRadius: 26, flexShrink: 0 },
   avatarText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.xs },
   bio: { fontSize: 12, color: colors.text.muted, lineHeight: 17, marginTop: 2, fontFamily: 'DMSans' },
