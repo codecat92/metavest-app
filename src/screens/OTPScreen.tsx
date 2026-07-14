@@ -2,10 +2,10 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Shield } from 'lucide-react-native';
+import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { authApi } from '@/api/auth';
@@ -26,7 +26,14 @@ export default function OTPScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [stagingOtp, setStagingOtp] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    otpApi.sendOtp(email, 0, type ?? 'user').then(res => {
+      setStagingOtp(res.data.otp_code);
+    }).catch(() => {});
+  }, []);
 
   const handleVerify = async () => {
     if (code.length < 4) {
@@ -48,7 +55,8 @@ export default function OTPScreen() {
   const handleResend = async () => {
     setResending(true);
     try {
-      await otpApi.sendOtp(email, 0, type ?? 'user');
+      const res = await otpApi.sendOtp(email, 0, type ?? 'user');
+      setStagingOtp(res.data.otp_code);
       alert.showAlert({ title: 'OTP Sent', message: 'A new code has been sent to your email', type: 'success' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed to resend', type: 'error' });
@@ -75,6 +83,20 @@ export default function OTPScreen() {
           <Text style={{ color: colors.accent.purple, fontWeight: '700' }}>{email}</Text>
         </Text>
       </View>
+
+      {stagingOtp && (
+        <View style={[styles.stagingBanner, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.30)' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs }}>
+            <AlertTriangle size={18} color="#F59E0B" />
+            <Text style={[typography.captionBold, { color: '#F59E0B', fontFamily: 'DMSans-Bold' }]}>
+              SISTEM OTP INI HANYA UNTUK STAGING!
+            </Text>
+          </View>
+          <Text style={[typography.bodyBold, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
+            Your code: {stagingOtp}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.codeInputBox}>
         <TextInput
@@ -133,4 +155,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
   },
   resendBtn: { alignItems: 'center', paddingVertical: space.sm },
+  stagingBanner: {
+    borderWidth: 1, borderRadius: radius.md,
+    paddingHorizontal: space.lg, paddingVertical: space.md,
+    marginBottom: space.xl, alignItems: 'center',
+  },
 });
