@@ -67,6 +67,9 @@ export const signalsApi = {
   getAll: (page = 1) =>
     api.get<SignalListResponse>(`/signals/all?page=${page}`),
 
+  getFollowed: (page = 1) =>
+    api.get<SignalListResponse>(`/signals/followed?page=${page}`),
+
   getById: (id: number) =>
     api.get<ApiResponse<Signal>>(`/signals/${id}`),
 

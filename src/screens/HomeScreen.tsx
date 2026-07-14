@@ -433,7 +433,7 @@ export default function HomeScreen() {
     useCallback(() => {
       Promise.allSettled([
         followApi.getFollowed(1),
-        signalsApi.getAll(1),
+        signalsApi.getFollowed(1),
       ]).then(([followRes, signalRes]) => {
         if (followRes.status === 'fulfilled') setFollowingCount(followRes.value.data_count ?? 0);
         if (signalRes.status === 'fulfilled') setSignalsCount(signalRes.value.data_count ?? 0);
