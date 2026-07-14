@@ -3,7 +3,7 @@ import {
   TouchableOpacity, TextInput, ActivityIndicator, Image,
 } from 'react-native';
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
@@ -18,6 +18,7 @@ const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 export default function TradersScreen() {
   const [traders, setTraders] = useState<UserTrader[]>([]);
   const colors = useColors();
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
@@ -136,7 +137,12 @@ export default function TradersScreen() {
               const initials = (trader.name ?? 'TR').substring(0, 2).toUpperCase();
               const avatarColor = avatarColors[i % avatarColors.length];
               return (
-                <GlassCard key={trader.id} elevation={2}>
+                <TouchableOpacity
+                  key={trader.id}
+                  onPress={() => navigation.navigate('TraderDetail', { traderId: trader.id })}
+                  activeOpacity={0.7}
+                >
+                <GlassCard elevation={2}>
                   <View style={styles.topRow}>
                     {trader.profile_image_src && !isBroken ? (
                       <Image
@@ -185,6 +191,7 @@ export default function TradersScreen() {
                     ))}
                   </View>
                 </GlassCard>
+                </TouchableOpacity>
               );
             })}
             {sorted.length === 0 && !loading && (
