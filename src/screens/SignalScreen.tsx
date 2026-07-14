@@ -20,7 +20,7 @@ import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { US, EU, GB, JP, AU, NZ, CA, CH } from 'country-flag-icons/string/3x2';
+import { FLAGS } from '@/utils/currencyFlags';
 
 type SignalNavProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Signals'>,
@@ -30,11 +30,6 @@ type SignalNavProp = CompositeNavigationProp<
 type TabFilter = 'all' | 'buy' | 'sell';
 
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
-
-const currencyFlags: Record<string, string> = {
-  USD: US, EUR: EU, GBP: GB, JPY: JP,
-  AUD: AU, NZD: NZ, CAD: CA, CHF: CH,
-};
 
 export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
@@ -162,7 +157,7 @@ export default function SignalScreen() {
               const typeName = signal.signal_type_name ?? 'SIGNAL';
               const rr = signal.risk_reward_ratio;
               const baseCurrency = pairName.split('/')[0]?.toUpperCase() ?? '';
-              const flagSvg = currencyFlags[baseCurrency];
+              const flagSvg = FLAGS[baseCurrency];
 
               return (
                 <TouchableOpacity
