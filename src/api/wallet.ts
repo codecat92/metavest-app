@@ -45,7 +45,10 @@ export const walletApi = {
     const token = getToken();
     const res = await fetch(`${BASE_URL}/wallet/topup`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
       body: formData,
     });
 
