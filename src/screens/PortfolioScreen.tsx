@@ -382,7 +382,7 @@ export default function PortfolioScreen() {
                                 borderWidth: 1,
                                 borderColor: 'rgba(239,68,68,0.20)',
                               }}>
-                                <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={3}>
+                                <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={1} ellipsizeMode="tail">
                                   Reason: {item.rejection_reason}
                                 </Text>
                               </View>
