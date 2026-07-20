@@ -557,7 +557,7 @@ export default function PortfolioScreen() {
 
       {showWithdrawLocked && (
         <Modal visible transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: space.xl }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', padding: space.xl }}>
             <GlassCard elevation={4}>
               <View style={{ alignItems: 'center', gap: space.md }}>
                 <AlertTriangle size={40} color={colors.semantic.warning} />
@@ -571,7 +571,7 @@ export default function PortfolioScreen() {
                   title="OK"
                   variant="primary"
                   onPress={() => setShowWithdrawLocked(false)}
-                  style={{ marginTop: space.md }}
+                  style={{ marginTop: space.md, alignSelf: 'stretch' }}
                 />
               </View>
             </GlassCard>
