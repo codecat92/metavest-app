@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, TextInput,
+  TouchableOpacity, ActivityIndicator, TextInput, Modal,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useState } from 'react';
@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus,
-  Wallet as WalletIcon, Upload, X,
+  Wallet as WalletIcon, Upload, X, AlertTriangle,
 } from 'lucide-react-native';
 import { walletApi, Wallet, WalletTransaction } from '@/api/wallet';
 import { followApi, UserTrader } from '@/api/follow';
@@ -37,6 +37,7 @@ export default function PortfolioScreen() {
   const [amount, setAmount] = useState('');
   const [proofImageUri, setProofImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -346,6 +347,11 @@ export default function PortfolioScreen() {
                   {history.slice(0, 10).map((item) => {
                     const credit = isCredit(item);
                     return (
+                      <TouchableOpacity
+                        key={item.id}
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedTransaction(item)}
+                      >
                       <GlassCard key={item.id} elevation={2}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                           <View style={styles.txIcon}>
@@ -399,6 +405,7 @@ export default function PortfolioScreen() {
                           </View>
                         </View>
                       </GlassCard>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -448,6 +455,104 @@ export default function PortfolioScreen() {
           </>
         )}
       </ScrollView>
+
+      {selectedTransaction && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: space.xl }}>
+            <GlassCard elevation={4}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.lg }}>
+                <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
+                  {selectedTransaction.type_label ?? 'Transaction'} Details
+                </Text>
+                <TouchableOpacity onPress={() => setSelectedTransaction(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <X size={20} color={colors.text.secondary} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ gap: space.md }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Type</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>{selectedTransaction.type_label ?? selectedTransaction.type}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Amount</Text>
+                  <Text style={[typography.bodyBold, {
+                    color: isCredit(selectedTransaction) ? colors.semantic.positive : colors.semantic.negative,
+                    fontFamily: 'Manrope-Bold',
+                  }]}>
+                    {isCredit(selectedTransaction) ? '+' : '-'}{formatBalance(Math.abs(selectedTransaction.amount))}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Date</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                    {selectedTransaction.created_at ? new Date(selectedTransaction.created_at).toLocaleString() : '-'}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Status</Text>
+                  <Badge
+                    label={selectedTransaction.status_label ?? String(selectedTransaction.status)}
+                    variant={
+                      isApproved(selectedTransaction) ? 'success' :
+                      isRejected(selectedTransaction) ? 'danger' : 'warning'
+                    }
+                  />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Balance Before</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                    {formatBalance(selectedTransaction.balance_before)}
+                  </Text>
+                </View>
+                {selectedTransaction.balance_after != null && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>Balance After</Text>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                      {formatBalance(selectedTransaction.balance_after)}
+                    </Text>
+                  </View>
+                )}
+
+                {isRejected(selectedTransaction) && selectedTransaction.rejection_reason && (
+                  <View style={{
+                    backgroundColor: 'rgba(239,68,68,0.08)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(239,68,68,0.20)',
+                    borderRadius: radius.sm,
+                    padding: space.md,
+                  }}>
+                    <Text style={{ fontSize: 11, color: colors.semantic.negative, fontFamily: 'DMSans-Bold', marginBottom: 4 }}>
+                      Rejection Reason
+                    </Text>
+                    <Text style={{ fontSize: 13, color: colors.text.secondary, fontFamily: 'DMSans', lineHeight: 19 }}>
+                      {selectedTransaction.rejection_reason}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedTransaction.status === 1 && (selectedTransaction.type === 1 || selectedTransaction.type_label === 'Topup') && (
+                  <View style={{
+                    backgroundColor: 'rgba(245,158,11,0.08)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(245,158,11,0.20)',
+                    borderRadius: radius.sm,
+                    padding: space.md,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: space.sm,
+                  }}>
+                    <AlertTriangle size={16} color={colors.semantic.warning} />
+                    <Text style={{ fontSize: 13, color: colors.semantic.warning, fontFamily: 'DMSans', flex: 1 }}>
+                      Menunggu approval dari admin
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </GlassCard>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
