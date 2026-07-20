@@ -367,9 +367,19 @@ export default function PortfolioScreen() {
                               </Text>
                             )}
                             {isRejected(item) && item.rejection_reason && (
-                              <Text style={{ fontSize: 10, color: colors.text.secondary, marginTop: 2, fontFamily: 'DMSans' }} numberOfLines={2}>
-                                {item.rejection_reason}
-                              </Text>
+                              <View style={{
+                                marginTop: space.sm,
+                                paddingHorizontal: space.sm,
+                                paddingVertical: space.xs,
+                                borderRadius: radius.sm,
+                                backgroundColor: 'rgba(239,68,68,0.08)',
+                                borderWidth: 1,
+                                borderColor: 'rgba(239,68,68,0.20)',
+                              }}>
+                                <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={3}>
+                                  Reason: {item.rejection_reason}
+                                </Text>
+                              </View>
                             )}
                           </View>
                           <View style={{ alignItems: 'flex-end', gap: space.xs }}>
