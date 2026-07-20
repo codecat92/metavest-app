@@ -83,6 +83,6 @@ export const walletApi = {
     if (to) params.append('to', to);
     const qs = params.toString();
     const token = getToken();
-    return `${BASE_URL}/wallet/report${qs ? '?' + qs : ''}&token=${token}`;
+    return `${BASE_URL}/wallet/report?${qs ? qs + '&' : ''}token=${token}`;
   },
 };

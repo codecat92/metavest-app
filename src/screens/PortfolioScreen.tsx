@@ -119,7 +119,9 @@ export default function PortfolioScreen() {
     try {
       const url = walletApi.downloadReportUrl();
       const fileUri = FileSystem.documentDirectory + 'metavest-report.html';
-      await FileSystem.downloadAsync(url, fileUri);
+      await FileSystem.downloadAsync(url, fileUri, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
       await Sharing.shareAsync(fileUri, { mimeType: 'text/html' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Download failed', type: 'error' });
