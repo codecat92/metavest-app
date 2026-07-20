@@ -1,4 +1,4 @@
-import { api, ApiResponse } from './client';
+import { api, ApiResponse, getToken, BASE_URL } from './client';
 
 export interface Wallet {
   id_wallet: string;
@@ -8,35 +8,60 @@ export interface Wallet {
   status?: number;
 }
 
-export interface WalletHistoryItem {
-  id: number;
-  id_wallet: string;
-  type: string;
+export interface WalletTransaction {
+  id: string;
+  type: 'topup' | 'purchase' | 'refund' | 'adjustment';
+  status: 'pending' | 'approved' | 'rejected';
   amount: number;
-  status: number;
+  balance_before: number;
+  balance_after: number | null;
+  rejection_reason: string | null;
   created_at: string;
-  identifier?: string;
-  transfer_type?: number;
 }
 
-export interface WalletHistoryResponse {
-  data: WalletHistoryItem[];
-  data_count: number;
+export interface WalletBalance {
+  balance: number;
+  total_historical_deposit: number;
 }
 
 export const walletApi = {
   getById: () =>
     api.get<ApiResponse<Wallet>>('/wallet/byid'),
 
-  getHistory: (page = 1) =>
-    api.get<WalletHistoryResponse>(`/wallet/history?page=${page}`),
-
   requestTopUp: () =>
     api.post<ApiResponse<any>>('/wallet/request-top-up'),
 
-  validateTopUp: (amount: number) =>
-    api.post<ApiResponse<any>>('/wallet/top-up', { amount }),
-
   withdraw: (amount: number) =>
     api.post<ApiResponse<any>>('/wallet/withdraw', { amount }),
+
+  submitTopup: async (amount: number, proofImageUri: string) => {
+    const formData = new FormData();
+    formData.append('amount', String(amount));
+    formData.append('image_file', {
+      uri: proofImageUri,
+      name: 'proof.jpg',
+      type: 'image/jpeg',
+    } as any);
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/wallet/topup`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Request failed');
+    return json;
+  },
+
+  getTransactions: (filters?: { type?: string; from?: string; to?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.from) params.append('from', filters.from);
+    if (filters?.to) params.append('to', filters.to);
+    const qs = params.toString();
+    return api.get<ApiResponse<WalletTransaction[]>>(`/wallet/transactions${qs ? '?' + qs : ''}`);
+  },
+
+  getBalance: () =>
+    api.get<ApiResponse<WalletBalance>>('/wallet/balance'),
 };

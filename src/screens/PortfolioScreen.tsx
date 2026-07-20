@@ -1,19 +1,24 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, TextInput
+  TouchableOpacity, ActivityIndicator, TextInput,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus, Wallet as WalletIcon } from 'lucide-react-native';
-import { walletApi, Wallet, WalletHistoryItem } from '@/api/wallet';
+import * as ImagePicker from 'expo-image-picker';
+import {
+  TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus,
+  Wallet as WalletIcon, Upload, X,
+} from 'lucide-react-native';
+import { walletApi, Wallet, WalletTransaction } from '@/api/wallet';
 import { followApi, UserTrader } from '@/api/follow';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
+import { GlassCard, AppButton, AppInput, EmptyState, Badge } from '@/components';
 
 export default function PortfolioScreen() {
   const alert = useCustomAlert();
@@ -24,26 +29,26 @@ export default function PortfolioScreen() {
   const [otpCode, setOtpCode] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [pendingAmount, setPendingAmount] = useState(0);
-  const [history, setHistory] = useState<WalletHistoryItem[]>([]);
+  const [history, setHistory] = useState<WalletTransaction[]>([]);
   const [followed, setFollowed] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTopUp, setShowTopUp] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [amount, setAmount] = useState('');
+  const [proofImageUri, setProofImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const [walletRes, historyRes, activeRes, followRes] = await Promise.all([
+      const [walletRes, transactionsRes, activeRes, followRes] = await Promise.all([
         walletApi.getById(),
-        walletApi.getHistory(1),
+        walletApi.getTransactions(),
         followApi.getActive(1),
         followApi.getFollowed(1),
       ]);
       setWallet(walletRes.data ?? null);
-      setHistory(historyRes.data ?? []);
-      // Filter active traders to only followed ones
+      setHistory(transactionsRes.data ?? []);
       const followedIds = new Set((followRes.data ?? []).map(f => f.trader_id));
       setFollowed((activeRes.data ?? []).filter(t => followedIds.has(t.id)));
     } catch (e) {
@@ -58,8 +63,37 @@ export default function PortfolioScreen() {
   );
 
   const balance = wallet?.balance ?? 0;
+
   const formatBalance = (amount: number) =>
-    `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    `${amount.toLocaleString('en-US')} MP`;
+
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'topup':      return 'Top Up';
+      case 'purchase':   return 'Purchase';
+      case 'refund':     return 'Refund';
+      case 'adjustment': return 'Adjustment';
+      default:           return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+  };
+
+  const isCredit = (type: string) => type === 'topup' || type === 'refund';
+
+  const handlePickProof = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert.showAlert({ title: 'Permission denied', message: 'Allow access to photos', type: 'error' });
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setProofImageUri(result.assets[0].uri);
+    }
+  };
 
   if (!getToken()) {
     return (
@@ -100,7 +134,7 @@ export default function PortfolioScreen() {
 
             <View style={styles.actionRow}>
               <TouchableOpacity
-                onPress={() => { setShowTopUp(true); setShowWithdraw(false); setAmount(''); }}
+                onPress={() => { setShowTopUp(true); setShowWithdraw(false); setAmount(''); setProofImageUri(null); }}
                 style={[styles.actionBtn, { backgroundColor: 'rgba(34,197,94,0.1)', borderColor: 'rgba(34,197,94,0.25)' }]}
               >
                 <Plus size={16} color={colors.semantic.positive} />
@@ -120,22 +154,113 @@ export default function PortfolioScreen() {
                 <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                   Top Up Wallet
                 </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: space.md }]}>
+                  Balance: {formatBalance(balance)}
+                </Text>
+
                 <AppInput
                   value={amount}
                   onChangeText={setAmount}
                   placeholder="Enter amount"
                   keyboardType="numeric"
                 />
+
+                {!proofImageUri ? (
+                  <TouchableOpacity
+                    onPress={handlePickProof}
+                    activeOpacity={0.7}
+                    style={{
+                      borderWidth: 1.5,
+                      borderStyle: 'dashed',
+                      borderColor: colors.glass.borderStrong,
+                      borderRadius: radius.md,
+                      paddingVertical: space['2xl'],
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: space.sm,
+                      marginTop: space.md,
+                      marginBottom: space.md,
+                    }}
+                  >
+                    <Upload size={24} color={colors.text.secondary} />
+                    <Text style={[typography.bodyBold, { color: colors.text.secondary }]}>
+                      Upload Bukti Transfer
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={{ marginTop: space.md, marginBottom: space.md }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
+                      <ExpoImage
+                        source={{ uri: proofImageUri }}
+                        style={{
+                          width: 120,
+                          height: 120,
+                          borderRadius: radius.md,
+                          borderWidth: 1,
+                          borderColor: colors.glass.border,
+                        }}
+                        contentFit="cover"
+                      />
+                      <View style={{ flex: 1, gap: space.sm }}>
+                        <TouchableOpacity
+                          onPress={handlePickProof}
+                          activeOpacity={0.7}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: space.xs,
+                            paddingHorizontal: space.md,
+                            paddingVertical: space.sm,
+                            borderRadius: radius.sm,
+                            backgroundColor: colors.glass.g1,
+                            borderWidth: 1,
+                            borderColor: colors.glass.border,
+                            alignSelf: 'flex-start',
+                          }}
+                        >
+                          <Upload size={14} color={colors.text.secondary} />
+                          <Text style={[typography.label, { color: colors.text.secondary }]}>
+                            Ganti Gambar
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setProofImageUri(null)}
+                          activeOpacity={0.7}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: space.xs,
+                            paddingHorizontal: space.md,
+                            paddingVertical: space.sm,
+                            borderRadius: radius.sm,
+                            backgroundColor: 'rgba(239,68,68,0.10)',
+                            borderWidth: 1,
+                            borderColor: 'rgba(239,68,68,0.25)',
+                            alignSelf: 'flex-start',
+                          }}
+                        >
+                          <X size={14} color={colors.semantic.negative} />
+                          <Text style={[typography.label, { color: colors.semantic.negative }]}>
+                            Hapus
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
                 <AppButton
-                  title={submitting ? 'Processing...' : 'Confirm Top Up'}
+                  title={submitting ? 'Submitting...' : 'Confirm Top Up'}
+                  disabled={!proofImageUri}
                   onPress={async () => {
                     const val = Number(amount);
                     if (!val || val <= 0) { alert.showAlert({ title: 'Error', message: 'Enter a valid amount', type: 'error' }); return; }
+                    if (!proofImageUri) { alert.showAlert({ title: 'Error', message: 'Upload proof of transfer', type: 'error' }); return; }
                     setSubmitting(true);
                     try {
-                      await walletApi.validateTopUp(val);
-                      alert.showAlert({ title: 'Success', message: 'Top up request submitted', type: 'success' });
-                      setShowTopUp(false); setAmount(''); loadData();
+                      await walletApi.submitTopup(val, proofImageUri);
+                      alert.showAlert({ title: 'Success', message: 'Top up request submitted, menunggu approval admin', type: 'success' });
+                      setShowTopUp(false); setAmount(''); setProofImageUri(null); loadData();
                     } catch (e: any) { alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' }); }
                     finally { setSubmitting(false); }
                   }}
@@ -264,30 +389,49 @@ export default function PortfolioScreen() {
               ) : (
                 <View style={{ gap: space.sm }}>
                   {history.slice(0, 10).map((item) => {
-                    const isCredit = item.type === 'credit' || item.type === 'topup' || item.type === 'TopUp';
+                    const credit = isCredit(item.type);
                     return (
                       <GlassCard key={item.id} elevation={2}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
                           <View style={styles.txIcon}>
-                            {isCredit
+                            {credit
                               ? <ArrowUpRight size={18} color={colors.semantic.positive} />
                               : <ArrowDownRight size={18} color={colors.semantic.negative} />
                             }
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                              {item.type?.charAt(0).toUpperCase() + item.type?.slice(1) ?? 'Transaction'}
+                              {getTypeLabel(item.type)}
                             </Text>
                             <Text style={[typography.caption, { color: colors.text.secondary }]}>
                               {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
                             </Text>
+                            {item.status === 'pending' && item.type === 'topup' && (
+                              <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
+                                Menunggu approval
+                              </Text>
+                            )}
+                            {item.status === 'rejected' && item.rejection_reason && (
+                              <Text style={{ fontSize: 10, color: colors.text.secondary, marginTop: 2, fontFamily: 'DMSans' }} numberOfLines={2}>
+                                {item.rejection_reason}
+                              </Text>
+                            )}
                           </View>
-                          <Text style={[typography.bodyBold, {
-                            color: isCredit ? colors.semantic.positive : colors.semantic.negative,
-                            fontFamily: 'Manrope-Bold',
-                          }]}>
-                            {isCredit ? '+' : '-'}{formatBalance(Math.abs(item.amount ?? 0))}
-                          </Text>
+                          <View style={{ alignItems: 'flex-end', gap: space.xs }}>
+                            <Text style={[typography.bodyBold, {
+                              color: credit ? colors.semantic.positive : colors.semantic.negative,
+                              fontFamily: 'Manrope-Bold',
+                            }]}>
+                              {credit ? '+' : '-'}{formatBalance(Math.abs(item.amount))}
+                            </Text>
+                            <Badge
+                              label={item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                              variant={
+                                item.status === 'approved' ? 'success' :
+                                item.status === 'rejected' ? 'danger' : 'warning'
+                              }
+                            />
+                          </View>
                         </View>
                       </GlassCard>
                     );
