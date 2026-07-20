@@ -17,7 +17,7 @@ import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState, Badge } from '@/components';
