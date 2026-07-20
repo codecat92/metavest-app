@@ -85,10 +85,10 @@ export default function PortfolioScreen() {
     t => t.created_at && new Date(t.created_at).toDateString() === today
   );
   const todayTopup = todaysTransactions
-    .filter(t => t.type === 1 || t.type_label === 'Topup')
+    .filter(t => (t.type === 1 || t.type_label === 'Topup') && (t.status === 2 || t.status_label === 'Approved'))
     .reduce((sum, t) => sum + t.amount, 0);
   const todaySpend = todaysTransactions
-    .filter(t => t.type === 2 || t.type_label === 'Purchase')
+    .filter(t => (t.type === 2 || t.type_label === 'Purchase') && (t.status === 2 || t.status_label === 'Approved'))
     .reduce((sum, t) => sum + t.amount, 0);
   const dailyChange = todayTopup - todaySpend;
   const hasDailyActivity = todaysTransactions.length > 0;
