@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus,
-  Wallet as WalletIcon, Upload, X, AlertTriangle,
+  Wallet as WalletIcon, Upload, X, AlertTriangle, FileText,
 } from 'lucide-react-native';
 import { walletApi, Wallet, WalletTransaction, WalletBalance } from '@/api/wallet';
 import { followApi, UserTrader } from '@/api/follow';
@@ -17,6 +17,8 @@ import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState, Badge } from '@/components';
 
@@ -113,6 +115,17 @@ export default function PortfolioScreen() {
     }
   };
 
+  const handleDownloadReport = async () => {
+    try {
+      const url = walletApi.downloadReportUrl();
+      const fileUri = FileSystem.documentDirectory + 'metavest-report.html';
+      await FileSystem.downloadAsync(url, fileUri);
+      await Sharing.shareAsync(fileUri, { mimeType: 'text/html' });
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Download failed', type: 'error' });
+    }
+  };
+
   if (!getToken()) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
@@ -186,6 +199,28 @@ export default function PortfolioScreen() {
                   <Text style={{ fontSize: 16, fontWeight: '700', color: colors.semantic.positive, marginTop: 2, fontFamily: 'Manrope-Bold' }}>{approvedCount}</Text>
                 </View>
               </View>
+
+              <TouchableOpacity
+                onPress={handleDownloadReport}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: space.sm,
+                  paddingVertical: space.md,
+                  borderRadius: radius.md,
+                  backgroundColor: 'rgba(139,92,246,0.10)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(139,92,246,0.25)',
+                  marginTop: space.lg,
+                }}
+              >
+                <FileText size={16} color={colors.accent.purple} />
+                <Text style={[typography.bodyBold, { color: colors.accent.purple }]}>
+                  Download Report
+                </Text>
+              </TouchableOpacity>
             </GlassCard>
 
             <View style={styles.actionRow}>

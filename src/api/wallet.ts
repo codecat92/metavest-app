@@ -76,4 +76,13 @@ export const walletApi = {
 
   getBalance: () =>
     api.get<ApiResponse<WalletBalance>>('/wallet/balance'),
+
+  downloadReportUrl: (from?: string, to?: string): string => {
+    const params = new URLSearchParams();
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+    const qs = params.toString();
+    const token = getToken();
+    return `${BASE_URL}/wallet/report${qs ? '?' + qs : ''}&token=${token}`;
+  },
 };
