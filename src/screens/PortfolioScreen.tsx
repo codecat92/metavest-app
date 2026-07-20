@@ -67,17 +67,13 @@ export default function PortfolioScreen() {
   const formatBalance = (amount: number) =>
     `${amount.toLocaleString('en-US')} MP`;
 
-  const getTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'topup':      return 'Top Up';
-      case 'purchase':   return 'Purchase';
-      case 'refund':     return 'Refund';
-      case 'adjustment': return 'Adjustment';
-      default:           return type.charAt(0).toUpperCase() + type.slice(1);
-    }
-  };
+  const isCredit = (item: WalletTransaction) =>
+    item.type === 1 || item.type === 3 || item.type_label === 'Topup' || item.type_label === 'Refund';
 
-  const isCredit = (type: string) => type === 'topup' || type === 'refund';
+  const isApproved = (item: WalletTransaction) =>
+    item.status === 2 || item.status_label === 'Approved';
+  const isRejected = (item: WalletTransaction) =>
+    item.status === 3 || item.status_label === 'Rejected';
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -389,7 +385,7 @@ export default function PortfolioScreen() {
               ) : (
                 <View style={{ gap: space.sm }}>
                   {history.slice(0, 10).map((item) => {
-                    const credit = isCredit(item.type);
+                    const credit = isCredit(item);
                     return (
                       <GlassCard key={item.id} elevation={2}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
@@ -401,17 +397,17 @@ export default function PortfolioScreen() {
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                              {getTypeLabel(item.type)}
+                              {item.type_label ?? item.type}
                             </Text>
                             <Text style={[typography.caption, { color: colors.text.secondary }]}>
                               {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
                             </Text>
-                            {item.status === 'pending' && item.type === 'topup' && (
+                            {item.status === 1 && (item.type === 1 || item.type_label === 'Topup') && (
                               <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
                                 Menunggu approval
                               </Text>
                             )}
-                            {item.status === 'rejected' && item.rejection_reason && (
+                            {isRejected(item) && item.rejection_reason && (
                               <Text style={{ fontSize: 10, color: colors.text.secondary, marginTop: 2, fontFamily: 'DMSans' }} numberOfLines={2}>
                                 {item.rejection_reason}
                               </Text>
@@ -425,10 +421,10 @@ export default function PortfolioScreen() {
                               {credit ? '+' : '-'}{formatBalance(Math.abs(item.amount))}
                             </Text>
                             <Badge
-                              label={item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                              label={item.status_label ?? String(item.status)}
                               variant={
-                                item.status === 'approved' ? 'success' :
-                                item.status === 'rejected' ? 'danger' : 'warning'
+                                isApproved(item) ? 'success' :
+                                isRejected(item) ? 'danger' : 'warning'
                               }
                             />
                           </View>
