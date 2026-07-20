@@ -17,8 +17,7 @@ import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { otpApi } from '@/api/otp';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import * as FileSystem, { StorageAccessFramework } from 'expo-file-system/legacy';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState, Badge } from '@/components';
 
@@ -118,11 +117,30 @@ export default function PortfolioScreen() {
   const handleDownloadReport = async () => {
     try {
       const url = walletApi.downloadReportUrl();
-      const fileUri = FileSystem.documentDirectory + 'metavest-report.html';
-      await FileSystem.downloadAsync(url, fileUri, {
+      const fileName = `metavest-report-${new Date().toISOString().slice(0, 10)}.html`;
+
+      const tempUri = FileSystem.cacheDirectory + fileName;
+      await FileSystem.downloadAsync(url, tempUri, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      await Sharing.shareAsync(fileUri, { mimeType: 'text/html' });
+
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (!permissions.granted) {
+        alert.showAlert({ title: 'Cancelled', message: 'Folder access needed to save', type: 'info' });
+        return;
+      }
+
+      const destUri = await StorageAccessFramework.createFileAsync(
+        permissions.directoryUri, fileName, 'text/html'
+      );
+      const base64 = await FileSystem.readAsStringAsync(tempUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      await FileSystem.writeAsStringAsync(destUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      alert.showAlert({ title: 'Saved', message: `Report saved as ${fileName}`, type: 'success' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Download failed', type: 'error' });
     }
