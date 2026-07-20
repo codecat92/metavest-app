@@ -38,6 +38,7 @@ export default function PortfolioScreen() {
   const [proofImageUri, setProofImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
+  const [showWithdrawLocked, setShowWithdrawLocked] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -138,7 +139,7 @@ export default function PortfolioScreen() {
                 <Text style={[typography.bodyBold, { color: colors.semantic.positive }]}>Top Up</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => { setShowWithdraw(true); setShowTopUp(false); setAmount(''); }}
+                onPress={() => setShowWithdrawLocked(true)}
                 style={[styles.actionBtn, { backgroundColor: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.25)' }]}
               >
                 <Minus size={16} color={colors.semantic.negative} />
@@ -458,7 +459,7 @@ export default function PortfolioScreen() {
 
       {selectedTransaction && (
         <Modal visible transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: space.xl }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', padding: space.xl }}>
             <GlassCard elevation={4}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.lg }}>
                 <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
@@ -548,6 +549,30 @@ export default function PortfolioScreen() {
                     </Text>
                   </View>
                 )}
+              </View>
+            </GlassCard>
+          </View>
+        </Modal>
+      )}
+
+      {showWithdrawLocked && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: space.xl }}>
+            <GlassCard elevation={4}>
+              <View style={{ alignItems: 'center', gap: space.md }}>
+                <AlertTriangle size={40} color={colors.semantic.warning} />
+                <Text style={[typography.h4, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
+                  Feature Unavailable
+                </Text>
+                <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center' }]}>
+                  Fitur withdraw masih dalam pengembangan
+                </Text>
+                <AppButton
+                  title="OK"
+                  variant="primary"
+                  onPress={() => setShowWithdrawLocked(false)}
+                  style={{ marginTop: space.md }}
+                />
               </View>
             </GlassCard>
           </View>
