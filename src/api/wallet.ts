@@ -48,9 +48,18 @@ export const walletApi = {
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Request failed');
-    return json;
+
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (!res.ok) throw new Error(json.message || `Request failed (${res.status})`);
+      return json;
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        throw new Error(`Server returned invalid response (${res.status})`);
+      }
+      throw e;
+    }
   },
 
   getTransactions: (filters?: { type?: string; from?: string; to?: string }) => {
