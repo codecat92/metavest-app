@@ -11,7 +11,7 @@ import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus,
   Wallet as WalletIcon, Upload, X, AlertTriangle,
 } from 'lucide-react-native';
-import { walletApi, Wallet, WalletTransaction } from '@/api/wallet';
+import { walletApi, Wallet, WalletTransaction, WalletBalance } from '@/api/wallet';
 import { followApi, UserTrader } from '@/api/follow';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -39,18 +39,21 @@ export default function PortfolioScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
   const [showWithdrawLocked, setShowWithdrawLocked] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const [walletRes, transactionsRes, activeRes, followRes] = await Promise.all([
+      const [walletRes, transactionsRes, balanceRes, activeRes, followRes] = await Promise.all([
         walletApi.getById(),
         walletApi.getTransactions(),
+        walletApi.getBalance(),
         followApi.getActive(1),
         followApi.getFollowed(1),
       ]);
       setWallet(walletRes.data ?? null);
       setHistory(transactionsRes.data ?? []);
+      setWalletBalance(balanceRes.data ?? null);
       const followedIds = new Set((followRes.data ?? []).map(f => f.trader_id));
       setFollowed((activeRes.data ?? []).filter(t => followedIds.has(t.id)));
     } catch (e) {
@@ -76,6 +79,23 @@ export default function PortfolioScreen() {
     item.status === 2 || item.status_label === 'Approved';
   const isRejected = (item: WalletTransaction) =>
     item.status === 3 || item.status_label === 'Rejected';
+
+  const today = new Date().toDateString();
+  const todaysTransactions = history.filter(
+    t => t.created_at && new Date(t.created_at).toDateString() === today
+  );
+  const todayTopup = todaysTransactions
+    .filter(t => t.type === 1 || t.type_label === 'Topup')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const todaySpend = todaysTransactions
+    .filter(t => t.type === 2 || t.type_label === 'Purchase')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const dailyChange = todayTopup - todaySpend;
+  const hasDailyActivity = todaysTransactions.length > 0;
+
+  const totalTx = history.length;
+  const pendingCount = history.filter(t => t.status === 1 || t.status_label === 'Pending').length;
+  const approvedCount = history.filter(t => t.status === 2 || t.status_label === 'Approved').length;
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -122,11 +142,49 @@ export default function PortfolioScreen() {
               <Text style={[typography.h1, { color: colors.text.primary, marginTop: space.xs, fontFamily: 'Manrope-Bold' }]}>
                 {formatBalance(balance)}
               </Text>
+
+              {hasDailyActivity ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.sm }}>
+                  {dailyChange >= 0
+                    ? <ArrowUpRight size={14} color={colors.semantic.positive} />
+                    : <ArrowDownRight size={14} color={colors.semantic.negative} />
+                  }
+                  <Text style={[typography.body, {
+                    color: dailyChange >= 0 ? colors.semantic.positive : colors.semantic.negative,
+                    fontWeight: '700',
+                  }]}>
+                    {dailyChange >= 0 ? '+' : ''}{formatBalance(Math.abs(dailyChange))}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
+                </View>
+              ) : (
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: space.sm }]}>
+                  No activity today
+                </Text>
+              )}
+
+              <View style={{ borderTopWidth: 1, borderTopColor: colors.glass.border, marginTop: space.md, marginBottom: space.md }} />
+
               <View style={styles.walletIdRow}>
                 <Text style={[typography.label, { color: colors.text.secondary }]}>Wallet ID: </Text>
                 <Text style={[typography.label, { color: colors.text.muted }]} numberOfLines={1}>
                   {wallet?.id_wallet?.substring(0, 12) ?? '-'}...
                 </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: space['2xl'], marginTop: space.lg }}>
+                <View>
+                  <Text style={{ fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' }}>TOTAL TX</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' }}>{totalTx}</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' }}>PENDING</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.semantic.warning, marginTop: 2, fontFamily: 'Manrope-Bold' }}>{pendingCount}</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' }}>APPROVED</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.semantic.positive, marginTop: 2, fontFamily: 'Manrope-Bold' }}>{approvedCount}</Text>
+                </View>
               </View>
             </GlassCard>
 
