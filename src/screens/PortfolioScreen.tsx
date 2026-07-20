@@ -337,47 +337,6 @@ export default function PortfolioScreen() {
 
             <View style={styles.section}>
               <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
-                Followed Traders
-              </Text>
-              {followed.length === 0 ? (
-                <EmptyState icon={<TrendingUp size={28} color={colors.text.secondary} />} title="Not following anyone yet" />
-              ) : (
-                <View style={{ gap: space.sm }}>
-                  {followed.slice(0, 5).map((t, i) => {
-                    const initials = (t.name ?? 'TR').substring(0, 2).toUpperCase();
-                    const avColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
-                    return (
-                      <GlassCard key={t.id} elevation={2}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                          <View style={[styles.followAvatar, { backgroundColor: avColors[i % avColors.length] }]}>
-                            <Text style={styles.followAvatarText}>{initials}</Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                              {t.name}
-                            </Text>
-                            {t.description ? (
-                              <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
-                                {t.description}
-                              </Text>
-                            ) : null}
-                          </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-                            <TrendingUp size={12} color={colors.semantic.positive} />
-                            <Text style={[typography.caption, { color: colors.semantic.positive, fontWeight: '600' }]}>
-                              Following
-                            </Text>
-                          </View>
-                        </View>
-                      </GlassCard>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Recent Transactions
               </Text>
               {history.length === 0 ? (
@@ -427,6 +386,47 @@ export default function PortfolioScreen() {
                                 isRejected(item) ? 'danger' : 'warning'
                               }
                             />
+                          </View>
+                        </View>
+                      </GlassCard>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
+                Followed Traders
+              </Text>
+              {followed.length === 0 ? (
+                <EmptyState icon={<TrendingUp size={28} color={colors.text.secondary} />} title="Not following anyone yet" />
+              ) : (
+                <View style={{ gap: space.sm }}>
+                  {followed.slice(0, 5).map((t, i) => {
+                    const initials = (t.name ?? 'TR').substring(0, 2).toUpperCase();
+                    const avColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
+                    return (
+                      <GlassCard key={t.id} elevation={2}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                          <View style={[styles.followAvatar, { backgroundColor: avColors[i % avColors.length] }]}>
+                            <Text style={styles.followAvatarText}>{initials}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                              {t.name}
+                            </Text>
+                            {t.description ? (
+                              <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
+                                {t.description}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                            <TrendingUp size={12} color={colors.semantic.positive} />
+                            <Text style={[typography.caption, { color: colors.semantic.positive, fontWeight: '600' }]}>
+                              Following
+                            </Text>
                           </View>
                         </View>
                       </GlassCard>
