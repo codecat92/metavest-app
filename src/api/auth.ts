@@ -123,6 +123,7 @@ export const authApi = {
 
     const token = (response as any).access_token || response.data?.access_token;
     setToken(token);
+    console.log('🔑 REGISTER TOKEN:', token);
 
     // Fetch user profile with the new token
     const profileResponse = await api.get<User>('/auth-user');
