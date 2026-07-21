@@ -91,7 +91,7 @@ export default function PortfolioScreen() {
   const pendingCount = walletBalance?.pending_count ?? 0;
   const approvedCount = walletBalance?.approved_count ?? 0;
   const totalDeposited = walletBalance?.total_historical_deposit ?? 0;
-  const pendingAmount = walletBalance?.pending_amount ?? 0;
+  const pendingApprovalAmount = walletBalance?.pending_amount ?? 0;
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -181,14 +181,14 @@ export default function PortfolioScreen() {
                 </Text>
               </View>
 
-              {pendingAmount > 0 && (
+              {pendingApprovalAmount > 0 && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.xs }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
                     <AlertTriangle size={14} color={colors.semantic.warning} />
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>Pending Approval</Text>
                   </View>
                   <Text style={[typography.bodyBold, { color: colors.semantic.warning, fontFamily: 'DMSans-SemiBold' }]}>
-                    {formatBalance(pendingAmount)}
+                    {formatBalance(pendingApprovalAmount)}
                   </Text>
                 </View>
               )}
