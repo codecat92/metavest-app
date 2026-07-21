@@ -3,7 +3,7 @@ import {
   TouchableOpacity, ActivityIndicator, TextInput, Modal,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,13 +26,16 @@ export default function PortfolioScreen() {
   const alert = useCustomAlert();
   const colors = useColors();
   const { user } = useAuth();
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [portfolioData, setPortfolioData] = useState<{
+    wallet: Wallet | null;
+    history: WalletTransaction[];
+    walletBalance: WalletBalance | null;
+    followed: UserTrader[];
+  }>({ wallet: null, history: [], walletBalance: null, followed: [] });
   const [otpId, setOtpId] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [pendingAmount, setPendingAmount] = useState(0);
-  const [history, setHistory] = useState<WalletTransaction[]>([]);
-  const [followed, setFollowed] = useState<UserTrader[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTopUp, setShowTopUp] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -41,7 +44,6 @@ export default function PortfolioScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
   const [showWithdrawLocked, setShowWithdrawLocked] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -53,11 +55,13 @@ export default function PortfolioScreen() {
         followApi.getActive(1),
         followApi.getFollowed(1),
       ]);
-      setWallet(walletRes.data ?? null);
-      setHistory(transactionsRes.data ?? []);
-      setWalletBalance(balanceRes.data ?? null);
       const followedIds = new Set((followRes.data ?? []).map(f => f.trader_id));
-      setFollowed((activeRes.data ?? []).filter(t => followedIds.has(t.id)));
+      setPortfolioData({
+        wallet: walletRes.data ?? null,
+        history: transactionsRes.data ?? [],
+        walletBalance: balanceRes.data ?? null,
+        followed: (activeRes.data ?? []).filter(t => followedIds.has(t.id)),
+      });
     } catch (e) {
       console.log('Portfolio load failed:', e);
     } finally {
@@ -69,31 +73,39 @@ export default function PortfolioScreen() {
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
+  const { wallet, history, walletBalance, followed } = portfolioData;
   const balance = wallet?.balance ?? 0;
 
   const formatBalance = (amount: number) =>
     `${amount.toLocaleString('en-US')} MP`;
 
   const isCredit = (item: WalletTransaction) =>
-    item.type === 1 || item.type === 3 || item.type_label === 'Topup' || item.type_label === 'Refund';
+    item.type_label === 'Topup' || item.type_label === 'Refund';
 
   const isApproved = (item: WalletTransaction) =>
-    item.status === 2 || item.status_label === 'Approved';
+    item.status_label === 'Approved';
   const isRejected = (item: WalletTransaction) =>
-    item.status === 3 || item.status_label === 'Rejected';
+    item.status_label === 'Rejected';
 
-  const today = new Date().toDateString();
-  const todaysTransactions = history.filter(
-    t => t.created_at && new Date(t.created_at).toDateString() === today
-  );
-  const todayTopup = todaysTransactions
-    .filter(t => (t.type === 1 || t.type_label === 'Topup') && (t.status === 2 || t.status_label === 'Approved'))
-    .reduce((sum, t) => sum + t.amount, 0);
-  const todaySpend = todaysTransactions
-    .filter(t => (t.type === 2 || t.type_label === 'Purchase') && (t.status === 2 || t.status_label === 'Approved'))
-    .reduce((sum, t) => sum + t.amount, 0);
-  const dailyChange = todayTopup - todaySpend;
-  const hasDailyActivity = todaysTransactions.length > 0;
+  const todaysTransactions = useMemo(() => {
+    const today = new Date().toDateString();
+    return history.filter(
+      t => t.created_at && new Date(t.created_at).toDateString() === today
+    );
+  }, [history]);
+
+  const { todayTopup, todaySpend } = useMemo(() => {
+    const topup = todaysTransactions
+      .filter(t => t.type_label === 'Topup' && t.status_label === 'Approved')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const spend = todaysTransactions
+      .filter(t => t.type_label === 'Purchase' && t.status_label === 'Approved')
+      .reduce((sum, t) => sum + t.amount, 0);
+    return { todayTopup: topup, todaySpend: spend };
+  }, [todaysTransactions]);
+
+  const dailyChange = useMemo(() => todayTopup - todaySpend, [todayTopup, todaySpend]);
+  const hasDailyActivity = useMemo(() => todaysTransactions.length > 0, [todaysTransactions]);
 
   const totalTx = walletBalance?.total_transactions ?? 0;
   const pendingCount = walletBalance?.pending_count ?? 0;
@@ -482,7 +494,7 @@ export default function PortfolioScreen() {
                             <Text style={[typography.caption, { color: colors.text.secondary }]}>
                               {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
                             </Text>
-                            {item.status === 1 && (item.type === 1 || item.type_label === 'Topup') && (
+                            {item.status_label === 'Pending' && item.type_label === 'Topup' && (
                               <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
                                 Menunggu approval
                               </Text>
@@ -646,7 +658,7 @@ export default function PortfolioScreen() {
                   </View>
                 )}
 
-                {selectedTransaction.status === 1 && (selectedTransaction.type === 1 || selectedTransaction.type_label === 'Topup') && (
+                {selectedTransaction.status_label === 'Pending' && selectedTransaction.type_label === 'Topup' && (
                   <View style={{
                     backgroundColor: 'rgba(245,158,11,0.08)',
                     borderWidth: 1,
