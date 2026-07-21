@@ -95,9 +95,9 @@ export default function PortfolioScreen() {
   const dailyChange = todayTopup - todaySpend;
   const hasDailyActivity = todaysTransactions.length > 0;
 
-  const totalTx = history.length;
-  const pendingCount = history.filter(t => t.status === 1 || t.status_label === 'Pending').length;
-  const approvedCount = history.filter(t => t.status === 2 || t.status_label === 'Approved').length;
+  const totalTx = walletBalance?.total_transactions ?? 0;
+  const pendingCount = walletBalance?.pending_count ?? 0;
+  const approvedCount = walletBalance?.approved_count ?? 0;
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();

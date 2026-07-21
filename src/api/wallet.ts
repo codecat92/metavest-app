@@ -22,6 +22,9 @@ export interface WalletTransaction {
 export interface WalletBalance {
   balance: number;
   total_historical_deposit: number;
+  total_transactions: number;
+  pending_count: number;
+  approved_count: number;
 }
 
 export const walletApi = {
