@@ -562,6 +562,7 @@ export default function PortfolioScreen() {
                               Sembunyikan
                             </Text>
                           </TouchableOpacity>
+                          <View style={{ gap: space.sm }}>
                           {entry.items.map((item) => {
                             const credit = isCredit(item);
                             return (
@@ -624,8 +625,9 @@ export default function PortfolioScreen() {
                                   </View>
                                 </GlassCard>
                               </TouchableOpacity>
-                            );
-                          })}
+                      );
+                  })}
+                          </View>
                         </View>
                       );
                     }
