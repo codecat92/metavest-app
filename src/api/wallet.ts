@@ -25,6 +25,7 @@ export interface WalletBalance {
   total_transactions: number;
   pending_count: number;
   approved_count: number;
+  pending_amount: number;
 }
 
 export const walletApi = {

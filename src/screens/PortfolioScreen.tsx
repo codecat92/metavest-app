@@ -3,7 +3,7 @@ import {
   TouchableOpacity, ActivityIndicator, TextInput, Modal,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -87,29 +87,11 @@ export default function PortfolioScreen() {
   const isRejected = (item: WalletTransaction) =>
     item.status_label === 'Rejected';
 
-  const todaysTransactions = useMemo(() => {
-    const today = new Date().toDateString();
-    return history.filter(
-      t => t.created_at && new Date(t.created_at).toDateString() === today
-    );
-  }, [history]);
-
-  const { todayTopup, todaySpend } = useMemo(() => {
-    const topup = todaysTransactions
-      .filter(t => t.type_label === 'Topup' && t.status_label === 'Approved')
-      .reduce((sum, t) => sum + t.amount, 0);
-    const spend = todaysTransactions
-      .filter(t => t.type_label === 'Purchase' && t.status_label === 'Approved')
-      .reduce((sum, t) => sum + t.amount, 0);
-    return { todayTopup: topup, todaySpend: spend };
-  }, [todaysTransactions]);
-
-  const dailyChange = useMemo(() => todayTopup - todaySpend, [todayTopup, todaySpend]);
-  const hasDailyActivity = useMemo(() => todaysTransactions.length > 0, [todaysTransactions]);
-
   const totalTx = walletBalance?.total_transactions ?? 0;
   const pendingCount = walletBalance?.pending_count ?? 0;
   const approvedCount = walletBalance?.approved_count ?? 0;
+  const totalDeposited = walletBalance?.total_historical_deposit ?? 0;
+  const pendingAmount = walletBalance?.pending_amount ?? 0;
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -189,24 +171,26 @@ export default function PortfolioScreen() {
                 {formatBalance(balance)}
               </Text>
 
-              {hasDailyActivity ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.sm }}>
-                  {dailyChange >= 0
-                    ? <ArrowUpRight size={14} color={colors.semantic.positive} />
-                    : <ArrowDownRight size={14} color={colors.semantic.negative} />
-                  }
-                  <Text style={[typography.body, {
-                    color: dailyChange >= 0 ? colors.semantic.positive : colors.semantic.negative,
-                    fontWeight: '700',
-                  }]}>
-                    {dailyChange >= 0 ? '+' : ''}{formatBalance(Math.abs(dailyChange))}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                  <ArrowUpRight size={14} color={colors.semantic.positive} />
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Deposited</Text>
                 </View>
-              ) : (
-                <Text style={[typography.caption, { color: colors.text.muted, marginTop: space.sm }]}>
-                  No activity today
+                <Text style={[typography.bodyBold, { color: colors.semantic.positive, fontFamily: 'DMSans-SemiBold' }]}>
+                  {formatBalance(totalDeposited)}
                 </Text>
+              </View>
+
+              {pendingAmount > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.xs }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                    <AlertTriangle size={14} color={colors.semantic.warning} />
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>Pending Approval</Text>
+                  </View>
+                  <Text style={[typography.bodyBold, { color: colors.semantic.warning, fontFamily: 'DMSans-SemiBold' }]}>
+                    {formatBalance(pendingAmount)}
+                  </Text>
+                </View>
               )}
 
               <View style={{ borderTopWidth: 1, borderTopColor: colors.glass.border, marginTop: space.md, marginBottom: space.md }} />
