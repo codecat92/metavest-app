@@ -3,13 +3,14 @@ import {
   TouchableOpacity, ActivityIndicator, TextInput, Modal,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Plus, Minus,
   Wallet as WalletIcon, Upload, X, AlertTriangle, FileText,
+  ShoppingBag, RotateCcw, ChevronDown, ChevronUp,
 } from 'lucide-react-native';
 import { walletApi, Wallet, WalletTransaction, WalletBalance } from '@/api/wallet';
 import { followApi, UserTrader } from '@/api/follow';
@@ -44,6 +45,7 @@ export default function PortfolioScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null);
   const [showWithdrawLocked, setShowWithdrawLocked] = useState(false);
+  const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -92,6 +94,50 @@ export default function PortfolioScreen() {
   const approvedCount = walletBalance?.approved_count ?? 0;
   const totalDeposited = walletBalance?.total_historical_deposit ?? 0;
   const pendingApprovalAmount = walletBalance?.pending_amount ?? 0;
+
+  type GroupedEntry =
+    | { isGroup: false; key: string; transaction: WalletTransaction }
+    | { isGroup: true; key: string; count: number; totalAmount: number; type_label: string; status_label: string; created_at: string; items: WalletTransaction[] };
+
+  const groupedHistory = useMemo((): GroupedEntry[] => {
+    const groups: Record<string, WalletTransaction[]> = {};
+    history.forEach(t => {
+      const date = t.created_at ? new Date(t.created_at).toDateString() : 'unknown';
+      const k = `${date}|${t.type_label ?? t.type}|${t.status_label ?? t.status}`;
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(t);
+    });
+    return Object.entries(groups).map(([key, items]) => {
+      if (items.length > 1) {
+        const first = items[0];
+        return {
+          isGroup: true,
+          key,
+          count: items.length,
+          totalAmount: items.reduce((s, i) => s + i.amount, 0),
+          type_label: first.type_label ?? String(first.type),
+          status_label: first.status_label ?? String(first.status),
+          created_at: first.created_at,
+          items,
+        };
+      }
+      return { isGroup: false, key, transaction: items[0] };
+    }).sort((a, b) => {
+      const da = a.isGroup ? a.created_at : a.transaction.created_at;
+      const db = b.isGroup ? b.created_at : b.transaction.created_at;
+      return new Date(db).getTime() - new Date(da).getTime();
+    });
+  }, [history]);
+
+  const getGroupIcon = (type_label: string) => {
+    switch (type_label) {
+      case 'Topup':      return <ArrowUpRight size={18} color={colors.semantic.positive} />;
+      case 'Purchase':   return <ShoppingBag size={18} color={colors.semantic.negative} />;
+      case 'Refund':     return <RotateCcw size={18} color={colors.semantic.positive} />;
+      case 'Adjustment': return <ArrowDownRight size={18} color={colors.semantic.negative} />;
+      default:           return <ArrowDownRight size={18} color={colors.semantic.negative} />;
+    }
+  };
 
   const handlePickProof = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -451,11 +497,140 @@ export default function PortfolioScreen() {
               <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Recent Transactions
               </Text>
-              {history.length === 0 ? (
+              {groupedHistory.length === 0 ? (
                 <EmptyState icon={<ArrowUpRight size={28} color={colors.text.secondary} />} title="No transactions yet" />
               ) : (
                 <View style={{ gap: space.sm }}>
-                  {history.slice(0, 10).map((item) => {
+                  {groupedHistory.slice(0, 10).map((entry) => {
+
+                    if (entry.isGroup && entry.key !== expandedGroupKey) {
+                      const credit = entry.type_label === 'Topup' || entry.type_label === 'Refund';
+                      return (
+                        <TouchableOpacity
+                          key={entry.key}
+                          activeOpacity={0.7}
+                          onPress={() => setExpandedGroupKey(entry.key)}
+                        >
+                          <GlassCard elevation={2}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                              <View style={styles.txIcon}>
+                                {getGroupIcon(entry.type_label)}
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                                  {entry.type_label} ×{entry.count}
+                                </Text>
+                                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                                  Tap untuk lihat rincian
+                                </Text>
+                              </View>
+                              <View style={{ alignItems: 'flex-end', gap: space.xs }}>
+                                <Text style={[typography.bodyBold, {
+                                  color: credit ? colors.semantic.positive : colors.semantic.negative,
+                                  fontFamily: 'Manrope-Bold',
+                                }]}>
+                                  {credit ? '+' : '-'}{formatBalance(Math.abs(entry.totalAmount))}
+                                </Text>
+                                <Badge
+                                  label={entry.status_label}
+                                  variant={
+                                    entry.status_label === 'Approved' ? 'success' :
+                                    entry.status_label === 'Rejected' ? 'danger' : 'warning'
+                                  }
+                                />
+                                <ChevronDown size={14} color={colors.text.secondary} />
+                              </View>
+                            </View>
+                          </GlassCard>
+                        </TouchableOpacity>
+                      );
+                    }
+
+                    if (entry.isGroup && entry.key === expandedGroupKey) {
+                      return (
+                        <View key={entry.key}>
+                          <TouchableOpacity
+                            onPress={() => setExpandedGroupKey(null)}
+                            activeOpacity={0.7}
+                            style={{
+                              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                              gap: space.xs, paddingVertical: space.sm,
+                            }}
+                          >
+                            <ChevronUp size={14} color={colors.text.secondary} />
+                            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                              Sembunyikan
+                            </Text>
+                          </TouchableOpacity>
+                          {entry.items.map((item) => {
+                            const credit = isCredit(item);
+                            return (
+                              <TouchableOpacity
+                                key={item.id}
+                                activeOpacity={0.7}
+                                onPress={() => setSelectedTransaction(item)}
+                              >
+                                <GlassCard elevation={2}>
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                                    <View style={styles.txIcon}>
+                                      {credit
+                                        ? <ArrowUpRight size={18} color={colors.semantic.positive} />
+                                        : <ArrowDownRight size={18} color={colors.semantic.negative} />
+                                      }
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                      <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                                        {item.type_label ?? item.type}
+                                      </Text>
+                                      <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                                        {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
+                                      </Text>
+                                      {item.status_label === 'Pending' && item.type_label === 'Topup' && (
+                                        <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
+                                          Menunggu approval
+                                        </Text>
+                                      )}
+                                      {isRejected(item) && item.rejection_reason && (
+                                        <View style={{
+                                          marginTop: space.sm,
+                                          paddingHorizontal: space.sm,
+                                          paddingVertical: space.xs,
+                                          borderRadius: radius.sm,
+                                          backgroundColor: 'rgba(239,68,68,0.08)',
+                                          borderWidth: 1,
+                                          borderColor: 'rgba(239,68,68,0.20)',
+                                        }}>
+                                          <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={1} ellipsizeMode="tail">
+                                            Reason: {item.rejection_reason}
+                                          </Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                    <View style={{ alignItems: 'flex-end', gap: space.xs }}>
+                                      <Text style={[typography.bodyBold, {
+                                        color: credit ? colors.semantic.positive : colors.semantic.negative,
+                                        fontFamily: 'Manrope-Bold',
+                                      }]}>
+                                        {credit ? '+' : '-'}{formatBalance(Math.abs(item.amount))}
+                                      </Text>
+                                      <Badge
+                                        label={item.status_label ?? String(item.status)}
+                                        variant={
+                                          isApproved(item) ? 'success' :
+                                          isRejected(item) ? 'danger' : 'warning'
+                                        }
+                                      />
+                                    </View>
+                                  </View>
+                                </GlassCard>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      );
+                    }
+
+                    const item = (entry as { isGroup: false; transaction: WalletTransaction }).transaction;
                     const credit = isCredit(item);
                     return (
                       <TouchableOpacity
@@ -463,59 +638,59 @@ export default function PortfolioScreen() {
                         activeOpacity={0.7}
                         onPress={() => setSelectedTransaction(item)}
                       >
-                      <GlassCard key={item.id} elevation={2}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                          <View style={styles.txIcon}>
-                            {credit
-                              ? <ArrowUpRight size={18} color={colors.semantic.positive} />
-                              : <ArrowDownRight size={18} color={colors.semantic.negative} />
-                            }
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                              {item.type_label ?? item.type}
-                            </Text>
-                            <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                              {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
-                            </Text>
-                            {item.status_label === 'Pending' && item.type_label === 'Topup' && (
-                              <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
-                                Menunggu approval
-                              </Text>
-                            )}
-                            {isRejected(item) && item.rejection_reason && (
-                              <View style={{
-                                marginTop: space.sm,
-                                paddingHorizontal: space.sm,
-                                paddingVertical: space.xs,
-                                borderRadius: radius.sm,
-                                backgroundColor: 'rgba(239,68,68,0.08)',
-                                borderWidth: 1,
-                                borderColor: 'rgba(239,68,68,0.20)',
-                              }}>
-                                <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={1} ellipsizeMode="tail">
-                                  Reason: {item.rejection_reason}
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                          <View style={{ alignItems: 'flex-end', gap: space.xs }}>
-                            <Text style={[typography.bodyBold, {
-                              color: credit ? colors.semantic.positive : colors.semantic.negative,
-                              fontFamily: 'Manrope-Bold',
-                            }]}>
-                              {credit ? '+' : '-'}{formatBalance(Math.abs(item.amount))}
-                            </Text>
-                            <Badge
-                              label={item.status_label ?? String(item.status)}
-                              variant={
-                                isApproved(item) ? 'success' :
-                                isRejected(item) ? 'danger' : 'warning'
+                        <GlassCard elevation={2}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                            <View style={styles.txIcon}>
+                              {credit
+                                ? <ArrowUpRight size={18} color={colors.semantic.positive} />
+                                : <ArrowDownRight size={18} color={colors.semantic.negative} />
                               }
-                            />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                                {item.type_label ?? item.type}
+                              </Text>
+                              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                                {item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}
+                              </Text>
+                              {item.status_label === 'Pending' && item.type_label === 'Topup' && (
+                                <Text style={{ fontSize: 11, color: colors.semantic.warning, marginTop: 2, fontFamily: 'DMSans' }}>
+                                  Menunggu approval
+                                </Text>
+                              )}
+                              {isRejected(item) && item.rejection_reason && (
+                                <View style={{
+                                  marginTop: space.sm,
+                                  paddingHorizontal: space.sm,
+                                  paddingVertical: space.xs,
+                                  borderRadius: radius.sm,
+                                  backgroundColor: 'rgba(239,68,68,0.08)',
+                                  borderWidth: 1,
+                                  borderColor: 'rgba(239,68,68,0.20)',
+                                }}>
+                                  <Text style={{ fontSize: 10, color: colors.semantic.negative, fontFamily: 'DMSans' }} numberOfLines={1} ellipsizeMode="tail">
+                                    Reason: {item.rejection_reason}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={{ alignItems: 'flex-end', gap: space.xs }}>
+                              <Text style={[typography.bodyBold, {
+                                color: credit ? colors.semantic.positive : colors.semantic.negative,
+                                fontFamily: 'Manrope-Bold',
+                              }]}>
+                                {credit ? '+' : '-'}{formatBalance(Math.abs(item.amount))}
+                              </Text>
+                              <Badge
+                                label={item.status_label ?? String(item.status)}
+                                variant={
+                                  isApproved(item) ? 'success' :
+                                  isRejected(item) ? 'danger' : 'warning'
+                                }
+                              />
+                            </View>
                           </View>
-                        </View>
-                      </GlassCard>
+                        </GlassCard>
                       </TouchableOpacity>
                     );
                   })}
