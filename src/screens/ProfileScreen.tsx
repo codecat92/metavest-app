@@ -27,14 +27,15 @@ type ProfileNavProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 export default function ProfileScreen({ navigation }: { navigation: ProfileNavProp }) {
   const { logout, user, refreshUser, userType } = useAuth();
   const colors = useColors();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
-  const [traderProfileImage, setTraderProfileImage] = useState<string | null>(null);
+  const [traderProfileImage, setTraderProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [traderId, setTraderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const alert = useCustomAlert();
@@ -56,9 +57,11 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     useCallback(() => {
       refreshUser();
       fetchInstructorStatus();
+      setCacheBuster(Date.now());
+      setAvatarFailed(false);
       if (userType === 'trader') {
         fetch(`${BASE_URL}/user-traders/profile`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
+          headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
         })
           .then(r => r.json())
           .then(res => {
@@ -140,7 +143,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
   const imageSrc = activeImage
     ? (activeImage.startsWith('http')
         ? activeImage
-        : `${SERVER_HOST}/uploads/profilepic/${activeImage.split(/[\\/]/).pop()}` + `?t=${cacheBuster}`)
+        : `${STORAGE_HOST}/uploads/profilepic/${activeImage.split(/[\\/]/).pop()}` + `?t=${cacheBuster}`)
     : null;
 
   const settingsGroups = [
@@ -169,8 +172,8 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           <GlassCard elevation={3}>
             <View style={styles.avatarRow}>
               <TouchableOpacity onPress={handlePickPhoto} disabled={uploading} style={styles.avatarBtn}>
-                {imageSrc ? (
-                  <Image source={{ uri: imageSrc }} style={styles.avatarImg} />
+                {imageSrc && !avatarFailed ? (
+                  <Image source={{ uri: imageSrc }} style={styles.avatarImg} onError={() => setAvatarFailed(true)} />
                 ) : (
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{initials}</Text>
