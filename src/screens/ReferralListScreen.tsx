@@ -113,7 +113,7 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.lg }}>
             <Users size={40} color={c.accent.purple} />
             <View style={{ flex: 1 }}>
-              <Text style={[typography.priceSmall, { color: c.accent.purple, fontFamily: 'Manrope-Bold' }]}>
+              <Text style={[typography.priceSmall, { color: c.semantic.positive, fontFamily: 'Manrope-Bold' }]}>
                 {total}
               </Text>
               <Text style={[typography.caption, { color: c.text.secondary }]}>
@@ -125,7 +125,7 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           {levels.length > 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.lg }}>
               {levels.map((l) => (
-                <Badge key={l.depth} label={`Level ${l.depth}: ${l.count}`} variant="info" />
+                <Badge key={l.depth} label={`Level ${l.depth}: ${l.count}`} variant="success" />
               ))}
             </View>
           )}
