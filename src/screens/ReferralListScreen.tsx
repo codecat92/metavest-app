@@ -4,16 +4,33 @@ import {
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Award, Users, Copy } from 'lucide-react-native';
+import { ArrowLeft, Users, Copy, ChevronDown, ChevronRight } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useColors, space, radius, typography } from '@/theme';
 import { getToken, BASE_URL } from '@/api/client';
-import { GlassCard, Skeleton, EmptyState } from '@/components';
+import { GlassCard, Skeleton, EmptyState, Badge } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
+
+interface ReferralUser {
+  name: string;
+  profile_image_src: string | null;
+  type: 'user' | 'trader';
+}
+
+interface ReferralLevel {
+  depth: number;
+  count: number;
+  users: ReferralUser[];
+}
+
+interface ReferralTree {
+  total_descendants: number;
+  levels: ReferralLevel[];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralList'>;
 
@@ -21,34 +38,28 @@ export default function ReferralListScreen({ route, navigation }: Props) {
   const { referralCode } = route.params;
   const c = useColors();
   const { showAlert } = useCustomAlert();
-  const [users, setUsers] = useState<any[]>([]);
+  const [treeData, setTreeData] = useState<ReferralTree | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1]));
 
   const loadData = useCallback(async () => {
     try {
       const token = getToken();
-      console.log('[ReferralList] token:', token ? 'present' : 'MISSING');
       if (!token) return;
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const url = `${BASE_URL}/profile/referral-users`;
-      console.log('[ReferralList] fetching:', url);
-
-      const res = await fetch(url, {
+      const res = await fetch(`${BASE_URL}/profile/referral-tree`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
       clearTimeout(timeout);
 
       const json = await res.json();
-      console.log('[ReferralList] response:', JSON.stringify(json));
-      setUsers(json.data ?? []);
+      setTreeData(json);
     } catch (e: any) {
-      if (e?.name === 'AbortError') {
-        console.log('[ReferralList] Request timed out');
-      } else {
+      if (e?.name !== 'AbortError') {
         console.log('[ReferralList] Load failed:', e?.message);
       }
     } finally {
@@ -58,8 +69,16 @@ export default function ReferralListScreen({ route, navigation }: Props) {
 
   useFocusEffect(useCallback(() => { setLoading(true); loadData(); }, [loadData]));
 
-  const renderItem = ({ item }: { item: any }) => (
-    <GlassCard elevation={2}>
+  const toggleLevel = (depth: number) => {
+    setExpandedLevels(prev => {
+      const next = new Set(prev);
+      next.has(depth) ? next.delete(depth) : next.add(depth);
+      return next;
+    });
+  };
+
+  const renderUserItem = (item: ReferralUser, index: number) => (
+    <View key={index} style={[styles.userItem]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         {item.profile_image_src ? (
           <Image
@@ -75,20 +94,101 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
             {item.name ?? '-'}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: 2 }}>
-            <Text style={[typography.label, { color: c.text.secondary }]}>
-              {item.type === 'trader' ? 'Trader' : 'User'}
-            </Text>
-            <Text style={[typography.label, { color: c.text.muted }]}>
-              {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-            </Text>
-          </View>
+          <Text style={[typography.label, { color: c.text.secondary, marginTop: 2 }]}>
+            {item.type === 'trader' ? 'Trader' : 'User'}
+          </Text>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 
-  const total = users.length;
+  const levels = treeData?.levels ?? [];
+  const total = treeData?.total_descendants ?? 0;
+
+  const ListHeader = () => (
+    <View style={{ alignItems: 'center', marginBottom: space.lg }}>
+      {/* Summary Card */}
+      {treeData && (
+        <GlassCard elevation={3} style={{ width: '100%' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.lg }}>
+            <Users size={40} color={c.accent.purple} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.priceSmall, { color: c.accent.purple, fontFamily: 'Manrope-Bold' }]}>
+                {total}
+              </Text>
+              <Text style={[typography.caption, { color: c.text.secondary }]}>
+                Total network
+              </Text>
+            </View>
+          </View>
+
+          {levels.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginBottom: space.lg }}>
+              {levels.map((l) => (
+                <Badge key={l.depth} label={`Level ${l.depth}: ${l.count}`} variant="info" />
+              ))}
+            </View>
+          )}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xs, paddingTop: space.md, borderTopWidth: 1, borderTopColor: c.glass.border }}>
+            <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+              Your Code
+            </Text>
+            <TouchableOpacity
+              onPress={async () => {
+                await Clipboard.setStringAsync(referralCode);
+                showAlert({ title: 'Copied', message: 'Referral code copied to clipboard' });
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.codeBadge, { backgroundColor: c.accent.purple }]}>
+                <Text style={styles.codeText}>{referralCode}</Text>
+                <Copy size={12} color="rgba(255,255,255,0.7)" />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </GlassCard>
+      )}
+
+      {/* Level breakdown header only */}
+      {levels.length > 0 && (
+        <Text style={[typography.label, { color: c.text.secondary, marginTop: space.xl, marginBottom: space.sm, alignSelf: 'flex-start', fontFamily: 'DMSans-Bold' }]}>
+          YOUR NETWORK TREE
+        </Text>
+      )}
+    </View>
+  );
+
+  const renderLevel = ({ item }: { item: ReferralLevel }) => {
+    const isExpanded = expandedLevels.has(item.depth);
+    return (
+      <View style={{ marginBottom: space.sm }}>
+        <TouchableOpacity
+          onPress={() => toggleLevel(item.depth)}
+          activeOpacity={0.7}
+          style={[styles.levelHeader, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            {isExpanded ? (
+              <ChevronDown size={16} color={c.text.secondary} />
+            ) : (
+              <ChevronRight size={16} color={c.text.secondary} />
+            )}
+            <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+              Level {item.depth}
+            </Text>
+          </View>
+          <Badge label={String(item.count)} variant="neutral" />
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={{ paddingLeft: space.lg, marginTop: space.sm }}>
+            {item.users.map((u, i) => renderUserItem(u, i))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -107,39 +207,17 @@ export default function ReferralListScreen({ route, navigation }: Props) {
         </View>
       ) : (
         <FlatList
-          data={users}
-          keyExtractor={(item, idx) => `${item.type}-${idx}`}
-          renderItem={renderItem}
+          data={levels}
+          keyExtractor={(item) => `level-${item.depth}`}
+          renderItem={renderLevel}
           contentContainerStyle={styles.list}
-          ListHeaderComponent={
-            <View style={{ alignItems: 'center', marginBottom: space.lg }}>
-              <Text style={[typography.priceSmall, { color: c.accent.purple, fontFamily: 'Manrope-Bold' }]}>
-                {total}
-              </Text>
-              <Text style={[typography.caption, { color: c.text.secondary }]}>
-                {total === 0 ? 'No referrals yet' : total === 1 ? '1 user joined' : `${total} users joined`}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.md }}>
-                <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                  Your Code
-                </Text>
-                <TouchableOpacity
-                  onPress={async () => {
-                    await Clipboard.setStringAsync(referralCode);
-                    showAlert({ title: 'Copied', message: 'Referral code copied to clipboard' });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.codeBadge, { backgroundColor: c.accent.purple }]}>
-                    <Text style={styles.codeText}>{referralCode}</Text>
-                    <Copy size={12} color="rgba(255,255,255,0.7)" />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          }
+          ListHeaderComponent={ListHeader}
           ListEmptyComponent={
-            <EmptyState icon={<Users size={48} color={c.text.muted} />} title="No referrals yet" subtitle="Share your code to invite friends" />
+            treeData && treeData.total_descendants === 0 ? (
+              <EmptyState icon={<Users size={48} color={c.text.muted} />} title="No referrals yet" subtitle="Share your code to invite friends" />
+            ) : total === 0 && !loading ? (
+              <EmptyState icon={<Users size={48} color={c.text.muted} />} title="No referrals yet" subtitle="Share your code to invite friends" />
+            ) : null
           }
         />
       )}
@@ -154,7 +232,17 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarImg: { width: 40, height: 40, borderRadius: 20 },
   avatarText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
-  list: { paddingHorizontal: space['2xl'], paddingBottom: 80, gap: space.sm },
+  list: { paddingHorizontal: space['2xl'], paddingBottom: 80 },
   codeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.sm },
   codeText: { fontSize: 13, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
+  levelHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: space.lg, paddingVertical: space.md, borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  userItem: {
+    paddingVertical: space.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
 });
