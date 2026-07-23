@@ -19,6 +19,7 @@ interface ReferralUser {
   name: string;
   profile_image_src: string | null;
   type: 'user' | 'trader';
+  referred_by: string | null;
 }
 
 interface ReferralLevel {
@@ -97,6 +98,11 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           <Text style={[typography.label, { color: c.text.secondary, marginTop: 2 }]}>
             {item.type === 'trader' ? 'Trader' : 'User'}
           </Text>
+          {item.referred_by && (
+            <Text style={{ fontSize: 11, color: c.text.muted, marginTop: 1, fontFamily: 'DMSans' }} numberOfLines={1}>
+              Dibawa oleh {item.referred_by}
+            </Text>
+          )}
         </View>
       </View>
     </View>
