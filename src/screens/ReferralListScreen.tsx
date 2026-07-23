@@ -1,10 +1,10 @@
 import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity, Image,
+  View, Text, FlatList, StyleSheet, TouchableOpacity, Image, ActivityIndicator,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Users, Copy, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Users, Copy, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useColors, space, radius, typography } from '@/theme';
 import { getToken, BASE_URL } from '@/api/client';
@@ -22,15 +22,16 @@ interface ReferralUser {
   referred_by: string | null;
 }
 
-interface ReferralLevel {
-  depth: number;
-  count: number;
-  users: ReferralUser[];
+interface ReferralSummary {
+  total_descendants: number;
+  levels: { depth: number; count: number }[];
 }
 
-interface ReferralTree {
-  total_descendants: number;
-  levels: ReferralLevel[];
+interface LevelPage {
+  users: ReferralUser[];
+  page: number;
+  hasMore: boolean;
+  total: number;
 }
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralList'>;
@@ -39,11 +40,15 @@ export default function ReferralListScreen({ route, navigation }: Props) {
   const { referralCode } = route.params;
   const c = useColors();
   const { showAlert } = useCustomAlert();
-  const [treeData, setTreeData] = useState<ReferralTree | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [treeData, setTreeData] = useState<ReferralSummary | null>(null);
+  const [levelData, setLevelData] = useState<Record<number, LevelPage>>({});
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1]));
+  const [levelsLoading, setLevelsLoading] = useState<Set<number>>(new Set());
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const loadData = useCallback(async () => {
+  const fetchSummary = useCallback(async () => {
+    setLoadError(false);
     try {
       const token = getToken();
       if (!token) return;
@@ -51,7 +56,7 @@ export default function ReferralListScreen({ route, navigation }: Props) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const res = await fetch(`${BASE_URL}/profile/referral-tree`, {
+      const res = await fetch(`${BASE_URL}/profile/referral-tree/summary`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
@@ -61,25 +66,86 @@ export default function ReferralListScreen({ route, navigation }: Props) {
       setTreeData(json);
     } catch (e: any) {
       if (e?.name !== 'AbortError') {
-        console.log('[ReferralList] Load failed:', e?.message);
+        setLoadError(true);
       }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { setLoading(true); loadData(); }, [loadData]));
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    setLevelData({});
+    setExpandedLevels(new Set([1]));
+    fetchSummary();
+  }, [fetchSummary]));
+
+  const fetchLevel = useCallback(async (depth: number, page: number = 1) => {
+    setLevelsLoading(prev => new Set(prev).add(depth));
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch(
+        `${BASE_URL}/profile/referral-tree/level/${depth}?page=${page}&per_page=20`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeout);
+
+      const json = await res.json();
+
+      setLevelData(prev => ({
+        ...prev,
+        [depth]: {
+          users: page > 1 ? [...(prev[depth]?.users ?? []), ...json.users] : json.users,
+          page: json.page,
+          hasMore: json.has_more,
+          total: json.total,
+        },
+      }));
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        console.log('[ReferralList] Level load failed:', e?.message);
+      }
+    } finally {
+      setLevelsLoading(prev => {
+        const next = new Set(prev);
+        next.delete(depth);
+        return next;
+      });
+    }
+  }, []);
 
   const toggleLevel = (depth: number) => {
     setExpandedLevels(prev => {
       const next = new Set(prev);
-      next.has(depth) ? next.delete(depth) : next.add(depth);
+      if (next.has(depth)) {
+        next.delete(depth);
+      } else {
+        next.add(depth);
+        if (!levelData[depth]) {
+          fetchLevel(depth, 1);
+        }
+      }
       return next;
     });
   };
 
+  const loadMore = (depth: number) => {
+    const existing = levelData[depth];
+    if (existing && existing.hasMore) {
+      fetchLevel(depth, existing.page + 1);
+    }
+  };
+
   const renderUserItem = (item: ReferralUser, index: number) => (
-    <View key={index} style={[styles.userItem]}>
+    <View key={index} style={styles.userItem}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         {item.profile_image_src ? (
           <Image
@@ -113,7 +179,6 @@ export default function ReferralListScreen({ route, navigation }: Props) {
 
   const ListHeader = () => (
     <View style={{ alignItems: 'center', marginBottom: space.lg }}>
-      {/* Summary Card */}
       {treeData && (
         <GlassCard elevation={3} style={{ width: '100%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.lg }}>
@@ -156,7 +221,6 @@ export default function ReferralListScreen({ route, navigation }: Props) {
         </GlassCard>
       )}
 
-      {/* Level breakdown header only */}
       {levels.length > 0 && (
         <Text style={[typography.label, { color: c.text.secondary, marginTop: space.xl, marginBottom: space.sm, alignSelf: 'flex-start', fontFamily: 'DMSans-Bold' }]}>
           YOUR NETWORK TREE
@@ -165,8 +229,13 @@ export default function ReferralListScreen({ route, navigation }: Props) {
     </View>
   );
 
-  const renderLevel = ({ item }: { item: ReferralLevel }) => {
+  const renderLevel = ({ item }: { item: { depth: number; count: number } }) => {
     const isExpanded = expandedLevels.has(item.depth);
+    const isLoading = levelsLoading.has(item.depth);
+    const data = levelData[item.depth];
+    const users = data?.users ?? [];
+    const hasMore = data?.hasMore ?? false;
+
     return (
       <View style={{ marginBottom: space.sm }}>
         <TouchableOpacity
@@ -175,11 +244,7 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           style={[styles.levelHeader, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-            {isExpanded ? (
-              <ChevronDown size={16} color={c.text.secondary} />
-            ) : (
-              <ChevronRight size={16} color={c.text.secondary} />
-            )}
+            {isExpanded ? <ChevronDown size={16} color={c.text.secondary} /> : <ChevronRight size={16} color={c.text.secondary} />}
             <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
               Level {item.depth}
             </Text>
@@ -189,12 +254,61 @@ export default function ReferralListScreen({ route, navigation }: Props) {
 
         {isExpanded && (
           <View style={{ paddingLeft: space.lg, marginTop: space.sm }}>
-            {item.users.map((u, i) => renderUserItem(u, i))}
+            {isLoading && users.length === 0 ? (
+              <ActivityIndicator size="small" color={c.accent.purple} style={{ marginVertical: space.lg }} />
+            ) : (
+              <>
+                {users.map((u, i) => renderUserItem(u, i))}
+                {isLoading && users.length > 0 && (
+                  <ActivityIndicator size="small" color={c.accent.purple} style={{ marginVertical: space.md }} />
+                )}
+                {hasMore && !isLoading && (
+                  <TouchableOpacity
+                    onPress={() => loadMore(item.depth)}
+                    activeOpacity={0.7}
+                    style={{
+                      paddingVertical: space.md,
+                      alignItems: 'center',
+                      borderRadius: radius.md,
+                      backgroundColor: c.glass.g1,
+                      borderWidth: 1,
+                      borderColor: c.glass.border,
+                      marginTop: space.sm,
+                    }}
+                  >
+                    <Text style={[typography.bodyBold, { color: c.accent.purple }]}>
+                      Muat lebih banyak
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
           </View>
         )}
       </View>
     );
   };
+
+  if (!loading && loadError) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
+            <ArrowLeft size={20} color={c.text.secondary} />
+          </TouchableOpacity>
+          <Text style={[typography.h3, { color: c.text.primary, fontFamily: 'Manrope-Bold', marginLeft: space.md }]}>
+            Your Referrals
+          </Text>
+        </View>
+        <EmptyState
+          icon={<RefreshCw size={48} color={c.text.secondary} />}
+          title="Gagal memuat data"
+          subtitle="Coba lagi"
+          onPress={() => { setLoading(true); fetchSummary(); }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -220,8 +334,6 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           ListHeaderComponent={ListHeader}
           ListEmptyComponent={
             treeData && treeData.total_descendants === 0 ? (
-              <EmptyState icon={<Users size={48} color={c.text.muted} />} title="No referrals yet" subtitle="Share your code to invite friends" />
-            ) : total === 0 && !loading ? (
               <EmptyState icon={<Users size={48} color={c.text.muted} />} title="No referrals yet" subtitle="Share your code to invite friends" />
             ) : null
           }
