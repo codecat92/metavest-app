@@ -118,6 +118,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           if (json.data?.profile_image_src) {
             setTraderProfileImage(json.data.profile_image_src);
             setCacheBuster(Date.now());
+            refreshUser();
           }
           alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
         } else {
@@ -125,6 +126,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           if (response.data?.profile_image_src) {
             setProfileImage(response.data.profile_image_src);
             setCacheBuster(Date.now());
+            refreshUser();
           }
           alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
         }
