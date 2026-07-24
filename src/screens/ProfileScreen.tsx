@@ -32,7 +32,6 @@ const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 export default function ProfileScreen({ navigation }: { navigation: ProfileNavProp }) {
   const { logout, user, refreshUser, userType } = useAuth();
-  console.log('PROFILE_USER:', JSON.stringify({ id: user?.id_user, img: user?.profile_image_src }));
   const colors = useColors();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);
@@ -117,9 +116,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
             body: formData,
           });
           const json = await res.json();
-          console.log('TRADER_UPLOAD:', JSON.stringify(json));
           if (json.data?.profile_image_src) {
-            console.log('TRADER_NEW_IMAGE:', json.data.profile_image_src);
             setTraderProfileImage(json.data.profile_image_src);
             setCacheBuster(Date.now());
             refreshUser();
@@ -127,9 +124,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
         } else {
           const response = await profileApi.uploadPhoto(result.assets[0].uri);
-          console.log('UPLOAD_RESPONSE:', JSON.stringify(response));
           if (response.data?.profile_image_src) {
-            console.log('NEW_IMAGE_SRC:', response.data.profile_image_src);
             setProfileImage(response.data.profile_image_src);
             setCacheBuster(Date.now());
             refreshUser();
