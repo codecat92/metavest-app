@@ -111,7 +111,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           } as any);
           const res = await fetch(`${BASE_URL}/user-traders/update`, {
             method: 'POST',
-            headers: { Authorization: `Bearer ${getToken()}` },
+            headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
             body: formData,
           });
           const json = await res.json();
