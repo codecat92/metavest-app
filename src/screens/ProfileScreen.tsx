@@ -1,7 +1,8 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image, ActivityIndicator
+  TouchableOpacity, ActivityIndicator
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -175,7 +176,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
             <View style={styles.avatarRow}>
               <TouchableOpacity onPress={handlePickPhoto} disabled={uploading} style={styles.avatarBtn}>
                 {imageSrc && !avatarFailed ? (
-                  <Image source={{ uri: imageSrc }} style={styles.avatarImg} onError={() => setAvatarFailed(true)} />
+                  <ExpoImage source={{ uri: imageSrc }} style={styles.avatarImg} cachePolicy="none" onError={() => setAvatarFailed(true)} />
                 ) : (
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{initials}</Text>
