@@ -116,7 +116,9 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
             body: formData,
           });
           const json = await res.json();
+          console.log('TRADER_UPLOAD:', JSON.stringify(json));
           if (json.data?.profile_image_src) {
+            console.log('TRADER_NEW_IMAGE:', json.data.profile_image_src);
             setTraderProfileImage(json.data.profile_image_src);
             setCacheBuster(Date.now());
             refreshUser();
