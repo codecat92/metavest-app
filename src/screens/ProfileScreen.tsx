@@ -3,7 +3,7 @@ import {
   TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -53,6 +53,13 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
       setInstructorStatus(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (user?.profile_image_src) {
+      setProfileImage(user.profile_image_src);
+      setTraderProfileImage(user.profile_image_src);
+    }
+  }, [user?.profile_image_src]);
 
   useFocusEffect(
     useCallback(() => {
