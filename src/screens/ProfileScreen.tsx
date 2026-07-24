@@ -124,7 +124,9 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
           alert.showAlert({ title: 'Success', message: 'Profile photo updated', type: 'success' });
         } else {
           const response = await profileApi.uploadPhoto(result.assets[0].uri);
+          console.log('UPLOAD_RESPONSE:', JSON.stringify(response));
           if (response.data?.profile_image_src) {
+            console.log('NEW_IMAGE_SRC:', response.data.profile_image_src);
             setProfileImage(response.data.profile_image_src);
             setCacheBuster(Date.now());
             refreshUser();
