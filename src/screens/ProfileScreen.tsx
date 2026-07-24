@@ -32,6 +32,7 @@ const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 export default function ProfileScreen({ navigation }: { navigation: ProfileNavProp }) {
   const { logout, user, refreshUser, userType } = useAuth();
+  console.log('PROFILE_USER:', JSON.stringify({ id: user?.id_user, img: user?.profile_image_src }));
   const colors = useColors();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(user?.profile_image_src ?? null);

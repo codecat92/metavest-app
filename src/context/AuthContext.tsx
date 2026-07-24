@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const hasToken = await hasStoredToken();
         if (hasToken) {
           const profile = await api.get<User>('/auth-user');
+          console.log('AUTH_USER_AUTO_LOGIN:', JSON.stringify(profile));
           setUser(profile as unknown as User);
         }
       } catch (e) {
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const profile = await api.get<User>('/auth-user');
+      console.log('AUTH_USER_REFRESH:', JSON.stringify(profile));
       setUser(profile as unknown as User);
     } catch (e) {
       // ignore
