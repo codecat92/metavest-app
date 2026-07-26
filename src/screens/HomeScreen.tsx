@@ -490,10 +490,12 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            <TouchableOpacity onPress={() => navigation.navigate('Portfolio')} activeOpacity={0.7}>
             <View style={styles.mpBadge}>
               <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
               <Text style={styles.mpText}>{mpBalance !== null ? formatMP(mpBalance) : '--'}</Text>
             </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate('Notifications')}>
               <Bell size={18} color={colors.text.secondary} />
             </TouchableOpacity>
