@@ -1,6 +1,7 @@
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,6 +43,14 @@ const rankColors: Record<number, string> = {
   3: '#A8A8A8',
   4: '#FFD700',
   5: '#E01E5A',
+};
+
+const tierColors: Record<number, { ring: string; gradient: string }> = {
+  1: { ring: '#b8bcc9', gradient: '#3a3f4d' },
+  2: { ring: '#d99a5f', gradient: '#4a3020' },
+  3: { ring: '#c9cbd6', gradient: '#3a3d4a' },
+  4: { ring: '#f0c96b', gradient: '#4a3f10' },
+  5: { ring: '#c9a8f0', gradient: '#2a2450' },
 };
 
 const allRanks = [
@@ -121,16 +130,52 @@ export default function MyRankScreen({ navigation }: Props) {
         ) : data ? (
           <>
             {/* Hero Card */}
-            <GlassCard elevation={3} style={{ marginBottom: space.lg }}>
-              <View style={{ alignItems: 'center', gap: space.sm }}>
-                <RankIcon size={48} color={rankColor} />
-                <Text style={[typography.h1, { color: rankColor, fontFamily: 'Manrope-Bold' }]}>
+            <GlassCard elevation={3} style={{ marginBottom: space.lg, overflow: 'hidden', padding: 0 }}>
+              <LinearGradient
+                colors={[tierColors[currentRankId].gradient, '#1b2140']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: space.xl }}
+              >
+                <RankIcon
+                  size={140}
+                  color={tierColors[currentRankId].ring}
+                  style={{ position: 'absolute', right: -30, top: -10, opacity: 0.07 }}
+                />
+
+                <View style={{
+                  width: 76, height: 76, borderRadius: 38,
+                  borderWidth: 3, borderColor: tierColors[currentRankId].ring,
+                  alignItems: 'center', justifyContent: 'center',
+                  alignSelf: 'center', marginBottom: space.md,
+                }}>
+                  <RankIcon size={34} color={tierColors[currentRankId].ring} />
+                </View>
+
+                <Text style={{ fontSize: 20, fontWeight: '600', color: tierColors[currentRankId].ring, textAlign: 'center', fontFamily: 'Manrope-SemiBold', marginBottom: space.xs }}>
                   {data.rank_name}
                 </Text>
-                <Text style={[typography.caption, { color: c.text.secondary }]}>
-                  Level {currentRankId} of 5
+
+                <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginBottom: space.lg }]}>
+                  {data.next_rank
+                    ? `Berikutnya: ${data.next_rank.rank_name}`
+                    : 'Tingkat tertinggi tercapai'}
                 </Text>
-              </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space.xs }}>
+                  {[1, 2, 3, 4, 5].map((dot) => (
+                    <View
+                      key={dot}
+                      style={{
+                        width: 18, height: 4, borderRadius: 2,
+                        backgroundColor: dot <= currentRankId
+                          ? tierColors[currentRankId].ring
+                          : '#3a3560',
+                      }}
+                    />
+                  ))}
+                </View>
+              </LinearGradient>
             </GlassCard>
 
             {/* Progress Card */}
