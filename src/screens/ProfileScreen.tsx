@@ -9,7 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker';
 import {
   Shield, Bell, LogOut,
-  Star, Award, Mail, Phone, Hash, Camera, Sun, Moon, GraduationCap,
+  Star, Award, Mail, Phone, Hash, Camera, Sun, Moon, GraduationCap, Trophy, Gem,
 } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -86,6 +86,17 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     : 'UN';
 
   const rank = user?.user_rank as { rank_name?: string; rank_number?: string } | null;
+
+  const rankConfig: Record<number, { icon: React.ComponentType<{ size: number; color: string }>; color: string }> = {
+    1: { icon: Shield,  color: '#b8bcc9' },
+    2: { icon: Award,   color: '#d99a5f' },
+    3: { icon: Star,    color: '#c9cbd6' },
+    4: { icon: Trophy,  color: '#f0c96b' },
+    5: { icon: Gem,     color: '#c9a8f0' },
+  };
+
+  const rankNum = rank?.rank_number ? Number(rank.rank_number) : 0;
+  const rankMeta = rankNum > 0 ? rankConfig[rankNum] : null;
 
   const handlePickPhoto = async () => {
     if (!getToken()) {
@@ -205,11 +216,14 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   {user?.email ?? '-'}
                 </Text>
-                {rank?.rank_name && (
+                {rank?.rank_name && rankMeta && (
                   <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7}>
-                  <View style={styles.rankBadge}>
-                    <Award size={11} color={colors.accent.purple} />
-                    <Text style={{ fontSize: 11, color: colors.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }}>
+                  <View style={[styles.rankBadge, {
+                    backgroundColor: `${rankMeta.color}1E`,
+                    borderColor: `${rankMeta.color}50`,
+                  }]}>
+                    <rankMeta.icon size={11} color={rankMeta.color} />
+                    <Text style={{ fontSize: 11, color: rankMeta.color, fontWeight: '700', fontFamily: 'DMSans-Bold' }}>
                       {rank.rank_name}
                     </Text>
                   </View>
@@ -405,9 +419,7 @@ const styles = StyleSheet.create({
   rankBadge: {
     flexDirection: 'row', alignItems: 'center', gap: space.xs,
     marginTop: 6, paddingHorizontal: space.sm, paddingVertical: 3,
-    borderRadius: radius.sm,
-    backgroundColor: 'rgba(139,92,246,0.15)',
-    borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)',
+    borderRadius: radius.sm, borderWidth: 1,
     alignSelf: 'flex-start',
   },
 
