@@ -121,7 +121,7 @@ export default function MyRankScreen({ navigation }: Props) {
         ) : data ? (
           <>
             {/* Hero Card */}
-            <GlassCard elevation={3}>
+            <GlassCard elevation={3} style={{ marginBottom: space.lg }}>
               <View style={{ alignItems: 'center', gap: space.sm }}>
                 <RankIcon size={48} color={rankColor} />
                 <Text style={[typography.h1, { color: rankColor, fontFamily: 'Manrope-Bold' }]}>
@@ -135,7 +135,7 @@ export default function MyRankScreen({ navigation }: Props) {
 
             {/* Progress Card */}
             {data.next_rank ? (
-              <GlassCard elevation={2}>
+              <GlassCard elevation={2} style={{ marginBottom: space.lg }}>
                 <Text style={[typography.h4, { color: c.text.primary, marginBottom: space.lg, fontFamily: 'Manrope-Bold' }]}>
                   Menuju {data.next_rank.rank_name}
                 </Text>
@@ -153,7 +153,7 @@ export default function MyRankScreen({ navigation }: Props) {
                 {renderProgressBar(data.total_deposit, data.next_rank.min_deposit, c.accent.gold)}
               </GlassCard>
             ) : (
-              <GlassCard elevation={2}>
+              <GlassCard elevation={2} style={{ marginBottom: space.lg }}>
                 <View style={{ alignItems: 'center', gap: space.sm }}>
                   <Trophy size={40} color={rankColor} />
                   <Text style={[typography.h4, { color: rankColor, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
@@ -167,7 +167,7 @@ export default function MyRankScreen({ navigation }: Props) {
             )}
 
             {/* Ladder */}
-            <View style={{ marginBottom: space['3xl'] }}>
+            <View style={{ marginBottom: space['3xl'], marginTop: space.md }}>
               <Text style={[typography.h4, { color: c.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Tingkatan
               </Text>
