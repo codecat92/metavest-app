@@ -47,6 +47,7 @@ import CreateSignalScreen from '@/screens/trader/CreateSignalScreen';
 import MySignalsScreen from '@/screens/trader/MySignalsScreen';
 import ReferralListScreen from '@/screens/ReferralListScreen';
 import TraderDetailScreen from '@/screens/TraderDetailScreen';
+import MyRankScreen from '@/screens/MyRankScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -146,6 +147,7 @@ function RootNavigator() {
         <Stack.Screen name="MySignals" component={MySignalsScreen} />
         <Stack.Screen name="ReferralList" component={ReferralListScreen} />
         <Stack.Screen name="TraderDetail" component={TraderDetailScreen} />
+        <Stack.Screen name="MyRank" component={MyRankScreen} />
       </Stack.Navigator>
     </>
   );

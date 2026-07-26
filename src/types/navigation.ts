@@ -41,6 +41,7 @@ export type RootStackParamList = {
   MySignals: undefined;
   ReferralList: { referralCode: string };
   TraderDetail: { traderId: string };
+  MyRank: undefined;
 };
 
 export type TabParamList = {

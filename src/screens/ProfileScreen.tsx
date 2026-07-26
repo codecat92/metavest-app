@@ -206,12 +206,14 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
                   {user?.email ?? '-'}
                 </Text>
                 {rank?.rank_name && (
+                  <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7}>
                   <View style={styles.rankBadge}>
                     <Award size={11} color={colors.accent.purple} />
                     <Text style={{ fontSize: 11, color: colors.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }}>
                       {rank.rank_name}
                     </Text>
                   </View>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
