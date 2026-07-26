@@ -152,7 +152,7 @@ export default function MyRankScreen({ navigation }: Props) {
                   <RankIcon size={34} color={tierColors[currentRankId].ring} />
                 </View>
 
-                <Text style={{ fontSize: 20, fontWeight: '600', color: tierColors[currentRankId].ring, textAlign: 'center', fontFamily: 'Manrope-SemiBold', marginBottom: space.xs }}>
+                <Text style={{ fontSize: 20, fontWeight: '600', color: '#e8e9ee', textAlign: 'center', fontFamily: 'Manrope-SemiBold', marginBottom: space.xs }}>
                   {data.rank_name}
                 </Text>
 
