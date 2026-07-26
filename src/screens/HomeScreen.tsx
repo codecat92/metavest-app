@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -462,6 +462,17 @@ export default function HomeScreen() {
   const greeting = getGreeting();
   const GreetingIcon = greeting.Icon;
 
+  const rankConfig: Record<number, { icon: React.ComponentType<{ size: number; color: string }>; color: string }> = {
+    1: { icon: Shield,  color: '#b8bcc9' },
+    2: { icon: Award,   color: '#d99a5f' },
+    3: { icon: Star,    color: '#c9cbd6' },
+    4: { icon: Trophy,  color: '#f0c96b' },
+    5: { icon: Gem,     color: '#c9a8f0' },
+  };
+
+  const rankNum = (user as any)?.user_rank?.rank_number ?? 0;
+  const rank = rankNum > 0 ? rankConfig[rankNum] : null;
+
   const formatMP = (amount: number): string => {
     if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M MP`;
     if (amount >= 10_000) return `${Math.round(amount / 1_000)}K MP`;
@@ -490,6 +501,19 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            {rank && (
+              <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7}>
+                <View style={[styles.rankBadge, {
+                  backgroundColor: `${rank.color}1E`,
+                  borderColor: `${rank.color}50`,
+                }]}>
+                  <rank.icon size={13} color={rank.color} />
+                  <Text style={[styles.rankText, { color: rank.color }]}>
+                    {(user as any)?.user_rank?.rank_name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={() => navigation.navigate('Portfolio')} activeOpacity={0.7}>
             <View style={styles.mpBadge}>
               <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
@@ -581,6 +605,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: space['2xl'], paddingTop: 60, paddingBottom: space.xl,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  rankBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  rankText: { fontSize: 13, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   mpBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.full,
