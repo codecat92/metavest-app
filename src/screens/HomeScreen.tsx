@@ -499,21 +499,18 @@ export default function HomeScreen() {
             <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
               {user?.name?.split(' ')[0] ?? 'Trader'}
             </Text>
-          </View>
-          <View style={styles.headerRight}>
             {rank && (
-              <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7}>
-                <View style={[styles.rankBadge, {
-                  backgroundColor: `${rank.color}1E`,
-                  borderColor: `${rank.color}50`,
-                }]}>
-                  <rank.icon size={13} color={rank.color} />
-                  <Text style={[styles.rankText, { color: rank.color }]}>
+              <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7} style={{ marginTop: space.xs }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <rank.icon size={12} color={rank.color} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: rank.color, fontFamily: 'DMSans-Bold' }}>
                     {(user as any)?.user_rank?.rank_name}
                   </Text>
                 </View>
               </TouchableOpacity>
             )}
+          </View>
+          <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => navigation.navigate('Portfolio')} activeOpacity={0.7}>
             <View style={styles.mpBadge}>
               <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
