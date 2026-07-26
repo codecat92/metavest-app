@@ -137,11 +137,9 @@ export default function MyRankScreen({ navigation }: Props) {
                 end={{ x: 1, y: 1 }}
                 style={{ padding: space.xl }}
               >
-                <RankIcon
-                  size={140}
-                  color={tierColors[currentRankId].ring}
-                  style={{ position: 'absolute', right: -30, top: -10, opacity: 0.07 }}
-                />
+                <View style={{ position: 'absolute', right: -30, top: -10, opacity: 0.07 }}>
+                  <RankIcon size={140} color={tierColors[currentRankId].ring} />
+                </View>
 
                 <View style={{
                   width: 76, height: 76, borderRadius: 38,
