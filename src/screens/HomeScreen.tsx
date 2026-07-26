@@ -11,6 +11,7 @@ import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
 import { newsApi } from '@/api/news';
 import { followApi } from '@/api/follow';
 import { signalsApi } from '@/api/signals';
+import { walletApi } from '@/api/wallet';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -427,6 +428,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
+  const [mpBalance, setMpBalance] = useState<number | null>(null);
   const navigation = useNavigation<any>();
 
   useFocusEffect(
@@ -434,9 +436,11 @@ export default function HomeScreen() {
       Promise.allSettled([
         followApi.getFollowed(1),
         signalsApi.getFollowed(1),
-      ]).then(([followRes, signalRes]) => {
+        walletApi.getById(),
+      ]).then(([followRes, signalRes, walletRes]) => {
         if (followRes.status === 'fulfilled') setFollowingCount(followRes.value.data_count ?? 0);
         if (signalRes.status === 'fulfilled') setSignalsCount(signalRes.value.data_count ?? 0);
+        if (walletRes.status === 'fulfilled') setMpBalance(walletRes.value.data?.balance ?? 0);
       });
     }, [])
   );
@@ -457,6 +461,12 @@ export default function HomeScreen() {
 
   const greeting = getGreeting();
   const GreetingIcon = greeting.Icon;
+
+  const formatMP = (amount: number): string => {
+    if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M MP`;
+    if (amount >= 10_000) return `${Math.round(amount / 1_000)}K MP`;
+    return `${amount.toLocaleString()} MP`;
+  }; 
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
@@ -482,7 +492,7 @@ export default function HomeScreen() {
           <View style={styles.headerRight}>
             <View style={styles.mpBadge}>
               <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
-              <Text style={styles.mpText}>0 MP</Text>
+              <Text style={styles.mpText}>{mpBalance !== null ? formatMP(mpBalance) : '--'}</Text>
             </View>
             <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate('Notifications')}>
               <Bell size={18} color={colors.text.secondary} />
