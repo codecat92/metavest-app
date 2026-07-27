@@ -497,6 +497,9 @@ export default function PortfolioScreen() {
               <Text style={[typography.h4, { color: colors.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Recent Transactions
               </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: space.md, marginTop: -space.sm }]}>
+                10 transaksi terakhir
+              </Text>
               {groupedHistory.length === 0 ? (
                 <EmptyState icon={<ArrowUpRight size={28} color={colors.text.secondary} />} title="No transactions yet" />
               ) : (
