@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal,
   ActivityIndicator, NativeSyntheticEvent, NativeScrollEvent,
-  StyleSheet,
+  BackHandler, StyleSheet,
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import { ShieldCheck } from 'lucide-react-native';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton } from '@/components';
 import { consentApi, ConsentData } from '@/api/consent';
@@ -14,10 +14,9 @@ interface ConsentModalProps {
   visible: boolean;
   consentData: ConsentData | null;
   onAgreed: () => void;
-  onCancel?: () => void;
 }
 
-export default function ConsentModal({ visible, consentData, onAgreed, onCancel }: ConsentModalProps) {
+export default function ConsentModal({ visible, consentData, onAgreed }: ConsentModalProps) {
   const c = useColors();
   const alert = useCustomAlert();
   const [checked, setChecked] = useState(false);
@@ -44,26 +43,33 @@ export default function ConsentModal({ visible, consentData, onAgreed, onCancel 
     }
   };
 
-  const handleClose = () => {
-    if (onCancel) onCancel();
-  };
+  useEffect(() => {
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => handler.remove();
+  }, []);
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={() => { if (onCancel) onCancel(); }}
+      onRequestClose={() => {}}
     >
-      <View style={[styles.container, { backgroundColor: c.bg.primary }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-            <X size={20} color={c.text.secondary} />
-          </TouchableOpacity>
-          <Text style={[typography.h3, { color: c.text.primary, flex: 1, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
-            {consentData?.title ?? 'Loading...'}
-          </Text>
-          <View style={{ width: 40 }} />
+      <View style={[styles.container, { backgroundColor: c.bg.deep }]}>
+        <View style={[styles.header, { borderBottomColor: c.glass.borderStrong }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <ShieldCheck size={24} color={colors.accent.purple} />
+            <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold', flex: 1 }]}>
+              {consentData?.title ?? 'Loading...'}
+            </Text>
+          </View>
+          {consentData && (
+            <View style={[styles.versionBadge, { backgroundColor: c.glass.g2 }]}>
+              <Text style={[typography.label, { color: c.text.muted }]}>
+                Versi {consentData.version}
+              </Text>
+            </View>
+          )}
         </View>
 
         {!consentData ? (
@@ -72,52 +78,59 @@ export default function ConsentModal({ visible, consentData, onAgreed, onCancel 
           </View>
         ) : (
           <>
-            <ScrollView
-              style={styles.scrollContent}
-              contentContainerStyle={{ paddingBottom: space['4xl'] }}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-            >
-              <Text style={[typography.body, { color: c.text.primary, fontFamily: 'DMSans', lineHeight: 24 }]}>
-                {consentData.content}
-              </Text>
-            </ScrollView>
+            <View style={[styles.documentCard, { backgroundColor: c.bg.elevated, borderColor: c.glass.border }]}>
+              <ScrollView
+                style={{ flex: 1 }}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+              >
+                <Text style={[typography.body, {
+                  color: c.text.primary,
+                  fontFamily: 'DMSans',
+                  lineHeight: 26,
+                  textAlign: 'justify',
+                }]}>
+                  {consentData.content}
+                </Text>
+              </ScrollView>
+            </View>
 
-            <View style={[styles.footer, { borderTopColor: c.glass.border }]}>
-              {!hasScrolledToBottom && (
+            <View style={[styles.footer, { borderTopColor: c.glass.borderStrong }]}>
+              {!hasScrolledToBottom ? (
                 <View style={styles.scrollHint}>
-                  <Text style={[typography.label, { color: c.text.muted, textAlign: 'center' }]}>
-                    Scroll ke bawah untuk melanjutkan
+                  <View style={[styles.progressDots, { backgroundColor: c.glass.g2 }]}>
+                    <View style={[styles.progressDot, { backgroundColor: c.text.muted }]} />
+                    <View style={[styles.progressDotInactive, { backgroundColor: c.glass.g3 }]} />
+                    <View style={[styles.progressDotInactive, { backgroundColor: c.glass.g3 }]} />
+                  </View>
+                  <Text style={[typography.label, { color: c.text.muted, textAlign: 'center', marginTop: space.sm }]}>
+                    Baca hingga selesai untuk melanjutkan
                   </Text>
                 </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.checkRow}
+                  onPress={() => setChecked(!checked)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    checked && styles.checkboxChecked,
+                    { borderColor: checked ? colors.accent.purple : c.glass.borderStrong },
+                  ]}>
+                    {checked && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={[typography.body, { color: c.text.primary, flex: 1, fontFamily: 'DMSans' }]}>
+                    Saya telah membaca dan menyetujui
+                  </Text>
+                </TouchableOpacity>
               )}
-
-              <TouchableOpacity
-                style={styles.checkRow}
-                onPress={() => hasScrolledToBottom && setChecked(!checked)}
-                disabled={!hasScrolledToBottom}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.checkbox,
-                  { borderColor: hasScrolledToBottom ? colors.accent.purple : c.glass.borderStrong },
-                  checked && { backgroundColor: colors.accent.purple, borderColor: colors.accent.purple },
-                ]}>
-                  {checked && <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>✓</Text>}
-                </View>
-                <Text style={[typography.body, {
-                  color: hasScrolledToBottom ? c.text.primary : c.text.muted,
-                  flex: 1,
-                  fontFamily: 'DMSans',
-                }]}>
-                  Saya telah membaca dan menyetujui
-                </Text>
-              </TouchableOpacity>
 
               <AppButton
                 title="Setuju & Lanjutkan"
                 disabled={!checked}
                 loading={submitting}
+                size="lg"
                 onPress={handleAgree}
               />
             </View>
@@ -131,17 +144,27 @@ export default function ConsentModal({ visible, consentData, onAgreed, onCancel 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: space['2xl'], paddingTop: space['3xl'], paddingBottom: space.lg,
+    paddingHorizontal: space['2xl'],
+    paddingTop: space['3xl'],
+    paddingBottom: space.lg,
+    borderBottomWidth: 1,
   },
-  closeBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.glass.g1,
-    borderWidth: 1, borderColor: colors.glass.border,
-    alignItems: 'center', justifyContent: 'center',
+  versionBadge: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    marginTop: space.sm,
   },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { flex: 1, paddingHorizontal: space['2xl'] },
+  documentCard: {
+    flex: 1,
+    margin: space['2xl'],
+    marginBottom: 0,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: space.xl,
+  },
   footer: {
     borderTopWidth: 1,
     paddingHorizontal: space['2xl'],
@@ -150,14 +173,33 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   scrollHint: {
-    paddingVertical: space.xs,
+    alignItems: 'center',
+    paddingVertical: space.sm,
+  },
+  progressDots: {
+    flexDirection: 'row', gap: 6,
+    paddingHorizontal: space.md, paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  progressDot: {
+    width: 8, height: 8, borderRadius: 4,
+  },
+  progressDotInactive: {
+    width: 8, height: 8, borderRadius: 4, opacity: 0.4,
   },
   checkRow: {
     flexDirection: 'row', alignItems: 'center', gap: space.md,
   },
   checkbox: {
-    width: 22, height: 22, borderRadius: 4,
-    borderWidth: 2,
+    width: 24, height: 24, borderRadius: 4,
+    borderWidth: 2.5,
     alignItems: 'center', justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.accent.purple,
+    borderColor: colors.accent.purple,
+  },
+  checkmark: {
+    color: '#fff', fontSize: 15, fontWeight: '800', lineHeight: 20,
   },
 });
