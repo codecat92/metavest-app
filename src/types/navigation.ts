@@ -42,6 +42,7 @@ export type RootStackParamList = {
   ReferralList: { referralCode: string };
   TraderDetail: { traderId: string };
   MyRank: undefined;
+  PAMMKyc: { brokerId: number };
 };
 
 export type TabParamList = {

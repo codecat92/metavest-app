@@ -213,6 +213,14 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           ) : null}
         </View>
+
+        <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
+          <AppButton
+            title="Daftar PAMM"
+            variant="primary"
+            onPress={() => navigation.navigate('PAMMKyc', { brokerId })}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

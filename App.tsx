@@ -21,6 +21,7 @@ import PortfolioScreen from '@/screens/PortfolioScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import PAMMScreen from '@/screens/PAMMScreen';
 import PAMMDetailScreen from '@/screens/PAMMDetailScreen';
+import PAMMKycScreen from '@/screens/PAMMKycScreen';
 import NewsScreen from '@/screens/NewsScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import SignalDetailScreen from '@/screens/SignalDetailScreen';
@@ -124,6 +125,7 @@ function RootNavigator() {
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="PAMM" component={PAMMScreen} />
         <Stack.Screen name="PAMMDetail" component={PAMMDetailScreen} />
+        <Stack.Screen name="PAMMKyc" component={PAMMKycScreen} />
         <Stack.Screen name="News" component={NewsScreen} />
         <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
         <Stack.Screen name="Forum" component={ForumScreen} />
