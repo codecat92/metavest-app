@@ -82,7 +82,7 @@ export const pammApi = {
 
   addPammSubmission: (brokerId: number, userName: string) =>
     api.post<{ message: string; data: any }>('/pamm/add', {
-      id_broker: brokerId,
+      id_broker: String(brokerId),
       user_name: userName,
       status: 1,
     }),
