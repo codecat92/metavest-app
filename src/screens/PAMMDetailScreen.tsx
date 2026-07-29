@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking, Image
+  TouchableOpacity, ActivityIndicator, Linking, Image, Alert
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import { pammApi, BrokerWithDetail } from '@/api/pamm';
 import { getToken } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
+import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -21,9 +22,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PAMMDetail'>;
 export default function PAMMDetailScreen({ navigation, route }: Props) {
   const STAGING_HOST = 'http://157.66.4.40:8081';
   const colors = useColors();
+  const { user } = useAuth();
   const { brokerId } = route.params;
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submittingPamm, setSubmittingPamm] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -40,6 +43,18 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   useFocusEffect(
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
+
+  const handleDaftarPamm = async () => {
+    setSubmittingPamm(true);
+    try {
+      await pammApi.addPammSubmission(brokerId, user?.name ?? '');
+      navigation.navigate('PAMMKyc', { brokerId });
+    } catch (err: any) {
+      Alert.alert('Gagal', err.message || 'Gagal memulai pendaftaran PAMM');
+    } finally {
+      setSubmittingPamm(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -218,7 +233,8 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
           <AppButton
             title="Daftar PAMM"
             variant="primary"
-            onPress={() => navigation.navigate('PAMMKyc', { brokerId })}
+            loading={submittingPamm}
+            onPress={handleDaftarPamm}
           />
         </View>
       </ScrollView>

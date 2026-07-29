@@ -79,4 +79,11 @@ export const pammApi = {
 
   getBrokerDetail: (brokerId: number) =>
     api.get<ApiResponse<BrokerWithDetail>>(`/pamm/brokers/${brokerId}`),
+
+  addPammSubmission: (brokerId: number, userName: string) =>
+    api.post<{ message: string; data: any }>('/pamm/add', {
+      id_broker: brokerId,
+      user_name: userName,
+      status: 1,
+    }),
 };
