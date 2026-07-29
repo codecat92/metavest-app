@@ -51,7 +51,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
       const existing = (res.data ?? []).find(
         (item) => String(item.id_broker) === String(brokerId)
       );
-      setPammStatus(existing ? existing.status : null);
+      setPammStatus(existing ? Number(existing.status) : null);
     } catch {
       setPammStatus(null);
     }
