@@ -179,7 +179,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
     {
       title: 'Verification',
       items: [
-        { Icon: Award, label: 'Membership', value: user?.membership_status === 1 ? 'Active' : 'Free' },
+        { Icon: Award, label: 'Membership', value: Number(user?.membership_status) === 1 ? 'Active' : 'Free' },
         { Icon: Star, label: 'ID Verified', value: user?.ktp_verified === 1 ? 'Verified' : 'Not verified' },
         { Icon: Shield, label: 'Account Type', value: user?.account_type_name ?? 'Standard' },
       ],
