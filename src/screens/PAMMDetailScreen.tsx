@@ -27,6 +27,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submittingPamm, setSubmittingPamm] = useState(false);
+  const [pammStatus, setPammStatus] = useState<number | null | 'loading'>('loading');
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -41,13 +42,26 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   }, [brokerId]);
 
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadData(); }, [loadData])
+    useCallback(() => { setLoading(true); loadData(); checkPammStatus(); }, [loadData, checkPammStatus])
   );
+
+  const checkPammStatus = useCallback(async () => {
+    try {
+      const res = await pammApi.getByUser();
+      const existing = (res.data ?? []).find(
+        (item) => String(item.id_broker) === String(brokerId)
+      );
+      setPammStatus(existing ? existing.status : null);
+    } catch {
+      setPammStatus(null);
+    }
+  }, [brokerId]);
 
   const handleDaftarPamm = async () => {
     setSubmittingPamm(true);
     try {
       await pammApi.addPammSubmission(brokerId, user?.name ?? '');
+      await checkPammStatus();
       navigation.navigate('PAMMKyc', { brokerId });
     } catch (err: any) {
       Alert.alert('Gagal', err.message || 'Gagal memulai pendaftaran PAMM');
@@ -229,14 +243,40 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
           ) : null}
         </View>
 
-        <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
-          <AppButton
-            title="Daftar PAMM"
-            variant="primary"
-            loading={submittingPamm}
-            onPress={handleDaftarPamm}
-          />
-        </View>
+        {pammStatus === 'loading' ? (
+          <Skeleton height={48} borderRadius={radius.md} style={{ marginTop: space.md, marginHorizontal: space['2xl'] }} />
+        ) : pammStatus === null ? (
+          <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
+            <AppButton
+              title="Daftar PAMM"
+              variant="primary"
+              loading={submittingPamm}
+              onPress={handleDaftarPamm}
+            />
+          </View>
+        ) : pammStatus === 1 ? (
+          <View style={{
+            marginTop: space.md, marginHorizontal: space['2xl'],
+            padding: space.lg, borderRadius: radius.md,
+            backgroundColor: colors.glass.g1, borderWidth: 1,
+            borderColor: colors.glass.border, alignItems: 'center',
+          }}>
+            <Text style={[typography.bodyBold, { color: colors.semantic.positive }]}>
+              ✓ Sudah Terdaftar PAMM
+            </Text>
+          </View>
+        ) : (
+          <View style={{
+            marginTop: space.md, marginHorizontal: space['2xl'],
+            padding: space.lg, borderRadius: radius.md,
+            backgroundColor: colors.glass.g1, borderWidth: 1,
+            borderColor: colors.semantic.negative, alignItems: 'center',
+          }}>
+            <Text style={[typography.bodyBold, { color: colors.semantic.negative }]}>
+              Pendaftaran ditolak. Hubungi admin.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
