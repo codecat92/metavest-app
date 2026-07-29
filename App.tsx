@@ -22,6 +22,8 @@ import ProfileScreen from '@/screens/ProfileScreen';
 import PAMMScreen from '@/screens/PAMMScreen';
 import PAMMDetailScreen from '@/screens/PAMMDetailScreen';
 import PAMMKycScreen from '@/screens/PAMMKycScreen';
+import KYCFinancialScreen from '@/screens/KYCFinancialScreen';
+import DepositQuestionsScreen from '@/screens/DepositQuestionsScreen';
 import NewsScreen from '@/screens/NewsScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import SignalDetailScreen from '@/screens/SignalDetailScreen';
@@ -126,6 +128,8 @@ function RootNavigator() {
         <Stack.Screen name="PAMM" component={PAMMScreen} />
         <Stack.Screen name="PAMMDetail" component={PAMMDetailScreen} />
         <Stack.Screen name="PAMMKyc" component={PAMMKycScreen} />
+        <Stack.Screen name="KYCFinancial" component={KYCFinancialScreen} />
+        <Stack.Screen name="DepositQuestions" component={DepositQuestionsScreen} />
         <Stack.Screen name="News" component={NewsScreen} />
         <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
         <Stack.Screen name="Forum" component={ForumScreen} />

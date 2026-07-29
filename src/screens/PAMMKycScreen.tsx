@@ -185,7 +185,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       }
 
       Alert.alert('Berhasil', 'Data berhasil dikirim, menunggu verifikasi admin', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+        { text: 'Lanjut', onPress: () => navigation.navigate('KYCFinancial', { brokerId }) },
       ]);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Gagal mengirim data');

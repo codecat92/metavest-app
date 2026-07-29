@@ -43,6 +43,13 @@ export type RootStackParamList = {
   TraderDetail: { traderId: string };
   MyRank: undefined;
   PAMMKyc: { brokerId: number };
+  KYCFinancial: { brokerId: number };
+  DepositQuestions: {
+    brokerId: number;
+    employment_status: string;
+    annual_salary: string;
+    savings_investments_approx_value: string;
+  };
 };
 
 export type TabParamList = {
