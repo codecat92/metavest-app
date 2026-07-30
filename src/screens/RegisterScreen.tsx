@@ -11,6 +11,8 @@ import { useCustomAlert } from '@/context/AlertContext';
 import { authApi } from '@/api/auth';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton, AppInput, GlassCard } from '@/components';
+import ConsentModal from '@/components/ConsentModal';
+import { consentApi, ConsentData } from '@/api/consent';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -24,6 +26,8 @@ export default function RegisterScreen() {
   const [referralCode, setReferralCode] = useState('metavestvip');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [registrationConsent, setRegistrationConsent] = useState<ConsentData | null>(null);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { login } = useAuth();
   const alert = useCustomAlert();
@@ -53,7 +57,19 @@ export default function RegisterScreen() {
       });
       alert.showAlert({ title: 'Success', message: 'Account created successfully.', type: 'success' });
       await login(email.trim(), password);
-      navigation.replace('Tabs');
+
+      try {
+        const consentRes = await consentApi.get('registration');
+        if (!consentRes.data.already_agreed) {
+          setRegistrationConsent(consentRes.data);
+          setShowConsentModal(true);
+        } else {
+          navigation.replace('Tabs');
+        }
+      } catch (err) {
+        console.warn('Gagal fetch consent registrasi:', err);
+        navigation.replace('Tabs');
+      }
     } catch (e: any) {
       alert.showAlert({ title: 'Registration Failed', message: e.message || 'Unable to register.', type: 'error' });
     } finally {
@@ -155,6 +171,15 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConsentModal
+        visible={showConsentModal}
+        consentData={registrationConsent}
+        onAgreed={() => {
+          setShowConsentModal(false);
+          navigation.replace('Tabs');
+        }}
+      />
     </SafeAreaView>
   );
 }
