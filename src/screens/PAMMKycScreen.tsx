@@ -36,6 +36,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [placeOfBirth, setPlaceOfBirth] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [manualDob, setManualDob] = useState('');
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -127,8 +128,11 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
     } else {
       setPlaceError('');
     }
-    if (!dateOfBirth) {
+    if (!dateOfBirth && !manualDob.trim()) {
       setDobError('Tanggal lahir wajib diisi');
+      valid = false;
+    } else if (manualDob.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(manualDob.trim())) {
+      setDobError('Format tanggal: YYYY-MM-DD');
       valid = false;
     } else {
       setDobError('');
@@ -164,7 +168,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
         formData.append('passport_id', passportId.trim());
       }
       formData.append('place_of_birth', placeOfBirth.trim());
-      formData.append('date_of_birth', formatDate(dateOfBirth!));
+      formData.append('date_of_birth', manualDob.trim() || formatDate(dateOfBirth!));
 
       const uri = photoUri!;
       const filename = uri.split('/').pop() ?? 'ktp.jpg';
@@ -338,17 +342,34 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
               </View>
 
               {showDatePicker && (
-                <DateTimePicker
-                  value={dateOfBirth || new Date(2000, 0, 1)}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  maximumDate={new Date()}
-                  onChange={(event, date) => {
-                    setShowDatePicker(Platform.OS === 'ios');
-                    if (date) setDateOfBirth(date);
-                  }}
-                />
+                <View>
+                  <DateTimePicker
+                    value={dateOfBirth || new Date(1990, 0, 1)}
+                    mode="date"
+                    display="spinner"
+                    maximumDate={new Date()}
+                    onChange={(event, date) => {
+                      if (date) setDateOfBirth(date);
+                    }}
+                  />
+                  {Platform.OS === 'android' && (
+                    <AppButton
+                      title="Konfirmasi Tanggal"
+                      onPress={() => setShowDatePicker(false)}
+                      style={{ marginTop: space.sm }}
+                    />
+                  )}
+                </View>
               )}
+              <View style={{ marginTop: space.md }}>
+                <Text style={[typography.label, { color: c.text.secondary }]}>Atau ketik manual (YYYY-MM-DD)</Text>
+                <AppInput
+                  placeholder="1995-01-01"
+                  value={manualDob}
+                  onChangeText={setManualDob}
+                  containerStyle={{ marginBottom: 0 }}
+                />
+              </View>
 
               <Text style={[typography.bodyBold, { color: c.text.primary, marginBottom: space.sm, marginTop: space.md, fontFamily: 'Manrope-SemiBold' }]}>
                 {idType === 'ktp' ? 'Foto KTP' : 'Foto Passport'}
