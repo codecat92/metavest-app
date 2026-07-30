@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal,
   ActivityIndicator, NativeSyntheticEvent, NativeScrollEvent,
-  BackHandler, StyleSheet,
+  BackHandler, StyleSheet, Linking,
 } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -24,6 +24,30 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
   const [submitting, setSubmitting] = useState(false);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
+
+  const renderContentWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <Text
+            key={index}
+            style={{
+              color: colors.accent.gold,
+              textDecorationLine: 'underline',
+              fontFamily: 'DMSans-SemiBold',
+            }}
+            onPress={() => Linking.openURL(part)}
+          >
+            {part}
+          </Text>
+        );
+      }
+      return <Text key={index}>{part}</Text>;
+    });
+  };
 
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -108,8 +132,8 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
                   fontFamily: 'DMSans',
                   lineHeight: 26,
                   textAlign: 'justify',
-                }]}>
-                  {consentData.content}
+                }}>
+                  {renderContentWithLinks(consentData.content)}
                 </Text>
               </ScrollView>
             </View>
