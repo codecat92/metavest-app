@@ -11,8 +11,10 @@ import {
 } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail } from '@/api/pamm';
 import { getToken, api } from '@/api/client';
+import { consentApi, ConsentData } from '@/api/consent';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
+import ConsentModal from '@/components/ConsentModal';
 import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,7 +29,9 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submittingPamm, setSubmittingPamm] = useState(false);
-  const [pammStatus, setPammStatus] = useState<'loading' | 'not_registered' | 'ktp_rejected' | 'incomplete' | 'pending_review' | 'complete'>('loading');
+  const [pammStatus, setPammStatus] = useState<'loading' | 'not_registered' | 'ktp_rejected' | 'incomplete' | 'pending_review' | 'pending_jdr_consent' | 'complete'>('loading');
+  const [jdrConsentData, setJdrConsentData] = useState<ConsentData | null>(null);
+  const [showJdrConsentModal, setShowJdrConsentModal] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -86,6 +90,17 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
       }
 
       if (u.ktp_verified === '1') {
+        try {
+          const consentRes = await consentApi.get('jdr_broker_terms');
+          if (!consentRes.data.already_agreed) {
+            setPammStatus('pending_jdr_consent');
+            return;
+          }
+        } catch {
+          // consent check failed, treat as incomplete for safety
+          setPammStatus('pending_jdr_consent');
+          return;
+        }
         setPammStatus('complete');
         return;
       }
@@ -95,6 +110,16 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
       setPammStatus('not_registered');
     }
   }, [brokerId]);
+
+  const handleOpenJdrConsent = async () => {
+    try {
+      const res = await consentApi.get('jdr_broker_terms');
+      setJdrConsentData(res.data);
+      setShowJdrConsentModal(true);
+    } catch (err: any) {
+      Alert.alert('Gagal', 'Gagal memuat syarat & ketentuan JDR');
+    }
+  };
 
   const handleDaftarPamm = async () => {
     setSubmittingPamm(true);
@@ -338,6 +363,14 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
               ⏳ Data Anda sedang ditinjau admin
             </Text>
           </View>
+        ) : pammStatus === 'pending_jdr_consent' ? (
+          <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
+            <AppButton
+              title="Setujui Syarat JDR"
+              variant="primary"
+              onPress={handleOpenJdrConsent}
+            />
+          </View>
         ) : (
           <View style={{
             marginTop: space.md, marginHorizontal: space['2xl'],
@@ -351,6 +384,15 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
           </View>
         )}
       </ScrollView>
+
+      <ConsentModal
+        visible={showJdrConsentModal}
+        consentData={jdrConsentData}
+        onAgreed={async () => {
+          setShowJdrConsentModal(false);
+          await checkPammStatus();
+        }}
+      />
     </SafeAreaView>
   );
 }
