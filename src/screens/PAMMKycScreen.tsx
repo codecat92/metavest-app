@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Image, Platform,
+  View, Text, ScrollView, TouchableOpacity, Image,
   StyleSheet, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { ArrowLeft, Camera } from 'lucide-react-native';
 import { consentApi, ConsentData } from '@/api/consent';
 import { getToken, BASE_URL } from '@/api/client';
@@ -34,9 +33,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [passportId, setPassportId] = useState('');
   const [address, setAddress] = useState('');
   const [placeOfBirth, setPlaceOfBirth] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [manualDob, setManualDob] = useState('');
+  const [dateOfBirthText, setDateOfBirthText] = useState('');
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -93,10 +90,6 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
     }
   };
 
-  const formatDate = (d: Date): string => {
-    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-  };
-
   const validate = (): boolean => {
     let valid = true;
 
@@ -128,14 +121,17 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
     } else {
       setPlaceError('');
     }
-    if (!dateOfBirth && !manualDob.trim()) {
-      setDobError('Tanggal lahir wajib diisi');
-      valid = false;
-    } else if (manualDob.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(manualDob.trim())) {
-      setDobError('Format tanggal: YYYY-MM-DD');
+    if (!dateOfBirthText.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirthText.trim())) {
+      setDobError('Format tanggal lahir: YYYY-MM-DD (contoh: 1962-07-26)');
       valid = false;
     } else {
-      setDobError('');
+      const parsed = new Date(dateOfBirthText.trim());
+      if (isNaN(parsed.getTime())) {
+        setDobError('Tanggal tidak valid');
+        valid = false;
+      } else {
+        setDobError('');
+      }
     }
     if (!photoUri) {
       setPhotoError('Foto KTP/Passport wajib diupload');
@@ -168,7 +164,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
         formData.append('passport_id', passportId.trim());
       }
       formData.append('place_of_birth', placeOfBirth.trim());
-      formData.append('date_of_birth', manualDob.trim() || formatDate(dateOfBirth!));
+      formData.append('date_of_birth', dateOfBirthText.trim());
 
       const uri = photoUri!;
       const filename = uri.split('/').pop() ?? 'ktp.jpg';
@@ -322,54 +318,16 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
                 error={placeError}
                 containerStyle={styles.inputStyle}
               />
-
-              <View style={{ marginBottom: space.sm }}>
-                <Text style={[typography.label, { color: c.text.secondary }]}>Tanggal Lahir</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  style={{
-                    height: 52, borderRadius: radius.md, paddingHorizontal: space.lg,
-                    backgroundColor: c.glass.g1, borderWidth: 1,
-                    borderColor: dobError ? c.semantic.negative : c.glass.borderStrong,
-                    marginTop: space.sm, justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ color: dateOfBirth ? c.text.primary : c.text.secondary, fontSize: 15, fontFamily: 'DMSans' }}>
-                    {dateOfBirth ? formatDate(dateOfBirth) : 'Pilih Tanggal Lahir'}
-                  </Text>
-                </TouchableOpacity>
-                {dobError ? <Text style={{ color: c.semantic.negative, fontSize: 12, marginTop: 4 }}>{dobError}</Text> : null}
-              </View>
-
-              {showDatePicker && (
-                <View>
-                  <DateTimePicker
-                    value={dateOfBirth || new Date(1990, 0, 1)}
-                    mode="date"
-                    display="spinner"
-                    maximumDate={new Date()}
-                    onChange={(event, date) => {
-                      if (date) setDateOfBirth(date);
-                    }}
-                  />
-                  {Platform.OS === 'android' && (
-                    <AppButton
-                      title="Konfirmasi Tanggal"
-                      onPress={() => setShowDatePicker(false)}
-                      style={{ marginTop: space.sm }}
-                    />
-                  )}
-                </View>
-              )}
-              <View style={{ marginTop: space.md }}>
-                <Text style={[typography.label, { color: c.text.secondary }]}>Atau ketik manual (YYYY-MM-DD)</Text>
-                <AppInput
-                  placeholder="1995-01-01"
-                  value={manualDob}
-                  onChangeText={setManualDob}
-                  containerStyle={{ marginBottom: 0 }}
-                />
-              </View>
+              <AppInput
+                label="Tanggal Lahir (Format: YYYY-MM-DD)"
+                placeholder="Contoh: 1962-07-26"
+                value={dateOfBirthText}
+                onChangeText={setDateOfBirthText}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+                error={dobError}
+                containerStyle={styles.inputStyle}
+              />
 
               <Text style={[typography.bodyBold, { color: c.text.primary, marginBottom: space.sm, marginTop: space.md, fontFamily: 'Manrope-SemiBold' }]}>
                 {idType === 'ktp' ? 'Foto KTP' : 'Foto Passport'}
