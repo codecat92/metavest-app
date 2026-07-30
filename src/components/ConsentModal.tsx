@@ -30,7 +30,7 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
     const parts = text.split(urlRegex);
 
     return parts.map((part, index) => {
-      if (part.match(urlRegex)) {
+      if (/^https?:\/\//.test(part)) {
         return (
           <Text
             key={index}
