@@ -132,7 +132,7 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
                   fontFamily: 'DMSans',
                   lineHeight: 26,
                   textAlign: 'justify',
-                }}>
+                }]}>
                   {renderContentWithLinks(consentData.content)}
                 </Text>
               </ScrollView>
