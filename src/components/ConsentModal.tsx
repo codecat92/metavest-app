@@ -22,6 +22,8 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
   const [checked, setChecked] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
 
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -29,6 +31,21 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
       setHasScrolledToBottom(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (scrollViewHeight > 0 && contentHeight > 0 && contentHeight <= scrollViewHeight + 20) {
+      setHasScrolledToBottom(true);
+    }
+  }, [scrollViewHeight, contentHeight]);
+
+  useEffect(() => {
+    if (visible) {
+      setChecked(false);
+      setHasScrolledToBottom(false);
+      setScrollViewHeight(0);
+      setContentHeight(0);
+    }
+  }, [visible]);
 
   const handleAgree = async () => {
     if (!consentData) return;
@@ -81,6 +98,8 @@ export default function ConsentModal({ visible, consentData, onAgreed }: Consent
             <View style={[styles.documentCard, { backgroundColor: c.bg.elevated, borderColor: c.glass.border }]}>
               <ScrollView
                 style={{ flex: 1 }}
+                onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+                onContentSizeChange={(w, h) => setContentHeight(h)}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
               >
