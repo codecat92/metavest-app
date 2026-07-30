@@ -32,6 +32,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
 
   const [nik, setNik] = useState('');
   const [passportId, setPassportId] = useState('');
+  const [address, setAddress] = useState('');
   const [placeOfBirth, setPlaceOfBirth] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -44,6 +45,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [placeError, setPlaceError] = useState('');
   const [dobError, setDobError] = useState('');
   const [photoError, setPhotoError] = useState('');
+  const [addressError, setAddressError] = useState('');
 
   const loadConsent = useCallback(async () => {
     setConsentLoading(true);
@@ -104,6 +106,12 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       } else {
         setNikError('');
       }
+      if (!address.trim()) {
+        setAddressError('Alamat lengkap wajib diisi');
+        valid = false;
+      } else {
+        setAddressError('');
+      }
     }
     if (idType === 'passport') {
       if (!passportId.trim() || passportId.trim().length > 12) {
@@ -150,6 +158,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       if (idType === 'ktp') {
         formData.append('name', user?.name ?? '');
         formData.append('nik', nik.trim());
+        formData.append('address', address.trim());
       } else {
         formData.append('name', user?.name ?? '');
         formData.append('passport_id', passportId.trim());
@@ -269,6 +278,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
               />
 
               {idType === 'ktp' ? (
+                <>
                 <AppInput
                   label="NIK"
                   placeholder="3271..."
@@ -278,6 +288,16 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
                   error={nikError}
                   containerStyle={styles.inputStyle}
                 />
+                <AppInput
+                  label="Alamat Lengkap"
+                  placeholder="Jl. Contoh No. 123, Jakarta"
+                  value={address}
+                  onChangeText={setAddress}
+                  error={addressError}
+                  multiline
+                  containerStyle={styles.inputStyle}
+                />
+                </>
               ) : (
                 <AppInput
                   label="Passport ID"
