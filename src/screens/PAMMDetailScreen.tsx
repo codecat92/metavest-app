@@ -10,7 +10,7 @@ import {
   Shield, Medal, ChevronRight, ExternalLink
 } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail } from '@/api/pamm';
-import { getToken } from '@/api/client';
+import { getToken, api } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
 import { useAuth } from '@/context/AuthContext';
@@ -27,7 +27,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const [broker, setBroker] = useState<BrokerWithDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [submittingPamm, setSubmittingPamm] = useState(false);
-  const [pammStatus, setPammStatus] = useState<number | null | 'loading'>('loading');
+  const [pammStatus, setPammStatus] = useState<'loading' | 'not_registered' | 'ktp_rejected' | 'incomplete' | 'pending_review' | 'complete'>('loading');
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -47,13 +47,52 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
 
   const checkPammStatus = useCallback(async () => {
     try {
-      const res = await pammApi.getByUser();
-      const existing = (res.data ?? []).find(
+      const [pammRes, userRes] = await Promise.all([
+        pammApi.getByUser(),
+        api.get<{ id_user: string; name: string; email: string; ktp_verified: string; employment_status: string | null; annual_salary: string | null; savings_investments_approx_value: string | null; base_currency: string | null; expected_init_investment: string | null; account_type: string | null; account_leverage: string | null; profile_image_src: string | null }>('/auth-user'),
+      ]);
+      const existing = (pammRes.data ?? []).find(
         (item) => String(item.id_broker) === String(brokerId)
       );
-      setPammStatus(existing ? Number(existing.status) : null);
+      const u = userRes as any;
+
+      if (!existing) {
+        setPammStatus('not_registered');
+        return;
+      }
+
+      if (u.ktp_verified === '3') {
+        setPammStatus('ktp_rejected');
+        return;
+      }
+
+      const kycIncomplete = !u.employment_status
+        || !u.annual_salary
+        || !u.savings_investments_approx_value
+        || !u.base_currency
+        || !u.expected_init_investment
+        || !u.account_type
+        || !u.account_leverage
+        || u.ktp_verified === '0';
+
+      if (kycIncomplete) {
+        setPammStatus('incomplete');
+        return;
+      }
+
+      if (u.ktp_verified === '2') {
+        setPammStatus('pending_review');
+        return;
+      }
+
+      if (u.ktp_verified === '1') {
+        setPammStatus('complete');
+        return;
+      }
+
+      setPammStatus('incomplete');
     } catch {
-      setPammStatus(null);
+      setPammStatus('not_registered');
     }
   }, [brokerId]);
 
@@ -245,7 +284,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
 
         {pammStatus === 'loading' ? (
           <Skeleton height={48} borderRadius={radius.md} style={{ marginTop: space.md, marginHorizontal: space['2xl'] }} />
-        ) : pammStatus === null ? (
+        ) : pammStatus === 'not_registered' ? (
           <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
             <AppButton
               title="Daftar PAMM"
@@ -254,7 +293,52 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
               onPress={handleDaftarPamm}
             />
           </View>
-        ) : pammStatus === 1 ? (
+        ) : pammStatus === 'ktp_rejected' ? (
+          <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
+            <View style={{
+              padding: space.md, borderRadius: radius.md,
+              backgroundColor: 'rgba(239,68,68,0.1)', borderWidth: 1,
+              borderColor: colors.semantic.negative, marginBottom: space.sm,
+            }}>
+              <Text style={[typography.captionBold, { color: colors.semantic.negative, marginBottom: 4 }]}>
+                KTP Anda ditolak. Silakan upload ulang.
+              </Text>
+            </View>
+            <AppButton
+              title="Upload Ulang KTP"
+              variant="danger"
+              onPress={() => navigation.navigate('PAMMKyc', { brokerId })}
+            />
+          </View>
+        ) : pammStatus === 'incomplete' ? (
+          <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
+            <View style={{
+              padding: space.md, borderRadius: radius.md,
+              backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1,
+              borderColor: colors.semantic.warning, marginBottom: space.sm,
+            }}>
+              <Text style={[typography.captionBold, { color: colors.semantic.warning, marginBottom: 4 }]}>
+                Data Anda belum lengkap. Lanjutkan pendaftaran.
+              </Text>
+            </View>
+            <AppButton
+              title="Lanjutkan Pendaftaran"
+              variant="primary"
+              onPress={() => navigation.navigate('PAMMKyc', { brokerId })}
+            />
+          </View>
+        ) : pammStatus === 'pending_review' ? (
+          <View style={{
+            marginTop: space.md, marginHorizontal: space['2xl'],
+            padding: space.lg, borderRadius: radius.md,
+            backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1,
+            borderColor: colors.semantic.warning, alignItems: 'center',
+          }}>
+            <Text style={[typography.bodyBold, { color: colors.semantic.warning }]}>
+              ⏳ Data Anda sedang ditinjau admin
+            </Text>
+          </View>
+        ) : (
           <View style={{
             marginTop: space.md, marginHorizontal: space['2xl'],
             padding: space.lg, borderRadius: radius.md,
@@ -263,17 +347,6 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
           }}>
             <Text style={[typography.bodyBold, { color: colors.semantic.positive }]}>
               ✓ Sudah Terdaftar PAMM
-            </Text>
-          </View>
-        ) : (
-          <View style={{
-            marginTop: space.md, marginHorizontal: space['2xl'],
-            padding: space.lg, borderRadius: radius.md,
-            backgroundColor: colors.glass.g1, borderWidth: 1,
-            borderColor: colors.semantic.negative, alignItems: 'center',
-          }}>
-            <Text style={[typography.bodyBold, { color: colors.semantic.negative }]}>
-              Pendaftaran ditolak. Hubungi admin.
             </Text>
           </View>
         )}
