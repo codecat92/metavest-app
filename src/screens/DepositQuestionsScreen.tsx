@@ -15,6 +15,12 @@ export default function DepositQuestionsScreen({ navigation, route }: Props) {
   const c = useColors();
   const { brokerId, employment_status, annual_salary, savings_investments_approx_value } = route.params;
 
+  const formatCurrency = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return Number(digits).toLocaleString('id-ID');
+  };
+
   const [baseCurrency, setBaseCurrency] = useState<number | null>(null);
   const [expectedInvestment, setExpectedInvestment] = useState('');
   const [accountType, setAccountType] = useState<number | null>(null);
@@ -100,9 +106,9 @@ export default function DepositQuestionsScreen({ navigation, route }: Props) {
 
             <AppInput
               label="Expected Initial Investment (IDR)"
-              placeholder="Contoh: 10000000"
-              value={expectedInvestment}
-              onChangeText={setExpectedInvestment}
+              placeholder="Contoh: 10.000.000"
+              value={expectedInvestment ? formatCurrency(expectedInvestment) : ''}
+              onChangeText={(text) => setExpectedInvestment(text.replace(/\D/g, ''))}
               keyboardType="numeric"
               error={investError}
               containerStyle={styles.inputStyle}

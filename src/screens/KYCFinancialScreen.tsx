@@ -13,6 +13,12 @@ export default function KYCFinancialScreen({ navigation, route }: Props) {
   const c = useColors();
   const { brokerId } = route.params;
 
+  const formatCurrency = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return Number(digits).toLocaleString('id-ID');
+  };
+
   const [employmentStatus, setEmploymentStatus] = useState('');
   const [annualSalary, setAnnualSalary] = useState('');
   const [savingsValue, setSavingsValue] = useState('');
@@ -63,18 +69,18 @@ export default function KYCFinancialScreen({ navigation, route }: Props) {
             />
             <AppInput
               label="Annual Salary (IDR)"
-              placeholder="Contoh: 100000000"
-              value={annualSalary}
-              onChangeText={setAnnualSalary}
+              placeholder="Contoh: 100.000.000"
+              value={annualSalary ? formatCurrency(annualSalary) : ''}
+              onChangeText={(text) => setAnnualSalary(text.replace(/\D/g, ''))}
               keyboardType="numeric"
               error={salaryError}
               containerStyle={styles.inputStyle}
             />
             <AppInput
               label="Savings & Investments Approx. Value (IDR)"
-              placeholder="Contoh: 50000000"
-              value={savingsValue}
-              onChangeText={setSavingsValue}
+              placeholder="Contoh: 50.000.000"
+              value={savingsValue ? formatCurrency(savingsValue) : ''}
+              onChangeText={(text) => setSavingsValue(text.replace(/\D/g, ''))}
               keyboardType="numeric"
               error={savingsError}
               containerStyle={{ marginBottom: 0 }}
