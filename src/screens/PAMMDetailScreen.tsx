@@ -32,6 +32,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const [pammStatus, setPammStatus] = useState<'loading' | 'not_registered' | 'ktp_rejected' | 'incomplete' | 'pending_review' | 'pending_jdr_consent' | 'complete'>('loading');
   const [jdrConsentData, setJdrConsentData] = useState<ConsentData | null>(null);
   const [showJdrConsentModal, setShowJdrConsentModal] = useState(false);
+  const [ktpRejectionReason, setKtpRejectionReason] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -59,6 +60,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
         (item) => String(item.id_broker) === String(brokerId)
       );
       const u = userRes as any;
+      setKtpRejectionReason(u.ktp_rejection_reason ?? null);
 
       if (!existing) {
         setPammStatus('not_registered');
@@ -329,6 +331,22 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
                 KTP Anda ditolak. Silakan upload ulang.
               </Text>
             </View>
+
+            {ktpRejectionReason && (
+              <View style={{
+                padding: space.md, borderRadius: radius.md,
+                backgroundColor: colors.glass.g1, borderWidth: 1,
+                borderColor: colors.glass.borderStrong, marginBottom: space.md,
+              }}>
+                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 4 }]}>
+                  Alasan:
+                </Text>
+                <Text style={[typography.body, { color: colors.text.primary }]}>
+                  {ktpRejectionReason}
+                </Text>
+              </View>
+            )}
+
             <AppButton
               title="Upload Ulang KTP"
               variant="danger"
