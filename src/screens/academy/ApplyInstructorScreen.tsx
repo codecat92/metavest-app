@@ -17,9 +17,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type Props = NativeStackScreenProps<RootStackParamList, 'ApplyInstructor'>;
 
 const SPECIALIZATIONS = [
-  { id: 6, name: 'Saham' },
-  { id: 5, name: 'Crypto' },
-  { id: 7, name: 'Forex' },
+  { id: 1, name: 'Saham' },
+  { id: 2, name: 'Crypto' },
+  { id: 5, name: 'Forex' },
   { id: 4, name: 'Manajemen Risiko' },
 ];
 
