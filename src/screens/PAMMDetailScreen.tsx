@@ -30,6 +30,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [submittingPamm, setSubmittingPamm] = useState(false);
   const [pammStatus, setPammStatus] = useState<'loading' | 'not_registered' | 'ktp_rejected' | 'incomplete' | 'pending_review' | 'pending_jdr_consent' | 'complete'>('loading');
+  const [incompleteNextScreen, setIncompleteNextScreen] = useState<'PAMMKyc' | 'KYCFinancial'>('PAMMKyc');
   const [jdrConsentData, setJdrConsentData] = useState<ConsentData | null>(null);
   const [showJdrConsentModal, setShowJdrConsentModal] = useState(false);
   const [ktpRejectionReason, setKtpRejectionReason] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
 
       if (kycIncomplete) {
         setPammStatus('incomplete');
+        setIncompleteNextScreen(u.ktp_verified === '0' ? 'PAMMKyc' : 'KYCFinancial');
         return;
       }
 
@@ -126,7 +128,16 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
   const handleDaftarPamm = async () => {
     setSubmittingPamm(true);
     try {
-      await pammApi.addPammSubmission(brokerId, user?.name ?? '');
+      const freshUserRes = await api.get<any>('/auth-user');
+      const freshName = freshUserRes?.name;
+
+      if (!freshName) {
+        Alert.alert('Gagal', 'Data profil belum termuat, silakan coba lagi sesaat lagi.');
+        setSubmittingPamm(false);
+        return;
+      }
+
+      await pammApi.addPammSubmission(brokerId, freshName);
       await checkPammStatus();
       navigation.navigate('PAMMKyc', { brokerId });
     } catch (err: any) {
@@ -367,7 +378,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
             <AppButton
               title="Lanjutkan Pendaftaran"
               variant="primary"
-              onPress={() => navigation.navigate('PAMMKyc', { brokerId })}
+              onPress={() => navigation.navigate(incompleteNextScreen, { brokerId })}
             />
           </View>
         ) : pammStatus === 'pending_review' ? (
