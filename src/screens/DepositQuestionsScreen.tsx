@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Picker } from '@react-native-picker/picker';
@@ -14,6 +14,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DepositQuestions'>;
 export default function DepositQuestionsScreen({ navigation, route }: Props) {
   const c = useColors();
   const { brokerId, employment_status, annual_salary, savings_investments_approx_value } = route.params;
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: false, headerLeft: () => null });
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => handler.remove();
+  }, [navigation]);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');

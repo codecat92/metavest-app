@@ -26,6 +26,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [consent, setConsent] = useState<ConsentData | null>(null);
   const [consentLoading, setConsentLoading] = useState(true);
   const [consentAgreed, setConsentAgreed] = useState(false);
+  const [ktpLockedStatus, setKtpLockedStatus] = useState<string | null>(null);
 
   const [idType, setIdType] = useState<'ktp' | 'passport' | null>(null);
 
@@ -48,10 +49,18 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const loadConsent = useCallback(async () => {
     setConsentLoading(true);
     try {
-      const res = await consentApi.get('pamm_submission');
+      const [res, userRes] = await Promise.all([
+        consentApi.get('pamm_submission'),
+        fetch(`${BASE_URL}/auth-user`, {
+          headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
+        }).then(r => r.json()),
+      ]);
       setConsent(res.data);
       if (res.data.already_agreed) {
         setConsentAgreed(true);
+      }
+      if (userRes.ktp_verified === '1' || userRes.ktp_verified === '2') {
+        setKtpLockedStatus(userRes.ktp_verified);
       }
     } catch (e) {
       console.log('Consent load failed:', e);
@@ -228,6 +237,33 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
         consentData={consent}
         onAgreed={handleConsentAgreed}
       />
+    );
+  }
+
+  if (ktpLockedStatus === '1' || ktpLockedStatus === '2') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <ArrowLeft size={20} color={c.text.secondary} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space['2xl'] }}>
+          <Text style={[typography.h3, { color: c.text.primary, textAlign: 'center', marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
+            {ktpLockedStatus === '1' ? 'KTP Anda sudah terverifikasi' : 'KTP Anda sedang dalam proses verifikasi'}
+          </Text>
+          <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center', marginBottom: space['2xl'] }]}>
+            {ktpLockedStatus === '1'
+              ? 'Dokumen identitas Anda sudah disetujui. Tidak perlu mengupload ulang kecuali diminta oleh admin.'
+              : 'Dokumen Anda sedang ditinjau oleh tim kami. Silakan tunggu konfirmasi.'}
+          </Text>
+          <AppButton
+            title="Kembali"
+            variant="ghost"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 

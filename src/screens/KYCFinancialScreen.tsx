@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -12,6 +12,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'KYCFinancial'>;
 export default function KYCFinancialScreen({ navigation, route }: Props) {
   const c = useColors();
   const { brokerId } = route.params;
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: false, headerLeft: () => null });
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => handler.remove();
+  }, [navigation]);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
