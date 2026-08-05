@@ -209,12 +209,23 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
               {positions && positions.length > 0 ? (
                 positions.slice(0, 10).map((pos: any, i: number) => {
                   const isPositive = Number(pos.profit ?? 0) >= 0;
+                  const isBuy = (pos.type ?? 'buy') === 'buy';
                   return (
                     <View key={i} style={[styles.positionCard, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
                       <View style={styles.posHeader}>
                         <View style={styles.posSymbol}>
                           <Activity size={14} color={c.accent.purple} />
                           <Text style={[styles.posSymbolText, { color: c.text.primary }]}>{pos.symbol ?? 'N/A'}</Text>
+                          <View style={[
+                            styles.posType,
+                            isBuy
+                              ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+                              : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
+                          ]}>
+                            <Text style={[styles.posTypeText, { color: isBuy ? c.semantic.positive : c.semantic.negative }]}>
+                              {isBuy ? 'BUY' : 'SELL'}
+                            </Text>
+                          </View>
                         </View>
                         <View style={[
                           styles.posBadge,
@@ -228,11 +239,27 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                           </Text>
                         </View>
                       </View>
-                      <View style={styles.posDetails}>
-                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Vol: {pos.volume ?? '-'}</Text>
-                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Open: {pos.open_price ?? '-'}</Text>
-                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Current: {pos.current_price ?? '-'}</Text>
+                      {(pos.sl != null || pos.tp != null) ? (
+                        <View style={styles.posRow}>
+                          <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                            SL: {pos.sl != null ? Number(pos.sl).toFixed(5) : '--'}
+                          </Text>
+                          <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                            TP: {pos.tp != null ? Number(pos.tp).toFixed(5) : '--'}
+                          </Text>
+                        </View>
+                      ) : null}
+                      <View style={styles.posRow}>
+                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                          Vol: {pos.volume ?? '-'}
+                        </Text>
+                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                          Open: {pos.open_price != null ? Number(pos.open_price).toFixed(5) : '--'}
+                        </Text>
                       </View>
+                      <Text style={[styles.posDetail, { color: c.text.secondary, flexShrink: 1, marginTop: 6 }]} numberOfLines={1}>
+                        Current: {pos.current_price != null ? Number(pos.current_price).toFixed(5) : '--'}
+                      </Text>
                     </View>
                   );
                 })
@@ -404,7 +431,9 @@ const styles = StyleSheet.create({
   posSymbolText: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   posBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   posPnl: { fontSize: 12, fontWeight: '700', fontFamily: 'DMSans-Bold' },
-  posDetails: { flexDirection: 'row', gap: 14 },
+  posType: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
+  posTypeText: { fontSize: 10, fontWeight: '700', fontFamily: 'DMSans-Bold', textTransform: 'uppercase' },
+  posRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
   posDetail: { fontSize: 12, fontFamily: 'DMSans' },
   emptyPositions: {
     alignItems: 'center', paddingVertical: 24,
