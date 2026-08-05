@@ -560,7 +560,6 @@ export default function HomeScreen() {
             mt5Data={mt5Data}
             serviceError={mt5ServiceError}
             followingCount={followingCount}
-            signalsCount={signalsCount}
             onConnectPress={() => navigation.navigate('CopyTrade')}
           />
         )}
