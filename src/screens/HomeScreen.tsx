@@ -448,19 +448,21 @@ export default function HomeScreen() {
     }, [])
   );
 
-  useEffect(() => {
-    const checkMt5 = async () => {
-      try {
-        await copytradeApi.getSubscriberInfo();
-        const accountRes = await copytradeApi.getMt5Account();
-        setMt5Data(accountRes.data.mt5);
-        setMt5Connected(true);
-      } catch {
-        setMt5Connected(false);
-      }
-    };
-    checkMt5();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const checkMt5 = async () => {
+        try {
+          await copytradeApi.getSubscriberInfo();
+          const accountRes = await copytradeApi.getMt5Account();
+          setMt5Data(accountRes.data.mt5);
+          setMt5Connected(true);
+        } catch {
+          setMt5Connected(false);
+        }
+      };
+      checkMt5();
+    }, [])
+  );
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
