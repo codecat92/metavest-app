@@ -6,6 +6,7 @@ import GlassCard from './GlassCard';
 interface MT5AccountCardProps {
   connected: boolean;
   mt5Data?: any;
+  serviceError?: string | null;
   followingCount: number | null;
   signalsCount: number | null;
   onConnectPress: () => void;
@@ -81,6 +82,7 @@ function MetricTile({
 export default function MT5AccountCard({
   connected,
   mt5Data,
+  serviceError,
   followingCount,
   signalsCount,
   onConnectPress,
@@ -107,7 +109,16 @@ export default function MT5AccountCard({
 
       {/* ── EQUITY HERO ── */}
       <View style={[cardStyles.hero, { borderBottomColor: c.glass.border }]}>
-        {connected ? (
+        {connected && serviceError ? (
+          <View style={cardStyles.ctaArea}>
+            <Text style={[cardStyles.ctaTitle, { color: c.semantic.negative }]}>
+              Layanan Tidak Tersedia
+            </Text>
+            <Text style={[cardStyles.ctaSubtitle, { color: c.text.muted, textAlign: 'center' }]}>
+              {serviceError}
+            </Text>
+          </View>
+        ) : connected ? (
           <>
             <Text style={[cardStyles.equityValue, { color: c.text.primary }]}>
               {mt5Data?.equity != null ? formatCurrency(mt5Data.equity) : '--'}

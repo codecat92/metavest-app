@@ -432,6 +432,7 @@ export default function HomeScreen() {
   const [mpBalance, setMpBalance] = useState<number | null>(null);
   const [mt5Connected, setMt5Connected] = useState<boolean | null>(null);
   const [mt5Data, setMt5Data] = useState<any>(null);
+  const [mt5ServiceError, setMt5ServiceError] = useState<string | null>(null);
   const navigation = useNavigation<any>();
 
   useFocusEffect(
@@ -453,9 +454,14 @@ export default function HomeScreen() {
       const checkMt5 = async () => {
         try {
           await copytradeApi.getSubscriberInfo();
-          const accountRes = await copytradeApi.getMt5Account();
-          setMt5Data(accountRes.data.mt5);
           setMt5Connected(true);
+          setMt5ServiceError(null);
+          try {
+            const accountRes = await copytradeApi.getMt5Account();
+            setMt5Data(accountRes.data.mt5);
+          } catch (err: any) {
+            setMt5ServiceError(err.message || 'Layanan MT5 sedang tidak tersedia');
+          }
         } catch {
           setMt5Connected(false);
         }
@@ -551,6 +557,7 @@ export default function HomeScreen() {
           <MT5AccountCard
             connected={mt5Connected}
             mt5Data={mt5Data}
+            serviceError={mt5ServiceError}
             followingCount={followingCount}
             signalsCount={signalsCount}
             onConnectPress={() => navigation.navigate('CopyTrade')}
