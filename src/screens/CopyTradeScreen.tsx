@@ -41,8 +41,8 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
         copytradeApi.getMt5Positions().catch(() => null),
       ]);
       if (info?.data) setSubscriber(info.data as any);
-      if (mt5?.data) setMt5Account(mt5.data);
-      if (pos?.data) setPositions(pos.data);
+      if (mt5?.data) setMt5Account(mt5.data?.mt5 ?? null);
+      if (pos?.data) setPositions(pos.data?.mt5 ?? null);
     } catch (e) {
       // Not subscribed yet — that's OK
     } finally {
@@ -152,7 +152,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Free Margin</Text>
                   <Text style={[styles.statValue, { fontSize: 18 }]}>
-                    ${Number(mt5Account.free_margin ?? 0).toLocaleString()}
+                    ${Number(mt5Account.margin_free ?? 0).toLocaleString()}
                   </Text>
                 </View>
               </View>
