@@ -501,6 +501,12 @@ export default function HomeScreen() {
   const formatCurrency = (val: number): string =>
     '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const formatProfit = (val: number): { text: string; isPositive: boolean } => {
+    const abs = Math.abs(val);
+    const text = (val >= 0 ? '+' : '-') + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return { text, isPositive: val >= 0 };
+  }; 
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
       {isDark && <BackgroundGlow />}
@@ -586,15 +592,35 @@ export default function HomeScreen() {
           </GlassCard>
         ) : (
           <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
-            <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>MT5 Account</Text>
+              <Text style={[typography.caption, { color: colors.text.muted, fontFamily: 'DMSans-Bold' }]}>
+                {mt5Data?.server ?? '--'}
+              </Text>
+            </View>
+            <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs, textAlign: 'center' }]}>
               {mt5Data?.equity != null ? formatCurrency(mt5Data.equity) : '--'}
             </Text>
-            <View style={styles.portfolioChangeRow}>
-              <ArrowUpRight size={14} color={colors.semantic.positive} />
-              <Text style={[typography.body, { color: colors.semantic.positive, fontWeight: '700' }]}>--</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
+            <Text style={[typography.caption, { color: colors.text.muted, textAlign: 'center', marginTop: space.xs }]}>Equity</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.md, gap: space.md }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>Profit</Text>
+                {mt5Data?.profit != null ? (() => {
+                  const pf = formatProfit(mt5Data.profit);
+                  return <Text style={[typography.body, { color: pf.isPositive ? colors.semantic.positive : colors.semantic.negative, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>{pf.text}</Text>;
+                })() : <Text style={[typography.body, { color: colors.text.muted }]}>--</Text>}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>Margin</Text>
+                <Text style={[typography.body, { color: colors.text.primary, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>
+                  {mt5Data?.margin != null ? formatCurrency(mt5Data.margin) : '--'}
+                </Text>
+              </View>
             </View>
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: space.sm, textAlign: 'center' }]}>
+              {mt5Data?.company ?? '--'}
+            </Text>
+            <View style={{ height: 1, backgroundColor: colors.glass.border, marginVertical: space.md }} />
             <View style={styles.portfolioStats}>
               {[
                 { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
