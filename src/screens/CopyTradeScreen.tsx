@@ -45,7 +45,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
         copytradeApi.getMt5Positions().catch(() => null),
       ]);
       if (info?.data) setSubscriber(info.data as any);
-      if (mt5?.data) setMt5Account(mt5.data?.mt5 ?? null);
+      if (mt5?.data) setMt5Account({ ...mt5.data.mt5, active_positions: mt5.data.active_positions });
       if (pos?.data) setPositions(pos.data?.mt5 ?? null);
     } catch (e) {
     } finally {

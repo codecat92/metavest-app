@@ -458,7 +458,8 @@ export default function HomeScreen() {
           setMt5ServiceError(null);
           try {
             const accountRes = await copytradeApi.getMt5Account();
-            setMt5Data(accountRes.data.mt5);
+            const data = accountRes.data;
+            setMt5Data({ ...data.mt5, active_positions: data.active_positions });
           } catch (err: any) {
             setMt5ServiceError(err.message || 'Layanan MT5 sedang tidak tersedia');
           }

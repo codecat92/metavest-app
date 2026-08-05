@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { TrendingUp, Shield, Users, BarChart2, Zap, Link } from 'lucide-react-native';
+import { TrendingUp, Shield, Users, BarChart2, Zap, Link, Activity } from 'lucide-react-native';
 import { useColors, space, radius } from '@/theme';
 import GlassCard from './GlassCard';
 
@@ -100,11 +100,21 @@ export default function MT5AccountCard({
       {/* ── EYEBROW ROW ── */}
       <View style={cardStyles.eyebrow}>
         <Text style={[cardStyles.eyebrowText, { color: c.accent.gold }]}>MT5 ACCOUNT</Text>
-        {connected && mt5Data?.server ? (
-          <View style={[cardStyles.pill, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
-            <Text style={[cardStyles.pillText, { color: c.text.secondary }]}>{mt5Data.server}</Text>
-          </View>
-        ) : null}
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {connected && mt5Data?.active_positions != null ? (
+            <View style={[cardStyles.pill, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+              <Activity size={10} color={mt5Data.active_positions > 0 ? c.accent.gold : c.text.muted} />
+              <Text style={[cardStyles.pillText, { color: mt5Data.active_positions > 0 ? c.accent.gold : c.text.muted }]}>
+                {mt5Data.active_positions} OPEN
+              </Text>
+            </View>
+          ) : null}
+          {connected && mt5Data?.server ? (
+            <View style={[cardStyles.pill, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+              <Text style={[cardStyles.pillText, { color: c.text.secondary }]}>{mt5Data.server}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       {/* ── EQUITY HERO ── */}
