@@ -561,6 +561,7 @@ export default function HomeScreen() {
             serviceError={mt5ServiceError}
             followingCount={followingCount}
             onConnectPress={() => navigation.navigate('CopyTrade')}
+            onCardPress={() => navigation.navigate('CopyTrade')}
           />
         )}
 

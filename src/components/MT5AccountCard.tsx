@@ -9,6 +9,7 @@ interface MT5AccountCardProps {
   serviceError?: string | null;
   followingCount: number | null;
   onConnectPress: () => void;
+  onCardPress?: () => void;
 }
 
 function formatCurrency(val: number): string {
@@ -84,6 +85,7 @@ export default function MT5AccountCard({
   serviceError,
   followingCount,
   onConnectPress,
+  onCardPress,
 }: MT5AccountCardProps) {
   const c = useColors();
 
@@ -91,6 +93,7 @@ export default function MT5AccountCard({
   const openPosVal = mt5Data?.active_positions != null ? String(mt5Data.active_positions) : '--';
 
   return (
+    <TouchableOpacity onPress={onCardPress} activeOpacity={connected ? 0.9 : 1} disabled={!connected}>
     <GlassCard
       elevation={3}
       style={{ borderRadius: 20, padding: 22, borderColor: c.glass.border, marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}
@@ -180,6 +183,7 @@ export default function MT5AccountCard({
         />
       </View>
     </GlassCard>
+    </TouchableOpacity>
   );
 }
 
