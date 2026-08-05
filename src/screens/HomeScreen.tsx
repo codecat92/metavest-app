@@ -12,6 +12,7 @@ import { newsApi } from '@/api/news';
 import { followApi } from '@/api/follow';
 import { signalsApi } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
+import { copytradeApi } from '@/api/copytrade';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -429,6 +430,8 @@ export default function HomeScreen() {
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
   const [mpBalance, setMpBalance] = useState<number | null>(null);
+  const [mt5Connected, setMt5Connected] = useState<boolean | null>(null);
+  const [mt5Data, setMt5Data] = useState<any>(null);
   const navigation = useNavigation<any>();
 
   useFocusEffect(
@@ -444,6 +447,20 @@ export default function HomeScreen() {
       });
     }, [])
   );
+
+  useEffect(() => {
+    const checkMt5 = async () => {
+      try {
+        await copytradeApi.getSubscriberInfo();
+        const accountRes = await copytradeApi.getMt5Account();
+        setMt5Data(accountRes.data.mt5);
+        setMt5Connected(true);
+      } catch {
+        setMt5Connected(false);
+      }
+    };
+    checkMt5();
+  }, []);
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
@@ -477,7 +494,10 @@ export default function HomeScreen() {
     if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M MP`;
     if (amount >= 10_000) return `${Math.round(amount / 1_000)}K MP`;
     return `${amount.toLocaleString()} MP`;
-  }; 
+  };
+
+  const formatCurrency = (val: number): string =>
+    '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
@@ -523,30 +543,70 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── PORTOFOLIO CARD: Total Saldo + Perubahan Hari Ini + Statistik (Following / Win Rate / Signals) ── */}
-        <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
-          <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
-          <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
-            $0.00
-          </Text>
-          <View style={styles.portfolioChangeRow}>
-            <ArrowUpRight size={14} color={colors.semantic.positive} />
-            <Text style={[typography.body, { color: colors.semantic.positive, fontWeight: '700' }]}>--</Text>
-            <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
+        {/* ── PORTOFOLIO CARD: Total Saldo + Perubahan Hari Ini + Statistik (Following / Leverage / Signals) ── */}
+        {mt5Connected === null ? (
+          <View style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+            <Skeleton height={220} borderRadius={radius.lg} />
           </View>
-          <View style={styles.portfolioStats}>
-            {[
-              { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
-              { label: 'WIN RATE', value: '--' },
-              { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
-            ].map((s) => (
-              <View key={s.label}>
-                <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
-                <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
-              </View>
-            ))}
-          </View>
-        </GlassCard>
+        ) : mt5Connected === false ? (
+          <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CopyTrade')}
+              activeOpacity={0.8}
+              style={{
+                marginTop: space.md, marginBottom: space.lg,
+                paddingVertical: space.md, paddingHorizontal: space.xl,
+                borderRadius: radius.lg, alignSelf: 'flex-start',
+                backgroundColor: 'rgba(139,92,246,0.15)',
+                borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
+              }}
+            >
+              <Text style={[typography.body, { color: colors.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }]}>
+                Connect MT5 Account
+              </Text>
+            </TouchableOpacity>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>
+              Connect your MT5 account to view portfolio
+            </Text>
+            <View style={styles.portfolioStats}>
+              {[
+                { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
+                { label: 'LEVERAGE', value: '--' },
+                { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
+              ].map((s) => (
+                <View key={s.label}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
+                </View>
+              ))}
+            </View>
+          </GlassCard>
+        ) : (
+          <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
+            <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs }]}>
+              {mt5Data?.equity != null ? formatCurrency(mt5Data.equity) : '--'}
+            </Text>
+            <View style={styles.portfolioChangeRow}>
+              <ArrowUpRight size={14} color={colors.semantic.positive} />
+              <Text style={[typography.body, { color: colors.semantic.positive, fontWeight: '700' }]}>--</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>today</Text>
+            </View>
+            <View style={styles.portfolioStats}>
+              {[
+                { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
+                { label: 'LEVERAGE', value: mt5Data?.leverage != null ? `1:${mt5Data.leverage}` : '--' },
+                { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
+              ].map((s) => (
+                <View key={s.label}>
+                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
+                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
+                </View>
+              ))}
+            </View>
+          </GlassCard>
+        )}
 
         {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Portfolio / Forum) ── */}
         <QuickActions onNavigate={onNavigate} />
