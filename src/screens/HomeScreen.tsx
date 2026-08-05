@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, ArrowUpRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -14,7 +14,7 @@ import { signalsApi } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
 import { copytradeApi } from '@/api/copytrade';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Skeleton, BackgroundGlow } from '@/components';
+import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -498,15 +498,6 @@ export default function HomeScreen() {
     return `${amount.toLocaleString()} MP`;
   };
 
-  const formatCurrency = (val: number): string =>
-    '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const formatProfit = (val: number): { text: string; isPositive: boolean } => {
-    const abs = Math.abs(val);
-    const text = (val >= 0 ? '+' : '-') + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return { text, isPositive: val >= 0 };
-  }; 
-
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
       {isDark && <BackgroundGlow />}
@@ -551,89 +542,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── PORTOFOLIO CARD: Total Saldo + Perubahan Hari Ini + Statistik (Following / Leverage / Signals) ── */}
+        {/* ── MT5 ACCOUNT CARD: Hero card dengan data MT5 (connected) atau CTA (not-connected) ── */}
         {mt5Connected === null ? (
           <View style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
             <Skeleton height={220} borderRadius={radius.lg} />
           </View>
-        ) : mt5Connected === false ? (
-          <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Total Portfolio</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('CopyTrade')}
-              activeOpacity={0.8}
-              style={{
-                marginTop: space.md, marginBottom: space.lg,
-                paddingVertical: space.md, paddingHorizontal: space.xl,
-                borderRadius: radius.lg, alignSelf: 'flex-start',
-                backgroundColor: 'rgba(139,92,246,0.15)',
-                borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
-              }}
-            >
-              <Text style={[typography.body, { color: colors.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }]}>
-                Connect MT5 Account
-              </Text>
-            </TouchableOpacity>
-            <Text style={[typography.caption, { color: colors.text.muted }]}>
-              Connect your MT5 account to view portfolio
-            </Text>
-            <View style={styles.portfolioStats}>
-              {[
-                { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
-                { label: 'LEVERAGE', value: '--' },
-                { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
-              ].map((s) => (
-                <View key={s.label}>
-                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
-                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
-                </View>
-              ))}
-            </View>
-          </GlassCard>
         ) : (
-          <GlassCard elevation={3} style={{ marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>MT5 Account</Text>
-              <Text style={[typography.caption, { color: colors.text.muted, fontFamily: 'DMSans-Bold' }]}>
-                {mt5Data?.server ?? '--'}
-              </Text>
-            </View>
-            <Text style={[typography.h1, { color: colors.text.primary, fontFamily: 'Manrope-Bold', marginTop: space.xs, textAlign: 'center' }]}>
-              {mt5Data?.equity != null ? formatCurrency(mt5Data.equity) : '--'}
-            </Text>
-            <Text style={[typography.caption, { color: colors.text.muted, textAlign: 'center', marginTop: space.xs }]}>Equity</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: space.md, gap: space.md }}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>Profit</Text>
-                {mt5Data?.profit != null ? (() => {
-                  const pf = formatProfit(mt5Data.profit);
-                  return <Text style={[typography.body, { color: pf.isPositive ? colors.semantic.positive : colors.semantic.negative, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>{pf.text}</Text>;
-                })() : <Text style={[typography.body, { color: colors.text.muted }]}>--</Text>}
-              </View>
-              <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>Margin</Text>
-                <Text style={[typography.body, { color: colors.text.primary, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>
-                  {mt5Data?.margin != null ? formatCurrency(mt5Data.margin) : '--'}
-                </Text>
-              </View>
-            </View>
-            <Text style={[typography.caption, { color: colors.text.muted, marginTop: space.sm, textAlign: 'center' }]}>
-              {mt5Data?.company ?? '--'}
-            </Text>
-            <View style={{ height: 1, backgroundColor: colors.glass.border, marginVertical: space.md }} />
-            <View style={styles.portfolioStats}>
-              {[
-                { label: 'FOLLOWING', value: followingCount !== null ? `${followingCount} Traders` : '--' },
-                { label: 'LEVERAGE', value: mt5Data?.leverage != null ? `1:${mt5Data.leverage}` : '--' },
-                { label: 'SIGNALS', value: signalsCount !== null ? `${signalsCount} Active` : '--' },
-              ].map((s) => (
-                <View key={s.label}>
-                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
-                  <Text style={[styles.statValue, { color: colors.text.primary }]}>{s.value}</Text>
-                </View>
-              ))}
-            </View>
-          </GlassCard>
+          <MT5AccountCard
+            connected={mt5Connected}
+            mt5Data={mt5Data}
+            followingCount={followingCount}
+            signalsCount={signalsCount}
+            onConnectPress={() => navigation.navigate('CopyTrade')}
+          />
         )}
 
         {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Portfolio / Forum) ── */}
@@ -709,11 +630,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(139,92,246,0.20)',
     alignItems: 'center', justifyContent: 'center',
   },
-
-  portfolioChangeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.xs },
-  portfolioStats: { flexDirection: 'row', gap: space['2xl'], marginTop: space.lg },
-  statLabel: { fontSize: 11, color: colors.text.muted, fontWeight: '500', fontFamily: 'DMSans' },
-  statValue: { fontSize: 16, fontWeight: '700', color: colors.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' },
 
   quickActions: {
     flexDirection: 'row', paddingHorizontal: space['2xl'],

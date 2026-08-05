@@ -6,3 +6,4 @@ export { default as Badge } from './Badge';
 export { default as Skeleton } from './Skeleton';
 export { default as EmptyState } from './EmptyState';
 export { default as BackgroundGlow } from './BackgroundGlow';
+export { default as MT5AccountCard } from './MT5AccountCard';
