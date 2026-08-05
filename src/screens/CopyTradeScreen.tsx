@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Server, Key, User, Zap, Activity,
-  TrendingUp, Shield, Trash2
+  TrendingUp, Shield, Trash2, Building2, DollarSign, BarChart2, Unlock
 } from 'lucide-react-native';
 import { copytradeApi, Mt5Account } from '@/api/copytrade';
 import { getToken } from '@/api/client';
@@ -19,9 +19,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type CopyTradeProps = NativeStackScreenProps<RootStackParamList, 'CopyTrade'>;
 
+function formatCurrency(val: number): string {
+  return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const alert = useCustomAlert();
-  const colors = useColors();
+  const c = useColors();
   const [subscriber, setSubscriber] = useState<Mt5Account | null>(null);
   const [mt5Account, setMt5Account] = useState<any>(null);
   const [positions, setPositions] = useState<any>(null);
@@ -44,7 +48,6 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       if (mt5?.data) setMt5Account(mt5.data?.mt5 ?? null);
       if (pos?.data) setPositions(pos.data?.mt5 ?? null);
     } catch (e) {
-      // Not subscribed yet — that's OK
     } finally {
       setLoading(false);
     }
@@ -67,7 +70,6 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       setSubscriber(res.data?.user ?? null);
       loadData();
     } catch (e: any) {
-      // MT5 middleware might be down — show the error but accept the subscription
       if (e.message?.includes('Subscribe success') || e.message?.includes('Subscription')) {
         alert.showAlert({ title: 'Subscribed', message: 'Account saved. MT5 connection pending.', type: 'success' });
         setShowForm(false);
@@ -94,170 +96,226 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
 
   if (!getToken()) {
     return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
-        <View style={styles.center}><Text style={styles.centerText}>Login to use Copy Trading</Text></View>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
+        <View style={styles.center}><Text style={{ color: c.text.secondary }}>Login to use Copy Trading</Text></View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <ArrowLeft size={20} color={colors.text.secondary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: c.glass.g2, borderColor: c.glass.border }]}>
+            <ArrowLeft size={20} color={c.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Copy Trading</Text>
+          <Text style={[styles.title, { color: c.text.primary }]}>Copy Trading</Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 60 }} />
+          <ActivityIndicator size="large" color={c.accent.purple} style={{ marginTop: 60 }} />
         ) : subscriber ? (
           <>
-            {/* MT5 Account Info */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Shield size={18} color={colors.semantic.positive} />
-                <Text style={styles.cardTitle}>MT5 Account Connected</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <User size={14} color={colors.text.secondary} />
-                  <Text style={styles.infoLabel}>Account</Text>
-                  <Text style={styles.infoValue}>{subscriber.account}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <Server size={14} color={colors.text.secondary} />
-                  <Text style={styles.infoLabel}>Server</Text>
-                  <Text style={styles.infoValue}>{subscriber.mt5_server}</Text>
+            {/* ── CARD 1: Account Info ── */}
+            <GlassCard elevation={2} style={styles.accInfoCard}>
+              <View style={styles.accInfoHeader}>
+                <User size={20} color={c.accent.gold} />
+                <View>
+                  <Text style={[styles.accName, { color: c.text.primary }]}>
+                    {mt5Account?.name ?? `#${subscriber.account}`}
+                  </Text>
+                  <Text style={[styles.accLogin, { color: c.text.secondary }]}>
+                    #{subscriber.account}
+                  </Text>
                 </View>
               </View>
-            </View>
+              <View style={[styles.accDivider, { borderColor: c.glass.border }]} />
+              <View style={styles.accMetaRow}>
+                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+                  <Server size={11} color={c.text.secondary} />
+                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
+                    {subscriber.mt5_server}
+                  </Text>
+                </View>
+                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+                  <DollarSign size={11} color={c.accent.gold} />
+                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
+                    {mt5Account?.currency ?? 'USD'}
+                  </Text>
+                </View>
+                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+                  <BarChart2 size={11} color={c.accent.gold} />
+                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
+                    1:{mt5Account?.leverage ?? '--'}
+                  </Text>
+                </View>
+              </View>
+              {mt5Account?.company ? (
+                <View style={styles.accCompanyRow}>
+                  <Building2 size={11} color={c.text.muted} />
+                  <Text style={[styles.accCompany, { color: c.text.muted }]}>{mt5Account.company}</Text>
+                </View>
+              ) : null}
+            </GlassCard>
 
-            {/* Balance & Equity */}
+            {/* ── CARD 2: Balance Sheet ── */}
             {mt5Account && (
-              <View style={styles.statsRow}>
-                <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Balance</Text>
-                  <Text style={styles.statValue}>
-                    ${Number(mt5Account.balance ?? 0).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Equity</Text>
-                  <Text style={styles.statValue}>
-                    ${Number(mt5Account.equity ?? 0).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={styles.statCard}>
-                  <Text style={styles.statLabel}>Free Margin</Text>
-                  <Text style={[styles.statValue, { fontSize: 18 }]}>
-                    ${Number(mt5Account.margin_free ?? 0).toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Positions */}
-            {positions && positions.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Open Positions</Text>
-                {positions.slice(0, 10).map((pos: any, i: number) => (
-                  <View key={i} style={styles.positionCard}>
-                    <View style={styles.posHeader}>
-                      <View style={styles.posSymbol}>
-                        <Activity size={14} color={colors.accent.purple} />
-                        <Text style={styles.posSymbolText}>{pos.symbol ?? 'N/A'}</Text>
-                      </View>
-                      <View style={[styles.posBadge, {
-                        backgroundColor: Number(pos.profit ?? 0) >= 0 ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
-                        borderColor: Number(pos.profit ?? 0) >= 0 ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
-                      }]}>
-                        <TrendingUp size={11} color={Number(pos.profit ?? 0) >= 0 ? colors.semantic.positive : colors.semantic.negative} />
-                        <Text style={[styles.posPnl, { color: Number(pos.profit ?? 0) >= 0 ? colors.semantic.positive : colors.semantic.negative }]}>
-                          ${Number(pos.profit ?? 0).toFixed(2)}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.posDetails}>
-                      <Text style={styles.posDetail}>Vol: {pos.volume ?? '-'}</Text>
-                      <Text style={styles.posDetail}>Open: {pos.open_price ?? '-'}</Text>
-                      <Text style={styles.posDetail}>Current: {pos.current_price ?? '-'}</Text>
-                    </View>
+              <GlassCard elevation={2} style={styles.balanceCard}>
+                <Text style={[styles.bsTitle, { color: c.accent.gold }]}>BALANCE SHEET</Text>
+                <View style={styles.bsGrid}>
+                  <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border, borderBottomWidth: 1 }]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Balance</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
+                      {formatCurrency(Number(mt5Account.balance ?? 0))}
+                    </Text>
                   </View>
-                ))}
-              </View>
+                  <View style={[styles.bsItem, { borderBottomWidth: 1, borderColor: c.glass.border }]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Equity</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
+                      {formatCurrency(Number(mt5Account.equity ?? 0))}
+                    </Text>
+                  </View>
+                  <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border, borderBottomWidth: 1 }]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Profit</Text>
+                    <Text style={[styles.bsValue, { color: Number(mt5Account.profit ?? 0) >= 0 ? c.semantic.positive : c.semantic.negative }]}>
+                      {formatCurrency(Number(mt5Account.profit ?? 0))}
+                    </Text>
+                  </View>
+                  <View style={[styles.bsItem, { borderBottomWidth: 1, borderColor: c.glass.border }]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Margin</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
+                      {formatCurrency(Number(mt5Account.margin ?? 0))}
+                    </Text>
+                  </View>
+                  <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border }]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Free Margin</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
+                      {formatCurrency(Number(mt5Account.margin_free ?? 0))}
+                    </Text>
+                  </View>
+                  <View style={styles.bsItem}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Margin Level</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
+                      {mt5Account.margin_level != null ? `${Number(mt5Account.margin_level).toFixed(2)}%` : '--'}
+                    </Text>
+                  </View>
+                </View>
+              </GlassCard>
             )}
 
-            {/* Unsubscribe */}
-            <TouchableOpacity onPress={handleUnsubscribe} style={styles.unsubscribeBtn}>
-              <Trash2 size={16} color={colors.semantic.negative} />
-              <Text style={styles.unsubscribeText}>Disconnect MT5 Account</Text>
+            {/* ── CARD 3: Open Positions ── */}
+            <GlassCard elevation={2} style={styles.positionsCard}>
+              <Text style={[styles.bsTitle, { color: c.accent.gold }]}>OPEN POSITIONS</Text>
+              {positions && positions.length > 0 ? (
+                positions.slice(0, 10).map((pos: any, i: number) => {
+                  const isPositive = Number(pos.profit ?? 0) >= 0;
+                  return (
+                    <View key={i} style={[styles.positionCard, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+                      <View style={styles.posHeader}>
+                        <View style={styles.posSymbol}>
+                          <Activity size={14} color={c.accent.purple} />
+                          <Text style={[styles.posSymbolText, { color: c.text.primary }]}>{pos.symbol ?? 'N/A'}</Text>
+                        </View>
+                        <View style={[
+                          styles.posBadge,
+                          isPositive
+                            ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+                            : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
+                        ]}>
+                          <TrendingUp size={11} color={isPositive ? c.semantic.positive : c.semantic.negative} />
+                          <Text style={[styles.posPnl, { color: isPositive ? c.semantic.positive : c.semantic.negative }]}>
+                            ${Number(pos.profit ?? 0).toFixed(2)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.posDetails}>
+                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Vol: {pos.volume ?? '-'}</Text>
+                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Open: {pos.open_price ?? '-'}</Text>
+                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>Current: {pos.current_price ?? '-'}</Text>
+                      </View>
+                    </View>
+                  );
+                })
+              ) : (
+                <View style={styles.emptyPositions}>
+                  <Shield size={32} color={c.text.muted} />
+                  <Text style={[styles.emptyPosText, { color: c.text.muted }]}>No open positions</Text>
+                </View>
+              )}
+            </GlassCard>
+
+            {/* ── Disconnect ── */}
+            <TouchableOpacity
+              onPress={handleUnsubscribe}
+              style={[styles.unsubscribeBtn, { backgroundColor: c.semantic.negative + '14', borderColor: c.semantic.negative + '33' }]}
+            >
+              <Trash2 size={16} color={c.semantic.negative} />
+              <Text style={[styles.unsubscribeText, { color: c.semantic.negative }]}>Disconnect MT5 Account</Text>
             </TouchableOpacity>
           </>
         ) : showForm ? (
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Connect MT5 Account</Text>
+          <GlassCard elevation={2} style={styles.formCard}>
+            <Text style={[styles.formTitle, { color: c.text.primary }]}>Connect MT5 Account</Text>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>MT5 ACCOUNT</Text>
-              <View style={styles.inputBox}>
+              <Text style={[styles.formLabel, { color: c.text.secondary }]}>MT5 ACCOUNT</Text>
+              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: c.text.primary }]}
                   value={account}
                   onChangeText={setAccount}
                   placeholder="12345678"
-                  placeholderTextColor="#8899AA"
+                  placeholderTextColor={c.text.muted}
                 />
               </View>
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>PASSWORD</Text>
-              <View style={styles.inputBox}>
+              <Text style={[styles.formLabel, { color: c.text.secondary }]}>PASSWORD</Text>
+              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: c.text.primary }]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="MT5 password"
-                  placeholderTextColor="#8899AA"
+                  placeholderTextColor={c.text.muted}
                   secureTextEntry
                 />
               </View>
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>SERVER</Text>
-              <View style={styles.inputBox}>
+              <Text style={[styles.formLabel, { color: c.text.secondary }]}>SERVER</Text>
+              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: c.text.primary }]}
                   value={server}
                   onChangeText={setServer}
                   placeholder="ICMarkets-Demo"
-                  placeholderTextColor="#8899AA"
+                  placeholderTextColor={c.text.muted}
                   autoCapitalize="none"
                 />
               </View>
             </View>
             <TouchableOpacity
               onPress={handleSubscribe}
-              style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
+              style={[styles.submitBtn, { backgroundColor: c.accent.purple }, submitting && { opacity: 0.6 }]}
               disabled={submitting}
             >
-              {submitting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>Connect</Text>}
+              {submitting ? <ActivityIndicator size="small" color={c.text.primary} /> : <Text style={[styles.submitText, { color: c.text.primary }]}>Connect</Text>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowForm(false)} style={styles.cancelBtn}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[styles.cancelText, { color: c.text.secondary }]}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </GlassCard>
         ) : (
-          <View style={styles.emptyCard}>
-            <Zap size={48} color={colors.accent.purple} />
-            <Text style={styles.emptyTitle}>Copy Trading</Text>
-            <Text style={styles.emptySub}>
+          <GlassCard elevation={2} style={styles.emptyCard}>
+            <Zap size={48} color={c.accent.purple} />
+            <Text style={[styles.emptyTitle, { color: c.text.primary }]}>Copy Trading</Text>
+            <Text style={[styles.emptySub, { color: c.text.secondary }]}>
               Automatically copy trades from your followed traders to your MT5 account.
             </Text>
-            <TouchableOpacity onPress={() => setShowForm(true)} style={styles.connectBtn}>
-              <Text style={styles.connectBtnText}>Connect MT5 Account</Text>
+            <TouchableOpacity onPress={() => setShowForm(true)} style={[styles.connectBtn, { backgroundColor: c.accent.purple }]}>
+              <Text style={[styles.connectBtnText, { color: c.text.primary }]}>Connect MT5 Account</Text>
             </TouchableOpacity>
-          </View>
+          </GlassCard>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -265,10 +323,9 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.primary },
+  container: { flex: 1 },
   scroll: { paddingBottom: 100 },
   center: { flex: 1, alignItems: 'center', marginTop: 200 },
-  centerText: { color: colors.text.secondary },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
@@ -276,88 +333,122 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 24, fontWeight: '800', color: colors.text.primary },
+  title: { fontSize: 24, fontWeight: '800', fontFamily: 'Manrope-Bold' },
 
-  card: {
-    marginHorizontal: 24, padding: 20, borderRadius: 22, marginBottom: 20,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+  // ── CARD 1: Account Info ──
+  accInfoCard: {
+    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
-  infoRow: { flexDirection: 'row', gap: 20 },
-  infoItem: { flex: 1, gap: 4 },
-  infoLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '600' },
-  infoValue: { fontSize: 14, fontWeight: '800', color: colors.text.primary },
-
-  statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 24, marginBottom: 20 },
-  statCard: {
-    flex: 1, padding: 14, borderRadius: 16, alignItems: 'center',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+  accInfoHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
   },
-  statLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '600' },
-  statValue: { fontSize: 16, fontWeight: '800', color: colors.text.primary, marginTop: 4 },
+  accName: {
+    fontSize: 18, fontWeight: '700', fontFamily: 'Manrope-Bold',
+  },
+  accLogin: {
+    fontSize: 13, fontFamily: 'DMSans', marginTop: 2,
+  },
+  accDivider: {
+    borderTopWidth: 1, marginVertical: 14,
+  },
+  accMetaRow: {
+    flexDirection: 'row', gap: 8, flexWrap: 'wrap',
+  },
+  accMetaBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
+  },
+  accMetaText: {
+    fontSize: 11, fontFamily: 'DMSans-Medium',
+  },
+  accCompanyRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 12,
+  },
+  accCompany: {
+    fontSize: 11, fontFamily: 'DMSans',
+  },
 
-  section: { paddingHorizontal: 24, marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text.primary, marginBottom: 12 },
+  // ── CARD 2: Balance Sheet ──
+  balanceCard: {
+    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
+  },
+  bsTitle: {
+    fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 14,
+    fontFamily: 'DMSans-Bold', textTransform: 'uppercase',
+  },
+  bsGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+  },
+  bsItem: {
+    width: '50%', padding: 12,
+  },
+  bsLabel: {
+    fontSize: 10, fontWeight: '600', fontFamily: 'DMSans-Bold', marginBottom: 4,
+  },
+  bsValue: {
+    fontSize: 17, fontWeight: '600', fontFamily: 'Manrope-SemiBold',
+  },
+
+  // ── CARD 3: Positions ──
+  positionsCard: {
+    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
+  },
   positionCard: {
-    padding: 14, borderRadius: 16, marginBottom: 8,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
+    padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1,
   },
   posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   posSymbol: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  posSymbolText: { fontSize: 14, fontWeight: '700', color: colors.text.primary },
+  posSymbolText: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   posBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  posPnl: { fontSize: 12, fontWeight: '700' },
+  posPnl: { fontSize: 12, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   posDetails: { flexDirection: 'row', gap: 14 },
-  posDetail: { fontSize: 12, color: colors.text.secondary },
+  posDetail: { fontSize: 12, fontFamily: 'DMSans' },
+  emptyPositions: {
+    alignItems: 'center', paddingVertical: 24,
+  },
+  emptyPosText: {
+    fontSize: 13, fontFamily: 'DMSans', marginTop: 8,
+  },
 
+  // ── Disconnect ──
   unsubscribeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, marginHorizontal: 24, paddingVertical: 14, borderRadius: 16,
-    backgroundColor: 'rgba(255,75,110,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,75,110,0.2)',
+    borderWidth: 1,
   },
-  unsubscribeText: { fontSize: 14, fontWeight: '700', color: colors.semantic.negative },
+  unsubscribeText: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 
+  // ── Empty / Not-connected ──
   emptyCard: {
     marginHorizontal: 24, padding: 40, borderRadius: 24, alignItems: 'center',
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: colors.text.primary, marginTop: 16 },
-  emptySub: { fontSize: 13, color: colors.text.secondary, textAlign: 'center', lineHeight: 20, marginTop: 8, marginBottom: 24 },
+  emptyTitle: { fontSize: 22, fontWeight: '800', fontFamily: 'Manrope-Bold', marginTop: 16 },
+  emptySub: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginTop: 8, marginBottom: 24, fontFamily: 'DMSans' },
   connectBtn: {
     paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: colors.accent.purple,
   },
-  connectBtnText: { fontSize: 15, fontWeight: '700', color: colors.text.primary },
+  connectBtnText: { fontSize: 15, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 
+  // ── Form ──
   formCard: {
     marginHorizontal: 24, padding: 24, borderRadius: 22,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
   },
-  formTitle: { fontSize: 18, fontWeight: '800', color: colors.text.primary, marginBottom: 20 },
+  formTitle: { fontSize: 18, fontWeight: '800', fontFamily: 'Manrope-Bold', marginBottom: 20 },
   inputGroup: { marginBottom: 14 },
-  label: { fontSize: 11, fontWeight: '600', color: colors.text.secondary, letterSpacing: 0.5, marginBottom: 6 },
+  formLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6, fontFamily: 'DMSans-Bold' },
   inputBox: {
     height: 48, borderRadius: 14, paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    borderWidth: 1,
   },
-  input: { flex: 1, color: colors.text.primary, fontSize: 15 },
+  input: { flex: 1, fontSize: 15, fontFamily: 'DMSans' },
   submitBtn: {
     height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.accent.purple, marginTop: 8,
+    marginTop: 8,
   },
-  submitText: { fontSize: 15, fontWeight: '700', color: colors.text.primary },
+  submitText: { fontSize: 15, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 8 },
-  cancelText: { fontSize: 13, fontWeight: '600', color: colors.text.secondary },
+  cancelText: { fontSize: 13, fontWeight: '600', fontFamily: 'DMSans-Bold' },
 });
