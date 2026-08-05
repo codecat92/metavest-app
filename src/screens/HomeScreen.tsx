@@ -610,7 +610,7 @@ export default function HomeScreen() {
                   return <Text style={[typography.body, { color: pf.isPositive ? colors.semantic.positive : colors.semantic.negative, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>{pf.text}</Text>;
                 })() : <Text style={[typography.body, { color: colors.text.muted }]}>--</Text>}
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Margin</Text>
                 <Text style={[typography.body, { color: colors.text.primary, fontWeight: '700', fontFamily: 'Manrope-Bold' }]}>
                   {mt5Data?.margin != null ? formatCurrency(mt5Data.margin) : '--'}
