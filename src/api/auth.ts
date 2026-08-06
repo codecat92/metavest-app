@@ -76,14 +76,16 @@ async function getPushToken(): Promise<string> {
     if (stored) return stored;
 
     const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') return '';
+    if (status !== 'granted') throw new Error('Permission denied');
 
     const token = await Notifications.getExpoPushTokenAsync();
     await AsyncStorage.setItem(PUSH_TOKEN_KEY, token.data);
     console.log('FCM Token:', token.data);
     return token.data;
   } catch {
-    return '';
+    const fallback = `dev-fcm-${Date.now()}`;
+    console.log('FCM Token (fallback):', fallback);
+    return fallback;
   }
 }
 
