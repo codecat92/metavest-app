@@ -21,7 +21,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
   const [loading, setLoading] = useState(true);
 
   const screenMap: Record<string, string> = {
-    Consent: 'Profile',
+    Consent: 'ConsentDetail',
     Profile: 'Profile',
     Portfolio: 'Portfolio',
   };
@@ -104,7 +104,13 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
               );
               if (target) {
                 return (
-                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => navigation.navigate('Tabs', { screen: target })}>
+                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => {
+                    if (n.target_screen === 'Consent') {
+                      navigation.navigate('ConsentDetail', { consentCode: n.target_params ?? 'registration' });
+                    } else {
+                      navigation.navigate('Tabs', { screen: target });
+                    }
+                  }}>
                     {Item}
                   </TouchableOpacity>
                 );

@@ -44,6 +44,7 @@ export type RootStackParamList = {
   MyRank: undefined;
   PAMMKyc: { brokerId: number };
   KYCFinancial: { brokerId: number };
+  ConsentDetail: { consentCode: string };
   DepositQuestions: {
     brokerId: number;
     employment_status: string;
