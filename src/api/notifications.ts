@@ -15,4 +15,10 @@ export const notificationApi = {
 
   getById: (id: number) =>
     api.get<ApiResponse<Notification>>(`/user-notification/by-id/${id}`),
+
+  getUnreadCount: () =>
+    api.get<ApiResponse<{ count: number }>>('/user-notification/unread-count'),
+
+  markAllRead: () =>
+    api.put<ApiResponse<any>>('/user-notification/mark-all-read'),
 };

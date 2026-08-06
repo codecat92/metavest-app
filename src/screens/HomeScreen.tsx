@@ -13,6 +13,7 @@ import { followApi } from '@/api/follow';
 import { signalsApi } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
 import { copytradeApi } from '@/api/copytrade';
+import { notificationApi } from '@/api/notifications';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -433,6 +434,7 @@ export default function HomeScreen() {
   const [mt5Connected, setMt5Connected] = useState<boolean | null>(null);
   const [mt5Data, setMt5Data] = useState<any>(null);
   const [mt5ServiceError, setMt5ServiceError] = useState<string | null>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const navigation = useNavigation<any>();
 
   useFocusEffect(
@@ -446,6 +448,7 @@ export default function HomeScreen() {
         if (signalRes.status === 'fulfilled') setSignalsCount(signalRes.value.data_count ?? 0);
         if (walletRes.status === 'fulfilled') setMpBalance(walletRes.value.data?.balance ?? 0);
       });
+      notificationApi.getUnreadCount().then(res => setUnreadNotifCount(res.data.count)).catch(() => {});
     }, [])
   );
 
@@ -543,8 +546,15 @@ export default function HomeScreen() {
               <Text style={styles.mpText}>{mpBalance !== null ? formatMP(mpBalance) : '--'}</Text>
             </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bellBtn} onPress={() => navigation.navigate('Notifications')}>
+            <TouchableOpacity style={styles.bellBtn} onPress={() => {
+              notificationApi.markAllRead();
+              setUnreadNotifCount(0);
+              navigation.navigate('Notifications');
+            }}>
               <Bell size={18} color={colors.text.secondary} />
+              {unreadNotifCount > 0 && (
+                <View style={[styles.bellBadge, { backgroundColor: colors.semantic.negative }]} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -637,6 +647,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass.g1,
     borderWidth: 1, borderColor: 'rgba(139,92,246,0.20)',
     alignItems: 'center', justifyContent: 'center',
+  },
+  bellBadge: {
+    position: 'absolute', top: 4, right: 4,
+    width: 10, height: 10, borderRadius: 5,
   },
 
   quickActions: {
