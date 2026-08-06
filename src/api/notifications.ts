@@ -24,4 +24,7 @@ export const notificationApi = {
 
   markAllRead: () =>
     api.put<ApiResponse<any>>('/user-notification/mark-all-read'),
+
+  markRead: (id: number) =>
+    api.put<ApiResponse<any>>(`/user-notification/${id}/read`),
 };

@@ -31,7 +31,6 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
     try {
       const res = await notificationApi.getAll(1);
       setNotifs(res.data ?? []);
-      notificationApi.markAllRead().catch(() => {});
     } catch (e) {
       console.log('Notifications failed:', e);
     } finally {
@@ -104,20 +103,22 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
                   </View>
                 </GlassCard>
               );
-              if (target) {
-                return (
-                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => {
-                    if (n.target_screen === 'Consent') {
-                      navigation.navigate('ConsentDetail', { consentCode: n.target_params ?? 'registration' });
-                    } else {
-                      navigation.navigate('Tabs', { screen: target });
-                    }
-                  }}>
-                    {Item}
-                  </TouchableOpacity>
-                );
-              }
-              return <View key={n.id}>{Item}</View>;
+              const handlePress = () => {
+                if (isUnread) {
+                  notificationApi.markRead(n.id).catch(() => {});
+                  setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
+                }
+                if (n.target_screen === 'Consent') {
+                  navigation.navigate('ConsentDetail', { consentCode: n.target_params ?? 'registration' });
+                } else if (target) {
+                  navigation.navigate('Tabs', { screen: target });
+                }
+              };
+              return (
+                <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={handlePress}>
+                  {Item}
+                </TouchableOpacity>
+              );
             })}
           </View>
         )}
