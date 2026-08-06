@@ -104,7 +104,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
               );
               if (target) {
                 return (
-                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => navigation.navigate(target as any)}>
+                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => navigation.navigate('Tabs', { screen: target })}>
                     {Item}
                   </TouchableOpacity>
                 );
