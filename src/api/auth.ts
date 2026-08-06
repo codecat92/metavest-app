@@ -1,4 +1,6 @@
 import { api, setToken, clearToken, ApiResponse } from './client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 
 // --- Types matching backend response shapes ---
 
@@ -66,10 +68,24 @@ export interface LoginResult {
   user: User;
 }
 
-// Helper: generate a simple FCM token for dev (production would use real device token)
-const getFcmToken = (): string => {
-  return `dev-fcm-${Date.now()}`;
-};
+const PUSH_TOKEN_KEY = 'metavest_push_token';
+
+async function getPushToken(): Promise<string> {
+  try {
+    const stored = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
+    if (stored) return stored;
+
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') return '';
+
+    const token = await Notifications.getExpoPushTokenAsync();
+    await AsyncStorage.setItem(PUSH_TOKEN_KEY, token.data);
+    console.log('FCM Token:', token.data);
+    return token.data;
+  } catch {
+    return '';
+  }
+}
 
 export const authApi = {
   /**
@@ -88,7 +104,7 @@ export const authApi = {
   completeLogin: async (userId: string): Promise<LoginResult> => {
     const step2 = await api.post<ApiResponse<LoginStep2Data>>('/login-token', {
       user_id: userId,
-      fcm_token: getFcmToken(),
+      fcm_token: await getPushToken(),
     });
     const accessToken = step2.data.access_token;
     setToken(accessToken);
