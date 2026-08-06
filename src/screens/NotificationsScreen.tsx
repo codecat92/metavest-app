@@ -39,7 +39,11 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
   }, []);
 
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadData(); }, [loadData])
+    useCallback(() => {
+      setLoading(true);
+      loadData();
+      notificationApi.markAllRead().catch(() => {});
+    }, [loadData])
   );
 
   if (!getToken()) {
@@ -81,9 +85,10 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
         ) : (
           <View style={styles.list}>
             {notifs.map(n => {
+              const isUnread = !n.read_at;
               const target = n.target_screen && screenMap[n.target_screen];
               const Item = (
-                <GlassCard elevation={1}>
+                <GlassCard elevation={1} style={isUnread ? { borderLeftWidth: 3, borderLeftColor: colors.accent.gold } : undefined}>
                   <View style={{ flexDirection: 'row', gap: space.md }}>
                     <View style={styles.cardIcon}>
                       <MessageCircle size={18} color={colors.accent.purple} />

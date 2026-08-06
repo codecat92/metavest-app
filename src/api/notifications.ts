@@ -8,6 +8,7 @@ export interface Notification {
   message: string;
   target_screen?: string;
   target_params?: string;
+  read_at?: string | null;
   created_at: string;
 }
 
