@@ -6,6 +6,8 @@ export interface Notification {
   user_type: number;
   subject: string;
   message: string;
+  target_screen?: string;
+  target_params?: string;
   created_at: string;
 }
 

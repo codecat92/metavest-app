@@ -20,6 +20,12 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
   const colors = useColors();
   const [loading, setLoading] = useState(true);
 
+  const screenMap: Record<string, string> = {
+    Consent: 'Profile',
+    Profile: 'Profile',
+    Portfolio: 'Portfolio',
+  };
+
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
@@ -74,26 +80,37 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
           />
         ) : (
           <View style={styles.list}>
-            {notifs.map(n => (
-              <GlassCard key={n.id} elevation={1}>
-                <View style={{ flexDirection: 'row', gap: space.md }}>
-                  <View style={styles.cardIcon}>
-                    <MessageCircle size={18} color={colors.accent.purple} />
+            {notifs.map(n => {
+              const target = n.target_screen && screenMap[n.target_screen];
+              const Item = (
+                <GlassCard elevation={1}>
+                  <View style={{ flexDirection: 'row', gap: space.md }}>
+                    <View style={styles.cardIcon}>
+                      <MessageCircle size={18} color={colors.accent.purple} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                        {n.subject}
+                      </Text>
+                      <Text style={[typography.caption, { color: colors.text.secondary, marginTop: space.xs }]}>
+                        {n.message}
+                      </Text>
+                      <Text style={[typography.label, { color: colors.text.secondary, marginTop: 6 }]}>
+                        {n.created_at ? new Date(n.created_at).toLocaleDateString() : ''}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
-                      {n.subject}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: space.xs }]}>
-                      {n.message}
-                    </Text>
-                    <Text style={[typography.label, { color: colors.text.secondary, marginTop: 6 }]}>
-                      {n.created_at ? new Date(n.created_at).toLocaleDateString() : ''}
-                    </Text>
-                  </View>
-                </View>
-              </GlassCard>
-            ))}
+                </GlassCard>
+              );
+              if (target) {
+                return (
+                  <TouchableOpacity key={n.id} activeOpacity={0.7} onPress={() => navigation.navigate(target as any)}>
+                    {Item}
+                  </TouchableOpacity>
+                );
+              }
+              return <View key={n.id}>{Item}</View>;
+            })}
           </View>
         )}
       </ScrollView>
