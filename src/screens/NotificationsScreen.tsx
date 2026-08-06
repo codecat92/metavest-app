@@ -31,6 +31,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
     try {
       const res = await notificationApi.getAll(1);
       setNotifs(res.data ?? []);
+      notificationApi.markAllRead().catch(() => {});
     } catch (e) {
       console.log('Notifications failed:', e);
     } finally {
@@ -39,11 +40,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
   }, []);
 
   useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      loadData();
-      notificationApi.markAllRead().catch(() => {});
-    }, [loadData])
+    useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
   if (!getToken()) {
