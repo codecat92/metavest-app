@@ -84,7 +84,10 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
               const isUnread = !n.read_at;
               const target = n.target_screen && screenMap[n.target_screen];
               const Item = (
-                <GlassCard elevation={1} style={isUnread ? { borderLeftWidth: 3, borderLeftColor: colors.accent.gold } : undefined}>
+                <GlassCard elevation={1}>
+                  {isUnread && (
+                    <View style={[styles.unreadBar, { backgroundColor: colors.accent.gold }]} />
+                  )}
                   <View style={{ flexDirection: 'row', gap: space.md }}>
                     <View style={styles.cardIcon}>
                       <MessageCircle size={18} color={colors.accent.purple} />
@@ -145,5 +148,11 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: radius.lg,
     backgroundColor: 'rgba(139,92,246,0.12)',
     alignItems: 'center', justifyContent: 'center',
+  },
+  unreadBar: {
+    position: 'absolute',
+    left: 0, top: 0, bottom: 0, width: 4,
+    borderTopLeftRadius: radius.lg,
+    borderBottomLeftRadius: radius.lg,
   },
 });
