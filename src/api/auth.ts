@@ -69,8 +69,11 @@ export interface LoginResult {
 }
 
 const PUSH_TOKEN_KEY = 'metavest_push_token';
+let lastPushToken = '';
 
-async function getPushToken(): Promise<string> {
+export function getLastPushToken(): string { return lastPushToken; }
+
+export async function getPushToken(): Promise<string> {
   try {
     const stored = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
     if (stored) return stored;
@@ -81,10 +84,12 @@ async function getPushToken(): Promise<string> {
     const token = await Notifications.getExpoPushTokenAsync();
     await AsyncStorage.setItem(PUSH_TOKEN_KEY, token.data);
     console.log('FCM Token:', token.data);
+    lastPushToken = token.data;
     return token.data;
   } catch {
     const fallback = `dev-fcm-${Date.now()}`;
     console.log('FCM Token (fallback):', fallback);
+    lastPushToken = fallback;
     return fallback;
   }
 }

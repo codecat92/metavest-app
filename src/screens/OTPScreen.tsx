@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
-import { authApi } from '@/api/auth';
+import { authApi, getPushToken } from '@/api/auth';
+import { getLastPushToken } from '@/api/auth';
 import { otpApi } from '@/api/otp';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton } from '@/components';
@@ -27,12 +28,14 @@ export default function OTPScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [stagingOtp, setStagingOtp] = useState<string | null>(null);
+  const [pushToken, setPushToken] = useState<string>('');
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     otpApi.sendOtp(email, 0, type ?? 'user').then(res => {
       setStagingOtp(res.data.otp_code);
     }).catch(() => {});
+    getPushToken().then(t => setPushToken(t)).catch(() => {});
   }, []);
 
   const handleVerify = async () => {
@@ -97,6 +100,18 @@ export default function OTPScreen() {
           </Text>
         </View>
       )}
+
+      <View style={[styles.stagingBanner, { backgroundColor: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)' }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs }}>
+          <AlertTriangle size={18} color={colors.accent.purple} />
+          <Text style={[typography.captionBold, { color: colors.accent.purple, fontFamily: 'DMSans-Bold' }]}>
+            ⚡ PUSH TOKEN
+          </Text>
+        </View>
+        <Text style={[typography.bodyBold, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold', fontSize: 12 }]}>
+          {pushToken || getLastPushToken() || 'Loading...'}
+        </Text>
+      </View>
 
       <View style={styles.codeInputBox}>
         <TextInput
