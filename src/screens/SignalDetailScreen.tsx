@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
@@ -16,6 +17,19 @@ import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+const LIKED_IDS_KEY = 'liked_signal_ids';
+
+async function getLikedIds(): Promise<number[]> {
+  try {
+    const raw = await AsyncStorage.getItem(LIKED_IDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+async function saveLikedIds(ids: number[]) {
+  await AsyncStorage.setItem(LIKED_IDS_KEY, JSON.stringify(ids));
+}
 
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
@@ -35,7 +49,8 @@ export default function SignalDetailScreen() {
       const s = res.data;
       setSignal(s);
       setLocalLikes(s.likes ?? 0);
-      setLiked(s.is_liked === 1);
+      const cachedIds = await getLikedIds();
+      setLiked(s.is_liked === 1 || cachedIds.includes(signalId));
       signalsApi.click(signalId).catch(() => {});
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed to load signal', type: 'error' });
@@ -53,19 +68,18 @@ export default function SignalDetailScreen() {
 
   const handleLike = async () => {
     if (!signal) return;
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLocalLikes(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+    const cachedIds = await getLikedIds();
+    const updated = newLiked
+      ? [...cachedIds, signal.id].filter((v, i, a) => a.indexOf(v) === i)
+      : cachedIds.filter(id => id !== signal.id);
+    await saveLikedIds(updated);
     try {
-      if (liked) {
-        await signalsApi.unlike(signal.id);
-        setLiked(false);
-        setLocalLikes(prev => Math.max(0, prev - 1));
-      } else {
-        await signalsApi.like(signal.id);
-        setLiked(true);
-        setLocalLikes(prev => prev + 1);
-      }
-    } catch (e: any) {
-      // silently ignore — user doesn't need backend validation for like toggle
-    }
+      if (newLiked) await signalsApi.like(signal.id);
+      else await signalsApi.unlike(signal.id);
+    } catch {}
   };
 
   const handleShare = async () => {
