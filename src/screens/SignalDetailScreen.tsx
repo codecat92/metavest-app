@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking, Image,
+  TouchableOpacity, ActivityIndicator, Linking, Image, Share,
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -72,9 +72,11 @@ export default function SignalDetailScreen() {
     if (!signal) return;
     try {
       await signalsApi.share(signal.id);
-      alert.showAlert({ title: 'Shared', message: 'Signal shared successfully', type: 'success' });
+      await Share.share({
+        message: `${signal.trader_name ?? 'Trader'}: ${pairName} ${typeName}\nEntry: ${formatPrice(signal.open_price, signal.currency)}\nTP: ${formatPrice(signal.take_profit, signal.currency)}\nSL: ${formatPrice(signal.stop_loss, signal.currency)}\n\nFrom Metavest`,
+      });
     } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+      // cancelled or failed — no alert
     }
   };
 
@@ -239,9 +241,9 @@ export default function SignalDetailScreen() {
           <Share2 size={20} color={c.text.secondary} />
           <Text style={[styles.actionText, { color: c.text.secondary }]}>Share</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => Linking.openURL(tradeUrl)} style={[styles.tradeBtn, { backgroundColor: c.accent.purple }]}>
-          <Zap size={18} color={c.text.primary} fill={c.text.primary} />
-          <Text style={[styles.actionText, { color: c.text.primary }]}>Open MT5</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(tradeUrl)} style={[styles.tradeBtn, { backgroundColor: c.accent.gold }]}>
+          <Zap size={18} color={c.bg.deep} fill={c.bg.deep} />
+          <Text style={[styles.actionText, { color: c.bg.deep }]}>Open MT5</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
