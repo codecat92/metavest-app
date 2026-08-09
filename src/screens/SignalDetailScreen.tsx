@@ -64,7 +64,7 @@ export default function SignalDetailScreen() {
         setLocalLikes(prev => prev + 1);
       }
     } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+      // silently ignore — user doesn't need backend validation for like toggle
     }
   };
 
