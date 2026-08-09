@@ -5,7 +5,7 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronDown } from 'lucide-react-native';
-import { signalsApi, Signal, CreateSignalRequest } from '@/api/signals';
+import { signalsApi, Signal, CreateSignalRequest, PIP_DECIMALS, formatPrice } from '@/api/signals';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -62,6 +62,8 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
   const currencyName = CURRENCIES.find(x => x.id === currency)?.name;
   const typeName = SIGNAL_TYPES.find(x => x.id === signalType)?.name;
   const isSell = SIGNAL_TYPES.find(x => x.id === signalType)?.isSell ?? false;
+  const pairDecimals = currency ? (PIP_DECIMALS[currency] ?? 5) : 5;
+  const priceHint = (val: string) => val ? `→ ${formatPrice(val, currency ?? 1)}` : '';
 
   const validate = useCallback((): boolean => {
     const e: Record<string, string> = {};
@@ -219,7 +221,8 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
           {/* ── Entry Price ── */}
           <View>
             <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>ENTRY PRICE</Text>
-            <TextInput style={[fieldStyle, { borderColor: errors.openPrice ? c.semantic.negative : c.glass.border }]} placeholder="0.00" placeholderTextColor={c.text.muted} keyboardType="decimal-pad" value={openPrice} onChangeText={setOpenPrice} />
+            <TextInput style={[fieldStyle, { borderColor: errors.openPrice ? c.semantic.negative : c.glass.border }]} placeholder={`Input raw: 115600`} placeholderTextColor={c.text.muted} keyboardType="numeric" value={openPrice} onChangeText={setOpenPrice} />
+            {openPrice ? <Text style={[typography.label, { color: c.accent.gold, marginTop: 4 }]}>{priceHint(openPrice)}</Text> : <Text style={[typography.label, { color: c.text.muted, marginTop: 4 }]}>Input tanpa koma, auto-format: 115600 → 1.15600</Text>}
             {errors.openPrice && <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{errors.openPrice}</Text>}
           </View>
 
@@ -227,12 +230,14 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
           <View style={styles.twoCol}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>TAKE PROFIT</Text>
-              <TextInput style={[fieldStyle, { borderColor: errors.takeProfit ? c.semantic.negative : c.glass.border }]} placeholder="0.00" placeholderTextColor={c.text.muted} keyboardType="decimal-pad" value={takeProfit} onChangeText={setTakeProfit} />
+              <TextInput style={[fieldStyle, { borderColor: errors.takeProfit ? c.semantic.negative : c.glass.border }]} placeholder="Input raw" placeholderTextColor={c.text.muted} keyboardType="numeric" value={takeProfit} onChangeText={setTakeProfit} />
+              {takeProfit ? <Text style={[typography.label, { color: c.semantic.positive, marginTop: 4 }]}>{priceHint(takeProfit)}</Text> : null}
               {errors.takeProfit && <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{errors.takeProfit}</Text>}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>STOP LOSS</Text>
-              <TextInput style={[fieldStyle, { borderColor: errors.stopLoss ? c.semantic.negative : c.glass.border }]} placeholder="0.00" placeholderTextColor={c.text.muted} keyboardType="decimal-pad" value={stopLoss} onChangeText={setStopLoss} />
+              <TextInput style={[fieldStyle, { borderColor: errors.stopLoss ? c.semantic.negative : c.glass.border }]} placeholder="Input raw" placeholderTextColor={c.text.muted} keyboardType="numeric" value={stopLoss} onChangeText={setStopLoss} />
+              {stopLoss ? <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{priceHint(stopLoss)}</Text> : null}
               {errors.stopLoss && <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{errors.stopLoss}</Text>}
             </View>
           </View>

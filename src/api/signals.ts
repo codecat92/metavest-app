@@ -70,7 +70,9 @@ export const PIP_DECIMALS: Record<number, number> = {
 export function formatPrice(value: any, currencyId: number): string {
   const num = Number(value);
   if (isNaN(num)) return '-';
-  return num.toFixed(PIP_DECIMALS[currencyId] ?? 5);
+  const decimals = PIP_DECIMALS[currencyId] ?? 5;
+  const normalized = num / Math.pow(10, decimals);
+  return normalized.toFixed(decimals);
 }
 
 export const signalsApi = {
