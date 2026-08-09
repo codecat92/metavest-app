@@ -23,7 +23,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [referralCode, setReferralCode] = useState('metavestvip');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -39,6 +39,7 @@ export default function RegisterScreen() {
     if (!password) errs.password = 'Password is required';
     else if (password.length < 8) errs.password = 'Password must be at least 8 characters';
     if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match';
+    if (!referralCode.trim()) errs.referralCode = 'Referral code is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -53,7 +54,7 @@ export default function RegisterScreen() {
         last_name: lastName.trim() || undefined,
         email: email.trim(),
         password,
-        referral_code_2: referralCode.trim() || 'metavestvip',
+        referral_code_2: referralCode.trim(),
       });
       alert.showAlert({ title: 'Success', message: 'Account created successfully.', type: 'success' });
       await login(email.trim(), password);
@@ -144,12 +145,13 @@ export default function RegisterScreen() {
           />
 
           <AppInput
-            label="REFERRAL CODE (OPTIONAL)"
+            label="REFERRAL CODE"
             value={referralCode}
             onChangeText={setReferralCode}
             placeholder="Enter referral code"
             autoCapitalize="characters"
             editable={!loading}
+            error={errors.referralCode}
           />
 
           <AppButton
