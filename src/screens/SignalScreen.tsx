@@ -1,11 +1,11 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking, Image,
+  TouchableOpacity, ActivityIndicator, Linking, Image, TextInput,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
-  Filter, Search, TrendingUp, TrendingDown,
+  X, Search, TrendingUp, TrendingDown,
   Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,6 +44,8 @@ export default function SignalScreen() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
 
   const loadSignals = useCallback(async () => {
@@ -83,6 +85,15 @@ export default function SignalScreen() {
     return true;
   });
 
+  const searched = searchQuery.trim()
+    ? filtered.filter(s => {
+        const q = searchQuery.toLowerCase();
+        const pair = (s.currency_name ?? '').toLowerCase();
+        const trader = (s.trader_name ?? '').toLowerCase();
+        return pair.includes(q) || trader.includes(q);
+      })
+    : filtered;
+
   if (!getToken()) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
@@ -114,14 +125,27 @@ export default function SignalScreen() {
                 <Text style={[typography.label, { color: colors.accent.purple, marginLeft: 4 }]}>My Signals</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.iconBtn}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => { setSearchVisible(v => !v); setSearchQuery(''); }}>
               <Search size={16} color={colors.text.secondary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={16} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
         </View>
+
+        {searchVisible && (
+          <View style={styles.searchBar}>
+            <TextInput
+              style={[styles.searchInput, { color: colors.text.primary, backgroundColor: colors.glass.g1, borderColor: colors.glass.border }]}
+              placeholder="Search pair or trader..."
+              placeholderTextColor={colors.text.muted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+            <TouchableOpacity onPress={() => { setSearchVisible(false); setSearchQuery(''); }} style={styles.searchClose}>
+              <X size={16} color={colors.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.tabContainer}>
           {(['all', 'buy', 'sell'] as const).map((tab) => (
@@ -154,7 +178,7 @@ export default function SignalScreen() {
           </View>
         ) : (
           <View style={styles.cardList}>
-            {filtered.map((signal) => {
+            {searched.map((signal) => {
               const expanded = expandedId === signal.id;
               const buy = isBuy(signal);
               const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
@@ -318,7 +342,7 @@ export default function SignalScreen() {
                 </TouchableOpacity>
               );
             })}
-            {filtered.length === 0 && !loading && (
+            {searched.length === 0 && !loading && (
               <EmptyState
                 icon={<Search size={40} color={colors.text.secondary} />}
                 title="No signals found"
@@ -369,6 +393,20 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.accent.purple },
   tabText: { fontSize: 13, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
   tabTextActive: { color: colors.text.primary },
+
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', gap: space.sm,
+    paddingHorizontal: space['2xl'], marginBottom: space.md,
+  },
+  searchInput: {
+    flex: 1, height: 40, borderRadius: radius.sm, borderWidth: 1,
+    paddingHorizontal: space.md, fontSize: 14, fontFamily: 'DMSans',
+  },
+  searchClose: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.glass.g1,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   cardList: { paddingHorizontal: space['2xl'], gap: space.lg },
   cardOuter: {
