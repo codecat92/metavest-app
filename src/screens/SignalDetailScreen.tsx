@@ -1,25 +1,25 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, ActivityIndicator, Linking
+  TouchableOpacity, ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
-  Share2, Zap, Clock, Target, Eye, ExternalLink, AlertTriangle, Tag, Gem
+  Share2, Zap, Clock, Target, Eye, AlertTriangle, Tag, Gem, User,
 } from 'lucide-react-native';
 import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, Badge, Skeleton } from '@/components';
+import { GlassCard } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
-  const colors = useColors();
+  const c = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const signalId: number = route.params?.signalId;
@@ -27,32 +27,29 @@ export default function SignalDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(0);
-  const [executing, setExecuting] = useState(false);
   const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
+
+  const loadData = useCallback(async () => {
+    try {
+      const res = await signalsApi.getById(signalId);
+      const s = res.data;
+      setSignal(s);
+      setLocalLikes(s.likes ?? 0);
+      setLiked(s.is_liked === 1);
+      signalsApi.click(signalId).catch(() => {});
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Failed to load signal', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }, [signalId]);
 
   useEffect(() => {
     settingsApi.getTradeUrl().then(res => {
       if (res.data?.url) setTradeUrl(res.data.url);
     }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await signalsApi.getById(signalId);
-        const s = res.data;
-        setSignal(s);
-        setLocalLikes(s.likes ?? 0);
-        setLiked(s.is_liked === 1);
-        // Track click
-        signalsApi.click(signalId).catch(() => {});
-      } catch (e: any) {
-        alert.showAlert({ title: 'Error', message: e.message || 'Failed to load signal', type: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [signalId]);
+    loadData();
+  }, [loadData]);
 
   const handleLike = async () => {
     if (!signal) return;
@@ -81,32 +78,19 @@ export default function SignalDetailScreen() {
     }
   };
 
-  const handleExecute = async () => {
-    if (!signal) return;
-    setExecuting(true);
-    try {
-      await signalsApi.execute(signal.id);
-      alert.showAlert({ title: 'Executed', message: 'Signal copy trade initiated', type: 'success' });
-    } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Execution failed', type: 'error' });
-    } finally {
-      setExecuting(false);
-    }
-  };
-
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
-        <ActivityIndicator size="large" color={colors.accent.purple} style={{ marginTop: 200 }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
+        <ActivityIndicator size="large" color={c.accent.purple} style={{ marginTop: 200 }} />
       </SafeAreaView>
     );
   }
 
   if (!signal) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
         <View style={{ marginTop: 200, alignItems: 'center' }}>
-          <Text style={{ color: colors.text.secondary }}>Signal not found</Text>
+          <Text style={{ color: c.text.secondary }}>Signal not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -118,124 +102,154 @@ export default function SignalDetailScreen() {
   const rt = signal.risk_reward_ratio;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
-            <ArrowLeft size={20} color={colors.text.secondary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: c.glass.g2, borderColor: c.glass.border }]}>
+            <ArrowLeft size={20} color={c.text.secondary} />
           </TouchableOpacity>
-          <View style={[styles.typeBadge, {
-            backgroundColor: buy ? 'rgba(47,239,196,0.12)' : 'rgba(255,75,110,0.12)',
-            borderColor: buy ? 'rgba(47,239,196,0.3)' : 'rgba(255,75,110,0.3)',
-          }]}>
+          <View style={[styles.typeBadge,
+            buy
+              ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+              : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
+          ]}>
             {buy
-              ? <TrendingUp size={14} color={colors.semantic.positive} />
-              : <TrendingDown size={14} color={colors.semantic.negative} />
+              ? <TrendingUp size={14} color={c.semantic.positive} />
+              : <TrendingDown size={14} color={c.semantic.negative} />
             }
-            <Text style={[styles.typeText, { color: buy ? colors.semantic.positive : colors.semantic.negative }]}>
+            <Text style={[styles.typeText, { color: buy ? c.semantic.positive : c.semantic.negative }]}>
               {buy ? 'BUY' : 'SELL'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Trader Info */}
+        <View style={styles.traderSection}>
+          <View style={[styles.traderAvatar, { backgroundColor: c.glass.g2, borderColor: c.glass.border }]}>
+            {signal.trader_avatar_url ? (
+              <Image source={{ uri: signal.trader_avatar_url }} style={styles.avatarImg} />
+            ) : (
+              <User size={22} color={c.accent.purple} />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.traderName, { color: c.text.primary }]}>
+              {signal.trader_name ?? 'Unknown Trader'}
+            </Text>
+            <Text style={[styles.traderSignals, { color: c.text.secondary }]}>
+              {signal.total_signals ?? 0} signals
             </Text>
           </View>
         </View>
 
         {/* Pair & Type */}
         <View style={styles.heroSection}>
-          <Text style={[styles.pairName, { color: colors.text.primary }]}>{pairName}</Text>
-          <Text style={[styles.pairType, { color: colors.text.secondary }]}>{typeName}</Text>
+          <Text style={[styles.pairName, { color: c.text.primary }]}>{pairName}</Text>
+          <Text style={[styles.pairType, { color: c.text.secondary }]}>{typeName}</Text>
         </View>
 
         {/* Price Card */}
-        <View style={[styles.priceCard, { backgroundColor: colors.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }]}>
+        <GlassCard elevation={2} style={styles.priceCard}>
           <View style={styles.priceRow}>
             {[
-              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency), color: '#FFFFFF' },
-              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency), color: colors.semantic.positive },
-              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency), color: colors.semantic.negative },
+              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency), color: c.text.primary },
+              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency), color: c.semantic.positive },
+              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency), color: c.semantic.negative },
             ].map((p) => (
               <View key={p.label} style={styles.priceItem}>
-                <Text style={[styles.priceLabel, { color: 'rgba(255,255,255,0.80)' }]}>{p.label}</Text>
+                <Text style={[styles.priceLabel, { color: c.text.secondary }]}>{p.label}</Text>
                 <Text style={[styles.priceValue, { color: p.color }]}>{p.value}</Text>
               </View>
             ))}
           </View>
-        </View>
+        </GlassCard>
 
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          {[
-            { icon: Target, label: 'Risk/Reward', value: rt ? `1:${rt}` : '-', color: colors.accent.purple },
-            { icon: AlertTriangle, label: 'Disclaimer', value: 'Trade at your own risk', color: colors.semantic.warning },
-            { icon: Eye, label: 'Clicks', value: String(signal.clicks ?? 0), color: colors.text.secondary },
-            { icon: Heart, label: 'Likes', value: String(localLikes), color: colors.semantic.negative },
-            { icon: Share2, label: 'Shares', value: String(signal.shares ?? 0), color: colors.text.secondary },
-            { icon: Clock, label: 'Risk/Trade', value: signal.risk_per_one_trade ?? '-', color: '#F7C948' },
-            { icon: signal.price_value > 0 ? Gem : Tag, label: 'Price', value: signal.price_value > 0 ? 'PAID' : 'FREE', color: signal.price_value > 0 ? colors.accent.gold : colors.semantic.positive },
-          ].map((s) => (
-            <View key={s.label} style={[styles.statItem, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
-              <s.icon size={14} color={s.color} />
-              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{s.label}</Text>
-              <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
+        {/* Trading Info */}
+        <GlassCard elevation={2} style={styles.infoCard}>
+          <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADING INFO</Text>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricItem}>
+              <Target size={14} color={c.accent.purple} />
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>R:R</Text>
+              <Text style={[styles.metricValue, { color: c.accent.purple }]}>{rt ? `1:${rt}` : '-'}</Text>
             </View>
-          ))}
-        </View>
+            <View style={styles.metricItem}>
+              <Clock size={14} color={c.accent.gold} />
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Risk/Trade</Text>
+              <Text style={[styles.metricValue, { color: c.text.primary }]}>{signal.risk_per_one_trade ?? '-'}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              {signal.price_value > 0 ? <Gem size={14} color={c.accent.gold} /> : <Tag size={14} color={c.semantic.positive} />}
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Price</Text>
+              <Text style={[styles.metricValue, { color: signal.price_value > 0 ? c.accent.gold : c.semantic.positive }]}>{signal.price_value > 0 ? 'PAID' : 'FREE'}</Text>
+            </View>
+          </View>
+        </GlassCard>
+
+        {/* Engagement */}
+        <GlassCard elevation={2} style={styles.infoCard}>
+          <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>ENGAGEMENT</Text>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricItem}>
+              <Eye size={14} color={c.text.secondary} />
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Clicks</Text>
+              <Text style={[styles.metricValue, { color: c.text.primary }]}>{signal.clicks ?? 0}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Heart size={14} color={c.semantic.negative} />
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Likes</Text>
+              <Text style={[styles.metricValue, { color: c.text.primary }]}>{localLikes}</Text>
+            </View>
+            <View style={styles.metricItem}>
+              <Share2 size={14} color={c.text.secondary} />
+              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Shares</Text>
+              <Text style={[styles.metricValue, { color: c.text.primary }]}>{signal.shares ?? 0}</Text>
+            </View>
+          </View>
+        </GlassCard>
 
         {/* Notes */}
         {signal.notes ? (
-          <View style={styles.notesSection}>
-            <Text style={[styles.notesTitle, { color: colors.text.primary }]}>Trader Notes</Text>
-            <View style={[styles.notesCard, { backgroundColor: colors.glass.g2, borderColor: colors.glass.border }]}>
-              <Text style={[styles.notesText, { color: colors.text.secondary }]}>{signal.notes}</Text>
-            </View>
-          </View>
+          <GlassCard elevation={2} style={styles.infoCard}>
+            <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADER NOTES</Text>
+            <Text style={[styles.notesText, { color: c.text.secondary }]}>{signal.notes}</Text>
+          </GlassCard>
         ) : null}
 
+        {/* Disclaimer */}
+        <View style={styles.disclaimerRow}>
+          <AlertTriangle size={12} color={c.text.muted} />
+          <Text style={[styles.disclaimerText, { color: c.text.muted }]}>Trade at your own risk. This is not financial advice.</Text>
+        </View>
+
         {/* Created date */}
-        <Text style={styles.createdAt}>
+        <Text style={[styles.createdAt, { color: c.text.muted }]}>
           {signal.created_at ? new Date(signal.created_at).toLocaleString() : ''}
         </Text>
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.glass.g3, borderTopColor: colors.glass.borderStrong }]}>
-        <TouchableOpacity onPress={handleLike} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
-          <Heart size={20} color={liked ? colors.semantic.negative : colors.text.secondary} fill={liked ? colors.semantic.negative : 'none'} />
-          <Text style={[styles.actionText, liked && { color: colors.semantic.negative }, !liked && { color: colors.text.secondary }]}>
-            {liked ? 'Liked' : 'Like'}
-          </Text>
+      <View style={[styles.bottomBar, { backgroundColor: c.bg.elevated, borderTopColor: c.glass.borderStrong }]}>
+        <TouchableOpacity onPress={handleLike} style={[styles.actionBtn, { backgroundColor: c.glass.g2 }]}>
+          <Heart size={20} color={liked ? c.semantic.negative : c.text.secondary} fill={liked ? c.semantic.negative : 'none'} />
+          <Text style={[styles.actionText, { color: liked ? c.semantic.negative : c.text.secondary }]}>{liked ? 'Liked' : 'Like'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleShare} style={[styles.actionBtn, { backgroundColor: colors.glass.g2 }]}>
-          <Share2 size={20} color={colors.text.secondary} />
-          <Text style={[styles.actionText, { color: colors.text.secondary }]}>Share</Text>
+        <TouchableOpacity onPress={handleShare} style={[styles.actionBtn, { backgroundColor: c.glass.g2 }]}>
+          <Share2 size={20} color={c.text.secondary} />
+          <Text style={[styles.actionText, { color: c.text.secondary }]}>Share</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => Linking.openURL(tradeUrl)}
-          style={[styles.actionBtn, { backgroundColor: colors.accent.gold }]}
-        >
-          <ExternalLink size={16} color="#1A1A2E" />
-          <Text style={[styles.actionText, { color: '#1A1A2E' }]}>Trade Now</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleExecute}
-          style={styles.executeBtn}
-          disabled={executing}
-        >
-          {executing ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Zap size={18} color="#fff" fill="#fff" />
-              <Text style={styles.executeText}>Copy Trade</Text>
-            </>
-          )}
+        <TouchableOpacity onPress={() => Linking.openURL(tradeUrl)} style={[styles.tradeBtn, { backgroundColor: c.accent.purple }]}>
+          <Zap size={18} color={c.text.primary} fill={c.text.primary} />
+          <Text style={[styles.actionText, { color: c.text.primary }]}>Open MT5</Text>
         </TouchableOpacity>
       </View>
-      </SafeAreaView>
-    );
-  }
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.primary },
+  container: { flex: 1 },
   scroll: { paddingBottom: 120 },
 
   header: {
@@ -243,76 +257,70 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, paddingTop: 60, paddingBottom: 8,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
+    width: 40, height: 40, borderRadius: 20, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
   },
   typeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, borderWidth: 1,
   },
-  typeText: { fontSize: 14, fontWeight: '800' },
+  typeText: { fontSize: 14, fontWeight: '800', fontFamily: 'DMSans-Bold' },
 
-  heroSection: { paddingHorizontal: 24, marginTop: 20, marginBottom: 20 },
-  pairName: { fontSize: 36, fontWeight: '800', color: colors.text.primary, letterSpacing: -1 },
-  pairType: { fontSize: 16, color: colors.text.secondary, marginTop: 4, fontWeight: '600' },
+  traderSection: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 24, marginTop: 20, marginBottom: 8,
+  },
+  traderAvatar: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  avatarImg: { width: 44, height: 44, borderRadius: 22 },
+  traderName: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  traderSignals: { fontSize: 12, fontFamily: 'DMSans', marginTop: 2 },
+
+  heroSection: { paddingHorizontal: 24, marginTop: 16, marginBottom: 20 },
+  pairName: { fontSize: 36, fontWeight: '800', fontFamily: 'Manrope-Bold', letterSpacing: -1 },
+  pairType: { fontSize: 16, fontWeight: '600', fontFamily: 'DMSans-SemiBold', marginTop: 4 },
 
   priceCard: {
-    marginHorizontal: 24, padding: 20, borderRadius: 22,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.2)',
-    marginBottom: 20,
+    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
   },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between' },
   priceItem: { alignItems: 'center' },
-  priceLabel: { fontSize: 11, color: colors.text.secondary, fontWeight: '600', marginBottom: 4 },
-  priceValue: { fontSize: 16, fontWeight: '800' },
+  priceLabel: { fontSize: 11, fontWeight: '600', fontFamily: 'DMSans-SemiBold', marginBottom: 4 },
+  priceValue: { fontSize: 16, fontWeight: '800', fontFamily: 'Manrope-Bold' },
 
-  statsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 10,
-    paddingHorizontal: 24, marginBottom: 20,
+  infoCard: {
+    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 16,
   },
-  statItem: {
-    width: '47%', padding: 14, borderRadius: 16,
-    backgroundColor: 'rgba(14,20,57,0.85)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.12)',
-    gap: 4,
+  sectionTitle: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 12,
+    fontFamily: 'DMSans-Bold', textTransform: 'uppercase',
   },
-  statLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: '500' },
-  statValue: { fontSize: 16, fontWeight: '800', marginTop: 2 },
+  metricsRow: { flexDirection: 'row' },
+  metricItem: { flex: 1, alignItems: 'center', gap: 4 },
+  metricLabel: { fontSize: 10, fontWeight: '600', fontFamily: 'DMSans-SemiBold' },
+  metricValue: { fontSize: 15, fontWeight: '700', fontFamily: 'Manrope-Bold', marginTop: 2 },
 
-  notesSection: { paddingHorizontal: 24, marginBottom: 20 },
-  notesTitle: { fontSize: 14, fontWeight: '700', color: colors.text.primary, marginBottom: 10 },
-  notesCard: {
-    padding: 16, borderRadius: 18,
-    backgroundColor: 'rgba(171,75,255,0.08)',
-    borderWidth: 1, borderColor: 'rgba(171,75,255,0.15)',
+  notesText: { fontSize: 13, lineHeight: 20, fontFamily: 'DMSans' },
+
+  disclaimerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingHorizontal: 24, marginTop: 8, marginBottom: 8,
   },
-  notesText: { fontSize: 13, color: 'rgba(240,238,255,0.7)', lineHeight: 20 },
+  disclaimerText: { fontSize: 11, fontFamily: 'DMSans', textAlign: 'center' },
 
   createdAt: {
-    paddingHorizontal: 24, fontSize: 12, color: colors.text.secondary, textAlign: 'center',
+    paddingHorizontal: 24, fontSize: 12, fontFamily: 'DMSans', textAlign: 'center',
+    marginBottom: 20,
   },
 
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', paddingHorizontal: 24, paddingVertical: 16, paddingBottom: 36,
-    backgroundColor: 'rgba(14,20,57,0.95)',
-    borderTopWidth: 1, borderTopColor: 'rgba(171,75,255,0.15)',
-    gap: 10,
+    flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 32,
+    borderTopWidth: 1, gap: 10,
   },
-  actionBtn: {
-    flex: 1, alignItems: 'center', gap: 4,
-    paddingVertical: 10, borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  actionText: { fontSize: 11, fontWeight: '700', color: colors.text.secondary },
-  executeBtn: {
-    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: colors.accent.purple,
-  },
-  executeText: { fontSize: 14, fontWeight: '800', color: colors.text.primary },
+  actionBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 14 },
+  tradeBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
+  actionText: { fontSize: 11, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 });
