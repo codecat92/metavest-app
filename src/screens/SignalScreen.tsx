@@ -9,7 +9,7 @@ import {
   Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { signalsApi, Signal } from '@/api/signals';
+import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
 import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -261,9 +261,9 @@ export default function SignalScreen() {
                       <View style={styles.expandedSection}>
                         <View style={styles.expandedStats}>
                           {[
-                            { label: 'Entry', value: signal.open_price ?? '-' },
-                            { label: 'Take Profit', value: signal.take_profit ?? '-' },
-                            { label: 'Stop Loss', value: signal.stop_loss ?? '-' },
+                              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency) },
+                              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency) },
+                              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency) },
                             { label: 'R:R', value: rr ? `1:${rr}` : '-' },
                           ].map((item) => (
                             <View key={item.label} style={{ alignItems: 'center' }}>

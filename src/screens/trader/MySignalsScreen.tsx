@@ -9,7 +9,7 @@ import {
   ArrowLeft, TrendingUp, TrendingDown,
   Clock, Copy, Tag, Gem, Pencil, Trash2,
 } from 'lucide-react-native';
-import { signalsApi, Signal } from '@/api/signals';
+import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton, EmptyState } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -78,9 +78,9 @@ export default function MySignalsScreen({ navigation }: Props) {
           </View>
 
           <View style={{ flexDirection: 'row', gap: space.lg }}>
-            <View><Text style={[typography.label, { color: c.text.secondary }]}>Entry</Text><Text style={[typography.bodyBold, { color: c.text.primary }]}>{item.open_price}</Text></View>
-            <View><Text style={[typography.label, { color: c.text.secondary }]}>TP</Text><Text style={[typography.bodyBold, { color: c.semantic.positive }]}>{item.take_profit}</Text></View>
-            <View><Text style={[typography.label, { color: c.text.secondary }]}>SL</Text><Text style={[typography.bodyBold, { color: c.semantic.negative }]}>{item.stop_loss}</Text></View>
+            <View><Text style={[typography.label, { color: c.text.secondary }]}>Entry</Text><Text style={[typography.bodyBold, { color: c.text.primary }]}>{formatPrice(item.open_price, item.currency)}</Text></View>
+            <View><Text style={[typography.label, { color: c.text.secondary }]}>TP</Text><Text style={[typography.bodyBold, { color: c.semantic.positive }]}>{formatPrice(item.take_profit, item.currency)}</Text></View>
+            <View><Text style={[typography.label, { color: c.text.secondary }]}>SL</Text><Text style={[typography.bodyBold, { color: c.semantic.negative }]}>{formatPrice(item.stop_loss, item.currency)}</Text></View>
           </View>
 
           <View style={{ flexDirection: 'row', gap: space.md, marginTop: space.md }}>

@@ -9,7 +9,7 @@ import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
   Share2, Zap, Clock, Target, Eye, ExternalLink, AlertTriangle, Tag, Gem
 } from 'lucide-react-native';
-import { signalsApi, Signal } from '@/api/signals';
+import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
@@ -149,9 +149,9 @@ export default function SignalDetailScreen() {
         <View style={[styles.priceCard, { backgroundColor: colors.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }]}>
           <View style={styles.priceRow}>
             {[
-              { label: 'Entry', value: signal.open_price ?? '-', color: '#FFFFFF' },
-              { label: 'Take Profit', value: signal.take_profit ?? '-', color: colors.semantic.positive },
-              { label: 'Stop Loss', value: signal.stop_loss ?? '-', color: colors.semantic.negative },
+              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency), color: '#FFFFFF' },
+              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency), color: colors.semantic.positive },
+              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency), color: colors.semantic.negative },
             ].map((p) => (
               <View key={p.label} style={styles.priceItem}>
                 <Text style={[styles.priceLabel, { color: 'rgba(255,255,255,0.80)' }]}>{p.label}</Text>

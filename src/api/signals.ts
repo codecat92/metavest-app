@@ -63,6 +63,16 @@ export interface UpdateSignalRequest {
   notes?: string | null;
 }
 
+export const PIP_DECIMALS: Record<number, number> = {
+  1: 5, 2: 2, 3: 5, 4: 3, 5: 5, 6: 5, 7: 3, 8: 3, 9: 5, 10: 5, 11: 5,
+};
+
+export function formatPrice(value: any, currencyId: number): string {
+  const num = Number(value);
+  if (isNaN(num)) return '-';
+  return num.toFixed(PIP_DECIMALS[currencyId] ?? 5);
+}
+
 export const signalsApi = {
   getAll: (page = 1) =>
     api.get<SignalListResponse>(`/signals/all?page=${page}`),
