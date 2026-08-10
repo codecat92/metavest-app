@@ -16,6 +16,10 @@ const categories = ['All', 'Market', 'Education', 'Global News'];
 
 type NewsProps = NativeStackScreenProps<RootStackParamList, 'News'>;
 
+function stripHtml(html: string): string {
+  return (html ?? '').replace(/<\/?[^>]+(>|$)/g, '').trim();
+}
+
 export default function NewsScreen({ navigation }: NewsProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const colors = useColors();
@@ -168,7 +172,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
                       {article.title}
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: space.sm }]} numberOfLines={3}>
-                      {article.content}
+                      {stripHtml(article.content)}
                     </Text>
                     <View style={styles.readTimeRow}>
                       <Clock size={11} color={colors.text.secondary} />
