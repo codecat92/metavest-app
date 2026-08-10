@@ -65,7 +65,7 @@ export default function NewsScreen({ navigation }: NewsProps) {
   );
 
   const allItems: (Article & { tag: string })[] = [
-    ...articles.map(a => ({ ...a, tag: 'Market' })),
+    ...articles.map(a => ({ ...a, tag: a.category || 'Market' })),
     ...academy.map(a => ({ ...a, tag: 'Education' })),
     ...globalNews.map(a => ({ ...a, tag: 'Global News' })),
   ];
