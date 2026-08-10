@@ -167,6 +167,11 @@ export default function NewsScreen({ navigation }: NewsProps) {
                     <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>
                       {article.title}
                     </Text>
+                    {article.tag === 'Global News' && article.writer_name ? (
+                      <Text style={[typography.label, { color: colors.text.secondary, marginBottom: space.xs }]}>
+                        via {article.writer_name}
+                      </Text>
+                    ) : null}
                     <View style={styles.metaRow}>
                       <View style={[styles.tagBadge, {
                         backgroundColor: `${tagColor}18`,
