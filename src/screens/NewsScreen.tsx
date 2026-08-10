@@ -156,14 +156,17 @@ export default function NewsScreen({ navigation }: NewsProps) {
                   }}
                   style={{ borderRadius: radius.lg, overflow: 'hidden' }}
                 >
-                  <GlassCard elevation={2}>
-                    <View style={{ flexDirection: 'row', gap: space.md }}>
-                      {article.image_thumbnail ? (
-                        <Image source={{ uri: article.image_thumbnail }} style={styles.thumbnail} />
-                      ) : article.image_src ? (
-                        <Image source={{ uri: article.image_src }} style={styles.thumbnail} />
-                      ) : null}
-                      <View style={{ flex: 1 }}>
+                  <GlassCard elevation={2} noPadding>
+                    {article.image_thumbnail || article.image_src ? (
+                      <Image
+                        source={{ uri: article.image_thumbnail || article.image_src }}
+                        style={styles.thumbnail}
+                      />
+                    ) : null}
+                    <View style={{ padding: space.xl }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>
+                      {article.title}
+                    </Text>
                     <View style={styles.metaRow}>
                       <View style={[styles.tagBadge, {
                         backgroundColor: `${tagColor}18`,
@@ -175,9 +178,6 @@ export default function NewsScreen({ navigation }: NewsProps) {
                         {article.created_at ? new Date(article.created_at).toLocaleDateString() : ''}
                       </Text>
                     </View>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>
-                      {article.title}
-                    </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: space.sm }]} numberOfLines={3}>
                       {stripHtml(article.content)}
                     </Text>
@@ -187,7 +187,6 @@ export default function NewsScreen({ navigation }: NewsProps) {
                         {Math.ceil((article.content?.length ?? 0) / 500) || 1} min read
                       </Text>
                     </View>
-                      </View>
                     </View>
                   </GlassCard>
                 </TouchableOpacity>
@@ -244,5 +243,5 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.sm },
   tagBadge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm, borderWidth: 1 },
   readTimeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
-  thumbnail: { width: 80, height: 80, borderRadius: radius.sm, backgroundColor: 'rgba(139,92,246,0.08)' },
+  thumbnail: { width: '100%', height: 160, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
 });
