@@ -5,7 +5,7 @@ import {
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, Clock } from 'lucide-react-native';
+import { ArrowLeft, Search, Clock, FileText } from 'lucide-react-native';
 import { newsApi, Article } from '@/api/news';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton } from '@/components';
@@ -162,7 +162,11 @@ export default function NewsScreen({ navigation }: NewsProps) {
                         source={{ uri: article.image_thumbnail || article.image_src }}
                         style={styles.thumbnail}
                       />
-                    ) : null}
+                    ) : (
+                      <View style={styles.thumbnailPlaceholder}>
+                        <FileText size={32} color={colors.text.secondary} />
+                      </View>
+                    )}
                     <View style={{ padding: space.xl }}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>
                       {article.title}
@@ -249,4 +253,5 @@ const styles = StyleSheet.create({
   tagBadge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm, borderWidth: 1 },
   readTimeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   thumbnail: { width: '100%', height: 160, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  thumbnailPlaceholder: { width: '100%', height: 160, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, backgroundColor: 'rgba(139,92,246,0.06)', alignItems: 'center', justifyContent: 'center' },
 });
