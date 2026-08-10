@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator
+  TouchableOpacity, TextInput, ActivityIndicator, Image
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -157,6 +157,13 @@ export default function NewsScreen({ navigation }: NewsProps) {
                   style={{ borderRadius: radius.lg, overflow: 'hidden' }}
                 >
                   <GlassCard elevation={2}>
+                    <View style={{ flexDirection: 'row', gap: space.md }}>
+                      {article.image_thumbnail ? (
+                        <Image source={{ uri: article.image_thumbnail }} style={styles.thumbnail} />
+                      ) : article.image_src ? (
+                        <Image source={{ uri: article.image_src }} style={styles.thumbnail} />
+                      ) : null}
+                      <View style={{ flex: 1 }}>
                     <View style={styles.metaRow}>
                       <View style={[styles.tagBadge, {
                         backgroundColor: `${tagColor}18`,
@@ -179,6 +186,8 @@ export default function NewsScreen({ navigation }: NewsProps) {
                       <Text style={[typography.label, { color: colors.text.secondary }]}>
                         {Math.ceil((article.content?.length ?? 0) / 500) || 1} min read
                       </Text>
+                    </View>
+                      </View>
                     </View>
                   </GlassCard>
                 </TouchableOpacity>
@@ -235,4 +244,5 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.sm },
   tagBadge: { paddingHorizontal: space.sm, paddingVertical: 3, borderRadius: radius.sm, borderWidth: 1 },
   readTimeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  thumbnail: { width: 80, height: 80, borderRadius: radius.sm, backgroundColor: 'rgba(139,92,246,0.08)' },
 });
