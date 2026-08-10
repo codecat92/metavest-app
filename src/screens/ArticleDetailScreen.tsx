@@ -1,10 +1,11 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image
+  TouchableOpacity, Image, useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Clock, User, FileText } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import RenderHtml from 'react-native-render-html';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +15,7 @@ const SERVER_HOST = 'https://metavest-backend-production.up.railway.app';
 export default function ArticleDetailScreen() {
   const route = useRoute<any>();
   const colors = useColors();
+  const { width } = useWindowDimensions();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const article = route.params?.article;
 
@@ -72,9 +74,29 @@ export default function ArticleDetailScreen() {
           <Text style={[typography.h2, { color: colors.text.primary, lineHeight: 32, marginBottom: space.lg, fontFamily: 'Manrope-Bold' }]}>
             {article.title}
           </Text>
-          <Text style={[typography.body, { color: colors.text.muted, lineHeight: 25 }]}>
-            {article.content}
-          </Text>
+          <RenderHtml
+            contentWidth={width - space['2xl'] * 2}
+            source={{ html: article.content }}
+            baseStyle={{
+              color: colors.text.muted,
+              fontSize: 15,
+              lineHeight: 25,
+              fontFamily: 'DMSans',
+            }}
+            tagsStyles={{
+              strong: { color: colors.text.primary, fontFamily: 'DMSans-Bold' },
+              b: { color: colors.text.primary, fontFamily: 'DMSans-Bold' },
+              em: { fontStyle: 'italic' },
+              i: { fontStyle: 'italic' },
+              a: { color: colors.accent.gold, textDecorationLine: 'none' },
+              ul: { paddingLeft: 16 },
+              ol: { paddingLeft: 16 },
+              li: { marginBottom: 4 },
+              p: { marginBottom: 12 },
+              h3: { color: colors.text.primary, fontFamily: 'Manrope-Bold', fontSize: 18, marginBottom: 8, marginTop: 16 },
+              h4: { color: colors.text.primary, fontFamily: 'Manrope-Bold', fontSize: 16, marginBottom: 8, marginTop: 12 },
+            }}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
