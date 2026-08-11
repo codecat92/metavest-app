@@ -17,7 +17,7 @@ import { useCustomAlert } from '@/context/AlertContext';
 import { BASE_URL } from '@/api/client';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { CourseDetail, CourseLevel, Review } from '@/types/academy';
+import type { CourseDetail, CourseLevel, Review, CourseProgress } from '@/types/academy';
 
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
@@ -44,6 +44,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
   const [enrolled, setEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewTotal, setReviewTotal] = useState(0);
@@ -72,9 +73,11 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
     }
     setCheckingEnrollment(true);
     try {
-      await academyNewApi.getProgress(courseId);
+      const res = await academyNewApi.getProgress(courseId);
+      setProgress(res.data);
       setEnrolled(true);
     } catch {
+      setProgress(null);
       setEnrolled(false);
     } finally {
       setCheckingEnrollment(false);
@@ -139,18 +142,29 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
       return;
     }
     if (enrolled) {
-      if (!course?.chapters) {
+      const currentCourse = course;
+      if (!currentCourse?.chapters) {
         showAlert({ title: 'Loading', message: 'Course data is still loading, please wait a moment.', type: 'info' });
         return;
       }
-      const allLessons = course.chapters.flatMap(ch =>
+      const allLessons = currentCourse.chapters.flatMap(ch =>
         ch.lessons.map(l => ({ lessonId: l.id, chapterId: ch.id }))
       );
       if (allLessons.length > 0) {
+        let targetLesson = allLessons[0];
+        if (progress) {
+          const firstUncompleted = progress.lessons.find(l => !l.is_completed);
+          if (firstUncompleted) {
+            const match = allLessons.find(
+              al => al.lessonId === firstUncompleted.id && al.chapterId === firstUncompleted.chapter_id
+            );
+            if (match) targetLesson = match;
+          }
+        }
         navigation.navigate('Lesson', {
           courseId,
-          chapterId: allLessons[0].chapterId,
-          lessonId: allLessons[0].lessonId,
+          chapterId: targetLesson.chapterId,
+          lessonId: targetLesson.lessonId,
           allLessons,
         });
       } else {
@@ -169,7 +183,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
     } finally {
       setEnrolling(false);
     }
-  }, [isLoggedIn, enrolled, courseId, navigation, showAlert]);
+  }, [isLoggedIn, enrolled, courseId, navigation, showAlert, course, progress]);
 
   // ── Loading ──
 
@@ -478,6 +492,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
             size="lg"
             onPress={handleEnroll}
             loading={checkingEnrollment}
+            disabled={checkingEnrollment || !course}
             style={{ flex: 1 }}
           />
         )}
