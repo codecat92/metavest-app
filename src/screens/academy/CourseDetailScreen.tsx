@@ -39,6 +39,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
   const [enrolled, setEnrolled] = useState(false);
@@ -60,7 +61,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [courseId, showAlert]);
+  }, [courseId]);  // showAlert is stable from context
 
   // ── Enrollment ──
 
@@ -238,8 +239,8 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
 
         {/* ── Thumbnail ── */}
         <View style={[styles.thumbWrap, { marginHorizontal: space['2xl'] }]}>
-          {imageSrc ? (
-            <Image source={{ uri: imageSrc }} style={styles.thumb} resizeMode="cover" />
+          {imageSrc && !thumbFailed ? (
+            <Image source={{ uri: encodeURI(imageSrc) }} style={styles.thumb} resizeMode="cover" onError={() => setThumbFailed(true)} />
           ) : (
             <View style={[styles.thumbPlaceholder, { backgroundColor: c.glass.g2 }]}>
               <BookOpen size={40} color={c.text.muted} />
