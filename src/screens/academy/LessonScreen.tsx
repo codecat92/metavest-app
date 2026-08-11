@@ -9,7 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ArrowLeft, Clock, CheckCircle2, ChevronLeft, ChevronRight,
 } from 'lucide-react-native';
-import RenderHtml from 'react-native-render-html';
+import RenderHtml, { defaultSystemFonts } from 'react-native-render-html';
 import WebView from 'react-native-webview';
 import { academyNewApi } from '@/api/academyNew';
 import { useColors, space, radius, typography } from '@/theme';
@@ -158,6 +158,8 @@ export default function LessonScreen({ route, navigation }: Props) {
     th: { padding: space.sm, borderColor: c.glass.border, borderWidth: 1, color: c.text.primary },
   }), [c]);
 
+  const systemFonts = [...defaultSystemFonts, 'DMSans', 'DMSans-SemiBold', 'DMSans-Bold', 'Manrope', 'Manrope-Bold', 'Manrope-SemiBold', 'monospace'];
+
   // ── Loading ──
 
   if (loading) {
@@ -275,6 +277,7 @@ export default function LessonScreen({ route, navigation }: Props) {
                 key={`html-${idx}`}
                 contentWidth={contentWidth}
                 source={{ html: seg as string }}
+                systemFonts={systemFonts}
                 baseStyle={{
                   color: c.text.primary,
                   fontSize: 15,
@@ -282,6 +285,19 @@ export default function LessonScreen({ route, navigation }: Props) {
                   fontFamily: 'DMSans',
                 }}
                 tagsStyles={tagsStyles}
+                renderersProps={{
+                  img: { enableExperimentalPercentWidth: true },
+                }}
+                domVisitors={{
+                  onElement: (el) => {
+                    if (el.tagName === 'img' && el.attribs?.src) {
+                      const src = el.attribs.src;
+                      if (src.startsWith('/storage/') || src.startsWith('/uploads/')) {
+                        el.attribs.src = `${STORAGE_HOST}${src}`;
+                      }
+                    }
+                  },
+                }}
               />
             );
           })}
