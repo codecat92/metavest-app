@@ -138,9 +138,13 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
       return;
     }
     if (enrolled) {
-      const allLessons = course?.chapters.flatMap(ch =>
+      if (!course?.chapters) {
+        showAlert({ title: 'Loading', message: 'Course data is still loading, please wait a moment.', type: 'info' });
+        return;
+      }
+      const allLessons = course.chapters.flatMap(ch =>
         ch.lessons.map(l => ({ lessonId: l.id, chapterId: ch.id }))
-      ) ?? [];
+      );
       if (allLessons.length > 0) {
         navigation.navigate('Lesson', {
           courseId,
@@ -148,6 +152,8 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
           lessonId: allLessons[0].lessonId,
           allLessons,
         });
+      } else {
+        showAlert({ title: 'Info', message: 'No lessons available yet.', type: 'info' });
       }
       return;
     }
@@ -466,10 +472,11 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
           </View>
         ) : (
           <AppButton
-            title={!isLoggedIn ? 'Login to Enroll' : enrolled ? 'Continue Learning' : 'Enroll Now — Free'}
+            title={!isLoggedIn ? 'Login to Enroll' : checkingEnrollment ? 'Loading...' : enrolled ? 'Continue Learning' : 'Enroll Now — Free'}
             variant="primary"
             size="lg"
             onPress={handleEnroll}
+            loading={checkingEnrollment}
             style={{ flex: 1 }}
           />
         )}
