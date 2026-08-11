@@ -87,9 +87,11 @@ export default function InstructorCard({ instructor, onPress }: InstructorCardPr
         {/* ── Specializations ── */}
         {instructor.specializations.length > 0 && (
           <View style={styles.badgeRow}>
-            {visibleSpecs.map(s => (
-              <Badge key={s.id} label={s.name} variant="info" />
-            ))}
+            {visibleSpecs
+                .filter(s => s.name && s.name.trim())
+                .map(s => (
+                  <Badge key={s.id} label={s.name} variant="info" />
+                ))}
             {extraCount > 0 && (
               <Badge label={`+${extraCount}`} variant="neutral" />
             )}
