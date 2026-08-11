@@ -170,9 +170,11 @@ export default function InstructorDetailScreen({ route, navigation }: Props) {
               {/* Specializations */}
               {instructor.specializations.length > 0 && (
                 <View style={styles.specsRow}>
-                  {instructor.specializations.map(spec => (
-                    <Badge key={spec.id} label={spec.name} variant="info" />
-                  ))}
+                  {instructor.specializations
+                    .filter(spec => spec.name && spec.name.trim())
+                    .map(spec => (
+                      <Badge key={spec.id} label={spec.name} variant="info" />
+                    ))}
                 </View>
               )}
             </View>
