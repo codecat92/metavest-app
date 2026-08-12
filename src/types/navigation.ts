@@ -13,7 +13,7 @@ export type RootStackParamList = {
   PAMMDetail: { brokerId: number };
   News: undefined;
   SignalDetail: { signalId: number };
-  Forum: undefined;
+  Forum: { scrollToPostId?: number } | undefined;
   CopyTrade: undefined;
   Market: undefined;
   Academy: undefined;

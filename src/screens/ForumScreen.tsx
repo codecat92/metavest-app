@@ -2,7 +2,7 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, TextInput, ActivityIndicator, Modal, Image
 } from 'react-native';
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   MessageCircle, Heart, Share2, Plus, Send, User
@@ -26,7 +26,7 @@ interface PostCommentState {
   replyToId: number | null;
 }
 
-export default function ForumScreen({ navigation }: ForumProps) {
+export default function ForumScreen({ navigation, route }: ForumProps) {
   const alert = useCustomAlert();
   const colors = useColors();
   const { userType } = useAuth();
@@ -57,6 +57,13 @@ export default function ForumScreen({ navigation }: ForumProps) {
   useFocusEffect(
     useCallback(() => { setLoading(true); loadPosts(); }, [loadPosts])
   );
+
+  useEffect(() => {
+    const postId = route.params?.scrollToPostId;
+    if (postId) {
+      handleExpand(postId);
+    }
+  }, [route.params?.scrollToPostId]);
 
   const loadComments = async (postId: number) => {
     try {
