@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator, Modal
+  TouchableOpacity, TextInput, ActivityIndicator, Modal, Image
 } from 'react-native';
 import { useCallback, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,12 +9,14 @@ import {
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { forumApi, ForumPost, ForumComment } from '@/api/forum';
-import { getToken } from '@/api/client';
+import { getToken, BASE_URL } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 type ForumProps = NativeStackScreenProps<RootStackParamList, 'Forum'>;
 
@@ -189,12 +191,19 @@ export default function ForumScreen({ navigation }: ForumProps) {
                     <TouchableOpacity onPress={() => handleExpand(post.id)} activeOpacity={0.8}>
                       <View style={styles.cardHeader}>
                         <View style={styles.authorRow}>
-                          <View style={styles.avatar}>
-                            <User size={14} color={colors.accent.purple} />
-                          </View>
+                          {post.poster_profile_image ? (
+                            <Image
+                              source={{ uri: post.poster_profile_image.startsWith('http') ? post.poster_profile_image : `${STORAGE_HOST}/uploads/profilepic/${post.poster_profile_image.split(/[\\/]/).pop()}` }}
+                              style={styles.avatarImg}
+                            />
+                          ) : (
+                            <View style={styles.avatar}>
+                              <User size={14} color={c.accent.purple} />
+                            </View>
+                          )}
                           <View>
                             <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
-                              {post.poster_name ?? 'User'}
+                              {typeof post.poster_name === 'string' ? post.poster_name : 'User'}
                             </Text>
                             <Text style={[typography.label, { color: colors.text.secondary }]}>
                               {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
@@ -340,6 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139,92,246,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
+  avatarImg: { width: 36, height: 36, borderRadius: 18 },
   cardFooter: {
     flexDirection: 'row', gap: space.xl, marginTop: space.md, paddingTop: space.md,
     borderTopWidth: 1, borderTopColor: colors.glass.border,
