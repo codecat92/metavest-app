@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton, AppInput, GlassCard } from '@/components';
+import { getToken, BASE_URL } from '@/api/client';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -18,6 +19,38 @@ export default function KYCFinancialScreen({ navigation, route }: Props) {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => handler.remove();
   }, [navigation]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/auth-user`, {
+          headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
+        });
+        const u = await res.json();
+        if (cancelled) return;
+        const emp = u.employment_status ? String(u.employment_status) : '';
+        const sal = u.annual_salary ? String(u.annual_salary) : '';
+        const sav = u.savings_investments_approx_value ? String(u.savings_investments_approx_value) : '';
+        if (emp && sal && sav) {
+          navigation.replace('DepositQuestions', {
+            brokerId,
+            employment_status: emp,
+            annual_salary: sal,
+            savings_investments_approx_value: sav,
+          });
+          return;
+        }
+        if (emp) setEmploymentStatus(emp);
+        if (sal) setAnnualSalary(sal);
+        if (sav) setSavingsValue(sav);
+      } catch (e) {
+        console.log('KYCFinancial prefill failed:', e);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [brokerId, navigation]);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');

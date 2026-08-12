@@ -55,7 +55,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
     try {
       const [pammRes, userRes] = await Promise.all([
         pammApi.getByUser(),
-        api.get<{ id_user: string; name: string; email: string; ktp_verified: string; employment_status: string | null; annual_salary: string | null; savings_investments_approx_value: string | null; base_currency: string | null; expected_init_investment: string | null; account_type: string | null; account_leverage: string | null; profile_image_src: string | null }>('/auth-user'),
+        api.get<{ id_user: string; name: string; email: string; ktp_verified: string; passport_verified: string; employment_status: string | null; annual_salary: string | null; savings_investments_approx_value: string | null; base_currency: string | null; expected_init_investment: string | null; account_type: string | null; account_leverage: string | null; profile_image_src: string | null }>('/auth-user'),
       ]);
       const existing = (pammRes.data ?? []).find(
         (item) => String(item.id_broker) === String(brokerId)
@@ -80,20 +80,20 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
         || !u.expected_init_investment
         || !u.account_type
         || !u.account_leverage
-        || u.ktp_verified === '0';
+        || (u.ktp_verified === '0' && u.passport_verified === '0');
 
       if (kycIncomplete) {
         setPammStatus('incomplete');
-        setIncompleteNextScreen(u.ktp_verified === '0' ? 'PAMMKyc' : 'KYCFinancial');
+        setIncompleteNextScreen((u.ktp_verified === '0' && u.passport_verified === '0') ? 'PAMMKyc' : 'KYCFinancial');
         return;
       }
 
-      if (u.ktp_verified === '2') {
+      if (u.ktp_verified === '2' || u.passport_verified === '2') {
         setPammStatus('pending_review');
         return;
       }
 
-      if (u.ktp_verified === '1') {
+      if (u.ktp_verified === '1' || u.passport_verified === '1') {
         try {
           const consentRes = await consentApi.get('jdr_broker_terms');
           if (!consentRes.data.already_agreed) {
