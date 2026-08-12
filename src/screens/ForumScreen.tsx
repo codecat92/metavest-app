@@ -198,7 +198,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
                             />
                           ) : (
                             <View style={styles.avatar}>
-                              <User size={14} color={c.accent.purple} />
+                              <User size={14} color={colors.accent.purple} />
                             </View>
                           )}
                           <View>
