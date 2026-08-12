@@ -208,9 +208,9 @@ export default function ForumScreen({ navigation }: ForumProps) {
                             <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
                               {typeof post.poster_name === 'string' ? post.poster_name : 'User'}
                             </Text>
-                            <Text style={[typography.label, { color: colors.text.secondary }]}>
-                              {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
-                            </Text>
+                <Text style={[typography.label, { color: colors.text.secondary }]}>
+                  {post.created_at ? new Date(post.created_at).toLocaleString() : ''}
+                </Text>
                           </View>
                         </View>
                       </View>
@@ -269,6 +269,9 @@ export default function ForumScreen({ navigation }: ForumProps) {
                               </Text>
                               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                                 {c.content}
+                              </Text>
+                              <Text style={[typography.label, { color: colors.text.muted, marginTop: 4 }]}>
+                                {c.created_at ? new Date(c.created_at).toLocaleString() : ''}
                               </Text>
                             </View>
                           </View>
