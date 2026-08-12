@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity,
+  TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,7 +41,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
 
       const res = await api.get<ApiResponse<UserTrader>>(`/user-traders/detail/${traderId}`);
       setTrader(res.data);
-      setFollowed(res.data.follow_status === '1' || res.data.follow_status === 1);
+      setFollowed(String(res.data.follow_status) === '1');
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load trader');
       showAlert({ title: 'Error', message: e?.message ?? 'Failed to load trader' });
@@ -178,7 +178,9 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
 
               <View style={[
                 styles.statusBadge,
-                { backgroundColor: isActive ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)', borderColor: isActive ? 'rgba(34,197,94,0.30)' : 'rgba(239,68,68,0.30)' },
+                isActive
+                  ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+                  : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
               ]}>
                 {isActive ? (
                   <ShieldCheck size={13} color={c.semantic.positive} />
@@ -190,20 +192,26 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
                 </Text>
               </View>
 
-              {trader.description ? (
-                <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center', lineHeight: 22, marginTop: space.xs }]}>
-                  {trader.description}
-                </Text>
-              ) : null}
+              <Text style={[typography.body, {
+                color: trader.description ? c.text.secondary : c.text.muted,
+                textAlign: 'center', lineHeight: 22, marginTop: space.xs,
+                fontStyle: trader.description ? 'normal' : 'italic',
+              }]}>
+                {trader.description || 'No description provided'}
+              </Text>
 
               <TouchableOpacity
                 onPress={() => followed ? handleUnfollow() : handleFollow()}
                 disabled={followUpdating}
                 style={[styles.followBtn, followed && styles.followBtnActive]}
               >
-                <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
-                  {followed ? 'Following' : 'Follow'}
-                </Text>
+                {followUpdating ? (
+                  <ActivityIndicator size="small" color={followed ? c.accent.purple : c.text.primary} />
+                ) : (
+                  <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
+                    {followed ? 'Following' : 'Follow'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
 
