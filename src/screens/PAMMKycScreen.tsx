@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { ArrowLeft, Camera } from 'lucide-react-native';
 import { consentApi, ConsentData } from '@/api/consent';
-import { pammApi } from '@/api/pamm';
 import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, Skeleton } from '@/components';
@@ -204,8 +203,6 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       if (!response.ok) {
         throw new Error(json.message || 'Upload failed');
       }
-
-      await pammApi.addPammSubmission(brokerId, user?.name ?? '');
 
       Alert.alert('Berhasil', 'Data berhasil dikirim, menunggu verifikasi admin', [
         { text: 'Lanjut', onPress: () => navigation.navigate('KYCFinancial', { brokerId }) },

@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Picker } from '@react-native-picker/picker';
 import { api } from '@/api/client';
+import { pammApi } from '@/api/pamm';
+import { useAuth } from '@/context/AuthContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton, AppInput, GlassCard } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
@@ -13,6 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DepositQuestions'>;
 
 export default function DepositQuestionsScreen({ navigation, route }: Props) {
   const c = useColors();
+  const { user } = useAuth();
   const { brokerId, employment_status, annual_salary, savings_investments_approx_value } = route.params;
 
   useEffect(() => {
@@ -64,6 +67,8 @@ export default function DepositQuestionsScreen({ navigation, route }: Props) {
       };
 
       await api.post('/additional-profile/update', body);
+
+      await pammApi.addPammSubmission(brokerId, user?.name ?? '');
 
       Alert.alert('Berhasil', 'Pendaftaran PAMM berhasil dikirim, menunggu verifikasi admin', [
         { text: 'OK', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] }) },
