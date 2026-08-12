@@ -137,8 +137,6 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
         return;
       }
 
-      await pammApi.addPammSubmission(brokerId, freshName);
-      await checkPammStatus();
       navigation.navigate('PAMMKyc', { brokerId });
     } catch (err: any) {
       Alert.alert('Gagal', err.message || 'Gagal memulai pendaftaran PAMM');
