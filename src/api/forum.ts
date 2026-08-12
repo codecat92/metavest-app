@@ -25,6 +25,7 @@ export interface ForumComment {
   commenter_type: number;
   likes: number;
   commenter_name?: string;
+  commenter_profile_image?: string | null;
   created_at: string;
 }
 

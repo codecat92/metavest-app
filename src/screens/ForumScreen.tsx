@@ -254,7 +254,14 @@ export default function ForumScreen({ navigation }: ForumProps) {
                         {postComments.map((c) => (
                           <View key={c.id} style={styles.commentItem}>
                             <View style={styles.commentAvatar}>
-                              <User size={10} color={colors.text.secondary} />
+                              {c.commenter_profile_image ? (
+                                <Image
+                                  source={{ uri: c.commenter_profile_image.startsWith('http') ? c.commenter_profile_image : `${STORAGE_HOST}/uploads/profilepic/${c.commenter_profile_image.split(/[\\/]/).pop()}` }}
+                                  style={styles.commentAvatarImg}
+                                />
+                              ) : (
+                                <User size={10} color={colors.text.secondary} />
+                              )}
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '700' }]}>
@@ -368,7 +375,9 @@ const styles = StyleSheet.create({
     width: 24, height: 24, borderRadius: 12,
     backgroundColor: colors.glass.g2,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
+  commentAvatarImg: { width: 24, height: 24, borderRadius: 12 },
   commentInputRow: {
     flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.sm,
   },
