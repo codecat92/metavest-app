@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
   },
   avatarImg: { width: 52, height: 52, borderRadius: 26, flexShrink: 0 },
   avatarText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: space.xs },
-  bio: { fontSize: 12, color: colors.text.muted, lineHeight: 17, marginTop: 2, fontFamily: 'DMSans' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  bio: { fontSize: 12, color: colors.text.muted, lineHeight: 17, marginTop: space.xs, fontFamily: 'DMSans' },
 
   followBtn: {
     height: 34, paddingHorizontal: space.md, borderRadius: radius.md,
