@@ -154,7 +154,7 @@ export default function ReferralListScreen({ route, navigation }: Props) {
           />
         ) : (
           <View style={[styles.avatar, { backgroundColor: item.type === 'trader' ? c.accent.gold : c.accent.purple }]}>
-            <Text style={styles.avatarText}>{item.name?.charAt(0).toUpperCase() ?? '?'}</Text>
+            <Text style={styles.avatarText}>{(typeof item.name === 'string' ? item.name : '?').charAt(0).toUpperCase()}</Text>
           </View>
         )}
         <View style={{ flex: 1 }}>

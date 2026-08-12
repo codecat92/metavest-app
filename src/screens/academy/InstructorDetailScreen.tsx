@@ -110,7 +110,7 @@ export default function InstructorDetailScreen({ route, navigation }: Props) {
         : `${STORAGE_HOST}${instructor.avatar_url}`)
     : null;
 
-  const initials = instructor.name
+  const initials = (typeof instructor.name === 'string' ? instructor.name : '')
     .split(' ')
     .map(n => n[0])
     .join('')

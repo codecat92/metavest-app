@@ -82,7 +82,7 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
   );
 
   const initials = user?.name
-    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    ? (typeof user.name === 'string' ? user.name : '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : 'UN';
 
   const rank = user?.user_rank as { rank_name?: string; rank_number?: string } | null;

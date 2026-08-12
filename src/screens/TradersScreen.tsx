@@ -82,8 +82,8 @@ export default function TradersScreen() {
   };
 
   const sorted = traders.filter(t =>
-    (t.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (t.description ?? '').toLowerCase().includes(search.toLowerCase())
+    (typeof t.name === 'string' ? t.name : '').toLowerCase().includes(search.toLowerCase()) ||
+    (typeof t.description === 'string' ? t.description : '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (!getToken()) {
@@ -134,7 +134,7 @@ export default function TradersScreen() {
             {sorted.map((trader, i) => {
               const isFollowed = followedSet.has(trader.id);
               const isBroken = brokenAvatars.has(trader.id);
-              const initials = (trader.name ?? 'TR').substring(0, 2).toUpperCase();
+              const initials = (typeof trader.name === 'string' ? trader.name : 'TR').substring(0, 2).toUpperCase();
               const avatarColor = avatarColors[i % avatarColors.length];
               return (
                 <TouchableOpacity

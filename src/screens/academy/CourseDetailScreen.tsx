@@ -134,7 +134,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
       : `${STORAGE_HOST}${course.instructor.avatar_url}`;
   }, [course?.instructor.avatar_url]);
 
-  const instructorInitial = course?.instructor.name.charAt(0).toUpperCase() ?? '?';
+  const instructorInitial = (typeof course?.instructor.name === 'string' ? course.instructor.name : '?').charAt(0).toUpperCase();
 
   const handleEnroll = useCallback(async () => {
     if (!isLoggedIn) {
@@ -436,9 +436,9 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
                     <View key={review.id} style={[styles.reviewItem, { borderColor: c.glass.border }]}>
                       <View style={styles.reviewItemHeader}>
                         <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
-                          <Text style={styles.reviewAvatarText}>
-                            {review.reviewer_name.charAt(0).toUpperCase()}
-                          </Text>
+                        <Text style={styles.reviewAvatarText}>
+                            {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
+                        </Text>
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>

@@ -244,7 +244,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
               <View style={styles.reviewHeader}>
                 <View style={[styles.avatar, { backgroundColor: c.accent.purple }]}>
                   <Text style={styles.avatarText}>
-                    {review.reviewer_name.charAt(0).toUpperCase()}
+                    {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>

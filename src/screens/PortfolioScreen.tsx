@@ -712,7 +712,7 @@ export default function PortfolioScreen() {
               ) : (
                 <View style={{ gap: space.sm }}>
                   {followed.slice(0, 5).map((t, i) => {
-                    const initials = (t.name ?? 'TR').substring(0, 2).toUpperCase();
+                    const initials = (typeof t.name === 'string' ? t.name : 'TR').substring(0, 2).toUpperCase();
                     const avColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
                     return (
                       <GlassCard key={t.id} elevation={2}>

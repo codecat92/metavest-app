@@ -37,7 +37,7 @@ export default function CourseCard({ course, onPress }: CourseCardProps) {
       : `${STORAGE_HOST}${course.instructor.avatar_url}`)
     : null;
 
-  const instructorInitial = course.instructor.name.charAt(0).toUpperCase();
+  const instructorInitial = (typeof course.instructor.name === 'string' ? course.instructor.name : '?').charAt(0).toUpperCase();
 
   const ratingColor = course.average_rating >= 4
     ? c.accent.gold

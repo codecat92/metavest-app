@@ -139,7 +139,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
         : `${STORAGE_HOST}/uploads/profilepic/${trader.profile_image_src.split(/[\\/]/).pop()}`)
     : null;
 
-  const initials = (trader.name ?? 'TR').substring(0, 2).toUpperCase();
+  const initials = (typeof trader.name === 'string' ? trader.name : 'TR').substring(0, 2).toUpperCase();
   const isActive = trader.status === 1;
   const signalsCount = (trader as any).signal?.total ?? 0;
   const academyCount = (trader as any).academy?.total ?? 0;

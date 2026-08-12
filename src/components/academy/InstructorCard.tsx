@@ -23,7 +23,7 @@ export default function InstructorCard({ instructor, onPress }: InstructorCardPr
         : `${STORAGE_HOST}${instructor.avatar_url}`)
     : null;
 
-  const initials = instructor.name
+  const initials = (typeof instructor.name === 'string' ? instructor.name : '')
     .split(' ')
     .map(n => n[0])
     .join('')
