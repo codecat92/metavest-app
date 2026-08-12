@@ -157,7 +157,10 @@ export default function TradersScreen() {
                     )}
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
-                        <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                        <Text
+                          style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold', flex: 1 }]}
+                          numberOfLines={1}
+                        >
                           {trader.name}
                         </Text>
                         {trader.status === 1 && <Star size={12} color={colors.accent.purple} fill={colors.accent.purple} />}
