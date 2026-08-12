@@ -26,6 +26,8 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [consent, setConsent] = useState<ConsentData | null>(null);
   const [consentLoading, setConsentLoading] = useState(true);
   const [consentAgreed, setConsentAgreed] = useState(false);
+  const [jdrConsent, setJdrConsent] = useState<ConsentData | null>(null);
+  const [jdrConsentAgreed, setJdrConsentAgreed] = useState(false);
 
   const [idType, setIdType] = useState<'ktp' | 'passport' | null>(null);
 
@@ -48,15 +50,20 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const loadConsent = useCallback(async () => {
     setConsentLoading(true);
     try {
-      const [res, userRes] = await Promise.all([
+      const [pammRes, jdrRes, userRes] = await Promise.all([
         consentApi.get('pamm_submission'),
+        consentApi.get('jdr_broker_terms'),
         fetch(`${BASE_URL}/auth-user`, {
           headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
         }).then(r => r.json()),
       ]);
-      setConsent(res.data);
-      if (res.data.already_agreed) {
+      setConsent(pammRes.data);
+      setJdrConsent(jdrRes.data);
+      if (pammRes.data.already_agreed) {
         setConsentAgreed(true);
+      }
+      if (jdrRes.data.already_agreed) {
+        setJdrConsentAgreed(true);
       }
       const ktpSubmitted = userRes.ktp_verified === '1' || userRes.ktp_verified === '2';
       const passportSubmitted = userRes.passport_verified === '1' || userRes.passport_verified === '2';
@@ -76,13 +83,18 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   );
 
   const showConsentModal = consent && !consentAgreed;
+  const showJdrConsentModal = jdrConsent && consentAgreed && !jdrConsentAgreed;
 
   useEffect(() => {
-    navigation.setOptions({ gestureEnabled: !showConsentModal });
-  }, [showConsentModal, navigation]);
+    navigation.setOptions({ gestureEnabled: !(showConsentModal || showJdrConsentModal) });
+  }, [showConsentModal, showJdrConsentModal, navigation]);
 
   const handleConsentAgreed = () => {
     setConsentAgreed(true);
+  };
+
+  const handleJdrConsentAgreed = () => {
+    setJdrConsentAgreed(true);
   };
 
   const handlePickPhoto = async () => {
@@ -238,6 +250,16 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
         visible={true}
         consentData={consent}
         onAgreed={handleConsentAgreed}
+      />
+    );
+  }
+
+  if (jdrConsent && consentAgreed && !jdrConsentAgreed) {
+    return (
+      <ConsentModal
+        visible={true}
+        consentData={jdrConsent}
+        onAgreed={handleJdrConsentAgreed}
       />
     );
   }
