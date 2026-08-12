@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { forumApi, ForumPost, ForumComment } from '@/api/forum';
 import { getToken, BASE_URL } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, AppHeader, EmptyState, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
@@ -28,6 +29,8 @@ interface PostCommentState {
 export default function ForumScreen({ navigation }: ForumProps) {
   const alert = useCustomAlert();
   const colors = useColors();
+  const { userType } = useAuth();
+  const posterType = userType === 'trader' ? 2 : 1;
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -71,7 +74,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
     }
     setSubmitting(true);
     try {
-      await forumApi.createPost(newTitle.trim(), newContent.trim());
+      await forumApi.createPost(newTitle.trim(), newContent.trim(), posterType);
       alert.showAlert({ title: 'Posted', message: 'Your post has been published', type: 'success' });
       setShowCreate(false);
       setNewTitle('');
@@ -91,7 +94,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
       return;
     }
     try {
-      await forumApi.createComment(postId, state.text.trim());
+      await forumApi.createComment(postId, state.text.trim(), posterType);
       setCommentStates(prev => ({ ...prev, [postId]: { text: '', replyToId: null } }));
       loadComments(postId);
     } catch (e: any) {

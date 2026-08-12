@@ -43,18 +43,18 @@ export const forumApi = {
   getComments: (postId: number, page = 1) =>
     api.get<ForumListResponse>(`/forums/comments/by-post/${postId}?page=${page}`),
 
-  createPost: (title: string, content: string) =>
+  createPost: (title: string, content: string, posterType = 1) =>
     api.post<ApiResponse<ForumPost>>('/forums/users/posts/create', {
       title,
       content,
-      poster_type: 1,
+      poster_type: posterType,
     }),
 
-  createComment: (postId: number, content: string) =>
+  createComment: (postId: number, content: string, commenterType = 1) =>
     api.post<ApiResponse<ForumComment>>('/forums/users/comments/create', {
       post_id: postId,
       content,
-      commenter_type: 1,
+      commenter_type: commenterType,
       comment_id: null,
     }),
 
