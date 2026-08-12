@@ -88,8 +88,8 @@ export default function SignalScreen() {
   const searched = searchQuery.trim()
     ? filtered.filter(s => {
         const q = searchQuery.toLowerCase();
-        const pair = (s.currency_name ?? '').toLowerCase();
-        const trader = (s.trader_name ?? '').toLowerCase();
+        const pair = (typeof s.currency_name === 'string' ? s.currency_name : '').toLowerCase();
+        const trader = (typeof s.trader_name === 'string' ? s.trader_name : '').toLowerCase();
         return pair.includes(q) || trader.includes(q);
       })
     : filtered;
@@ -203,7 +203,7 @@ export default function SignalScreen() {
                       ) : (
                         <View style={styles.avatarCircle}>
                           <Text style={styles.avatarText}>
-                            {signal.trader_name?.charAt(0).toUpperCase() ?? signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR'}
+                            {typeof signal.trader_name === 'string' ? signal.trader_name.charAt(0).toUpperCase() : (signal.trader_id?.substring(0, 2).toUpperCase() ?? 'TR')}
                           </Text>
                         </View>
                       )}
@@ -212,7 +212,7 @@ export default function SignalScreen() {
                           {typeName}
                         </Text>
                         <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                          {signal.trader_name ?? 'Trader'}
+                          {typeof signal.trader_name === 'string' ? signal.trader_name : 'Trader'}
                         </Text>
                       </View>
                       <Badge

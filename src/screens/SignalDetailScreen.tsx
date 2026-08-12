@@ -87,7 +87,7 @@ export default function SignalDetailScreen() {
     try {
       await signalsApi.share(signal.id);
       await Share.share({
-        message: `${signal.trader_name ?? 'Trader'}: ${pairName} ${typeName}\nEntry: ${formatPrice(signal.open_price, signal.currency)}\nTP: ${formatPrice(signal.take_profit, signal.currency)}\nSL: ${formatPrice(signal.stop_loss, signal.currency)}\n\nFrom Metavest`,
+        message: `${typeof signal.trader_name === 'string' ? signal.trader_name : 'Trader'}: ${pairName} ${typeName}\nEntry: ${formatPrice(signal.open_price, signal.currency)}\nTP: ${formatPrice(signal.take_profit, signal.currency)}\nSL: ${formatPrice(signal.stop_loss, signal.currency)}\n\nFrom Metavest`,
       });
     } catch (e: any) {
       // cancelled or failed — no alert
@@ -151,7 +151,7 @@ export default function SignalDetailScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.traderName, { color: c.text.primary }]}>
-              {signal.trader_name ?? 'Unknown Trader'}
+              {typeof signal.trader_name === 'string' ? signal.trader_name : 'Unknown Trader'}
             </Text>
             <Text style={[styles.traderSignals, { color: c.text.secondary }]}>
               {signal.total_signals ?? 0} signals
