@@ -21,10 +21,10 @@ export interface ForumComment {
   post_id: number;
   comment_id: number | null;
   content: string;
-  poster_id: string;
-  poster_type: number;
+  commenter_id: string;
+  commenter_type: number;
   likes: number;
-  poster_name?: string;
+  commenter_name?: string;
   created_at: string;
 }
 

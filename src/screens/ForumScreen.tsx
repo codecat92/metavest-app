@@ -237,7 +237,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
                         <TouchableOpacity onPress={() => handleExpand(post.id)} style={styles.footerBtn}>
                           <MessageCircle size={14} color={colors.text.secondary} />
                           <Text style={[typography.label, { color: colors.text.secondary }]}>
-                            {postComments.length}
+                            {post.comments ?? 0}
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => handleShare(post.id)} style={styles.footerBtn}>
@@ -258,7 +258,7 @@ export default function ForumScreen({ navigation }: ForumProps) {
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '700' }]}>
-                                {c.poster_name ?? 'User'}
+                                {c.commenter_name ?? 'User'}
                               </Text>
                               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                                 {c.content}
