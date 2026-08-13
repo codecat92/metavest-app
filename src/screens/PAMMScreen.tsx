@@ -6,11 +6,12 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Building2, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Building2, ChevronRight, Lock } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail, PammBanner } from '@/api/pamm';
 import { getToken } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
+import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -19,6 +20,7 @@ type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
 export default function PAMMScreen({ navigation }: PAMMProps) {
   const STAGING_HOST = 'http://157.66.4.40:8081';
   const colors = useColors();
+  const { userType } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const [banners, setBanners] = useState<PammBanner[]>([]);
   const [brokers, setBrokers] = useState<BrokerWithDetail[]>([]);
@@ -104,6 +106,34 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     const currentOffset = Number(JSON.stringify(translateX));
     startScroll(currentOffset);
   }, [startScroll, translateX]);
+
+  if (userType === 'trader') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <ArrowLeft size={20} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space['2xl'] }}>
+          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: space.lg }}>
+            <Lock size={34} color={colors.accent.gold} />
+          </View>
+          <Text style={[typography.h3, { color: colors.text.primary, textAlign: 'center', marginBottom: space.sm, fontFamily: 'Manrope-Bold' }]}>
+            PAMM Not Available
+          </Text>
+          <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginBottom: space['2xl'] }]}>
+            This feature is only available for investor accounts.
+          </Text>
+          <AppButton
+            title="Go Back"
+            variant="ghost"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>

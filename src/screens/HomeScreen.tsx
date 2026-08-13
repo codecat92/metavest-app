@@ -1,10 +1,10 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Animated, Easing, RefreshControl
+  TouchableOpacity, Animated, Easing, RefreshControl, Modal
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -213,7 +213,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
 }
 
 // KOMPONEN: FeatureCards — Dua kartu fitur (Copy Trading + PAMM)
-function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
+function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => void; pammLocked: boolean }) {
   const c = useColors();
   const features = [
     {
@@ -221,12 +221,14 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
       desc: 'Auto-copy trades to your MT5 account',
       screen: 'copytrade',
       Icon: Copy,
+      locked: false,
     },
     {
       label: 'PAMM',
       desc: 'Explore PAMM brokers',
       screen: 'pamm',
       Icon: Wallet,
+      locked: pammLocked,
     },
   ];
 
@@ -240,6 +242,11 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
           style={{ flex: 1 }}
         >
           <GlassCard elevation={2} style={fcStyles.card}>
+            {f.locked && (
+              <View style={fcStyles.lockBadge}>
+                <Lock size={12} color={c.accent.gold} />
+              </View>
+            )}
             <View style={[fcStyles.iconWrap, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
               <f.Icon size={28} color="#8B5CF6" strokeWidth={1.5} />
             </View>
@@ -251,6 +258,11 @@ function FeatureCards({ onNavigate }: { onNavigate: (s: string) => void }) {
             <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
               {f.desc}
             </Text>
+            {f.locked && (
+              <Text style={[typography.caption, { color: c.text.muted, textAlign: 'center', marginTop: 4 }]}>
+                Investor only
+              </Text>
+            )}
           </GlassCard>
         </TouchableOpacity>
       ))}
@@ -424,10 +436,11 @@ const newsStyles = StyleSheet.create({
 });
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user, userType } = useAuth();
   const colors = useColors();
   const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [showPammLockModal, setShowPammLockModal] = useState(false);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
   const [mpBalance, setMpBalance] = useState<number | null>(null);
@@ -475,6 +488,10 @@ export default function HomeScreen() {
   );
 
   const onNavigate = (screen: string) => {
+    if (screen === 'pamm' && userType === 'trader') {
+      setShowPammLockModal(true);
+      return;
+    }
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
@@ -596,7 +613,7 @@ export default function HomeScreen() {
         <MarqueeMarkets />
 
         {/* ── FEATURE CARDS: Kartu Copy Trading + PAMM ── */}
-        <FeatureCards onNavigate={onNavigate} />
+        <FeatureCards onNavigate={onNavigate} pammLocked={userType === 'trader'} />
 
         {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
         <AcademyCard onPress={() => navigation.navigate('Academy')} />
@@ -615,6 +632,32 @@ export default function HomeScreen() {
           <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
         </View>
       </ScrollView>
+
+      {showPammLockModal && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
+            <GlassCard elevation={4}>
+              <View style={{ alignItems: 'center', gap: space.md }}>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Lock size={30} color={colors.accent.gold} />
+                </View>
+                <Text style={[typography.h4, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
+                  PAMM — Investors Only
+                </Text>
+                <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center' }]}>
+                  Trader accounts cannot access PAMM. This feature is only available for regular investor accounts.
+                </Text>
+                <AppButton
+                  title="Got it"
+                  variant="primary"
+                  onPress={() => setShowPammLockModal(false)}
+                  style={{ marginTop: space.md, alignSelf: 'stretch' }}
+                />
+              </View>
+            </GlassCard>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -693,6 +736,15 @@ const fcStyles = StyleSheet.create({
     minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  lockBadge: {
+    position: 'absolute', top: 10, right: 10,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: 'rgba(212,175,55,0.15)',
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.40)',
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 1,
   },
   iconWrap: {
     width: 56, height: 56, borderRadius: radius.xl,
