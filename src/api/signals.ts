@@ -79,6 +79,9 @@ export const signalsApi = {
   getAll: (page = 1) =>
     api.get<SignalListResponse>(`/signals/all?page=${page}`),
 
+  getByTrader: (traderId: string, page = 1) =>
+    api.get<SignalListResponse>(`/signals/all?page=${page}&trader_id=${traderId}`),
+
   getFollowed: (page = 1) =>
     api.get<SignalListResponse>(`/signals/followed?page=${page}`),
 

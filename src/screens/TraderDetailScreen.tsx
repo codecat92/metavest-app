@@ -7,10 +7,14 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Zap, Users, GraduationCap, MessageSquare,
-  ShieldCheck, ShieldOff,
+  ShieldCheck, ShieldOff, ChevronRight,
 } from 'lucide-react-native';
 import { getToken, BASE_URL, api, ApiResponse } from '@/api/client';
 import { followApi, UserTrader } from '@/api/follow';
+import { signalsApi, Signal } from '@/api/signals';
+import { forumApi, ForumPost } from '@/api/forum';
+import { academyNewApi } from '@/api/academyNew';
+import type { CourseListItem } from '@/types/academy';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -33,6 +37,28 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
   const [followUpdating, setFollowUpdating] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
+  const [signals, setSignals] = useState<Signal[]>([]);
+  const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
+  const [academyCourses, setAcademyCourses] = useState<CourseListItem[]>([]);
+  const [academyInstructorId, setAcademyInstructorId] = useState<number | null>(null);
+
+  const loadSummaries = useCallback(async (t: UserTrader) => {
+    const instructorId = (t as any).academy?.instructor_id ?? null;
+    setAcademyInstructorId(instructorId);
+
+    const [sigRes, forumRes, acaRes] = await Promise.allSettled([
+      signalsApi.getByTrader(t.id),
+      forumApi.getPostsByAuthor(t.id),
+      instructorId ? academyNewApi.getInstructor(instructorId) : Promise.resolve(null),
+    ]);
+
+    if (sigRes.status === 'fulfilled') setSignals((sigRes.value?.data ?? []).slice(0, 3));
+    if (forumRes.status === 'fulfilled') setForumPosts((forumRes.value?.data ?? []).slice(0, 3));
+    if (acaRes.status === 'fulfilled' && acaRes.value) {
+      setAcademyCourses((acaRes.value.data?.courses ?? []).slice(0, 3));
+    }
+  }, []);
+
   const loadTrader = useCallback(async () => {
     setError(null);
     try {
@@ -42,13 +68,14 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
       const res = await api.get<ApiResponse<UserTrader>>(`/user-traders/detail/${traderId}`);
       setTrader(res.data);
       setFollowed(String(res.data.follow_status) === '1');
+      loadSummaries(res.data);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load trader');
       showAlert({ title: 'Error', message: e?.message ?? 'Failed to load trader' });
     } finally {
       setLoading(false);
     }
-  }, [traderId, showAlert]);
+  }, [traderId, showAlert, loadSummaries]);
 
   useFocusEffect(
     useCallback(() => {
@@ -255,6 +282,120 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
             </View>
           </GlassCard>
         </View>
+
+        {/* ── Signals Section ── */}
+        {signals.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                <Zap size={16} color={c.accent.purple} />
+                <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>Signals</Text>
+              </View>
+              {signalsCount > 3 && <Badge label={`+${signalsCount - 3}`} variant="info" />}
+            </View>
+            <View style={{ gap: space.sm }}>
+              {signals.map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => navigation.navigate('SignalDetail', { signalId: s.id })}
+                  activeOpacity={0.8}
+                >
+                  <GlassCard elevation={1}>
+                    <View style={styles.previewRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                          {s.currency_name}
+                        </Text>
+                        <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]}>
+                          {s.signal_type_name} · {s.created_at_formatted}
+                        </Text>
+                      </View>
+                      <ChevronRight size={16} color={c.text.muted} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* ── Forum Section ── */}
+        {forumPosts.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                <MessageSquare size={16} color={c.text.primary} />
+                <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>Forum</Text>
+              </View>
+              {forumCount > 3 && <Badge label={`+${forumCount - 3}`} variant="info" />}
+            </View>
+            <View style={{ gap: space.sm }}>
+              {forumPosts.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  onPress={() => navigation.navigate('Forum', { scrollToPostId: p.id })}
+                  activeOpacity={0.8}
+                >
+                  <GlassCard elevation={1}>
+                    <View style={styles.previewRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={2}>
+                          {p.title}
+                        </Text>
+                        <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]}>
+                          {p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}
+                        </Text>
+                      </View>
+                      <ChevronRight size={16} color={c.text.muted} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* ── Academy Section ── */}
+        {academyCourses.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                <GraduationCap size={16} color={c.text.primary} />
+                <Text style={[typography.h4, { color: c.text.primary, fontFamily: 'Manrope-Bold' }]}>Academy</Text>
+              </View>
+              {academyInstructorId ? (
+                <TouchableOpacity onPress={() => navigation.navigate('InstructorDetail', { instructorId: academyInstructorId })}>
+                  <Text style={[typography.caption, { color: c.accent.purple, fontWeight: '600' }]}>See all</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            <View style={{ gap: space.sm }}>
+              {academyCourses.map((course) => (
+                <TouchableOpacity
+                  key={course.id}
+                  onPress={() => navigation.navigate('CourseDetail', { courseId: course.id })}
+                  activeOpacity={0.8}
+                >
+                  <GlassCard elevation={1}>
+                    <View style={styles.previewRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={2}>
+                          {course.title}
+                        </Text>
+                        <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]}>
+                          {course.specialization}
+                        </Text>
+                      </View>
+                      <ChevronRight size={16} color={c.text.muted} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <View style={{ height: space['3xl'] }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -313,6 +454,22 @@ const styles = StyleSheet.create({
   },
   stat: {
     alignItems: 'center',
+  },
+
+  section: {
+    paddingHorizontal: space['2xl'],
+    marginTop: space['2xl'],
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: space.md,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
   },
 
   centerState: {

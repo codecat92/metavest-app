@@ -38,6 +38,9 @@ export const forumApi = {
   getPosts: (page = 1) =>
     api.get<ForumListResponse>(`/forums/posts/all?page=${page}`),
 
+  getPostsByAuthor: (posterId: string, page = 1) =>
+    api.get<ForumListResponse>(`/forums/users/posts/all?page=${page}&poster_id=${posterId}`),
+
   getPostById: (id: number) =>
     api.get<ApiResponse<ForumPost>>(`/forums/posts/${id}`),
 
