@@ -11,7 +11,6 @@ import { consentApi, ConsentData } from '@/api/consent';
 import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, Skeleton } from '@/components';
-import { useAuth } from '@/context/AuthContext';
 import ConsentModal from '@/components/ConsentModal';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -20,7 +19,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PAMMKyc'>;
 
 export default function PAMMKycScreen({ navigation, route }: Props) {
   const c = useColors();
-  const { user } = useAuth();
   const { brokerId } = route.params;
 
   const [consent, setConsent] = useState<ConsentData | null>(null);
@@ -31,6 +29,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
 
   const [idType, setIdType] = useState<'ktp' | 'passport' | null>(null);
 
+  const [fullName, setFullName] = useState('');
   const [nik, setNik] = useState('');
   const [passportId, setPassportId] = useState('');
   const [address, setAddress] = useState('');
@@ -59,6 +58,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       ]);
       setConsent(pammRes.data);
       setJdrConsent(jdrRes.data);
+      setFullName(typeof userRes.name === 'string' ? userRes.name : '');
       if (pammRes.data.already_agreed) {
         setConsentAgreed(true);
       }
@@ -179,11 +179,11 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
       const formData = new FormData();
 
       if (idType === 'ktp') {
-        formData.append('name', user?.name ?? '');
+        formData.append('name', fullName);
         formData.append('nik', nik.trim());
         formData.append('address', address.trim());
       } else {
-        formData.append('name', user?.name ?? '');
+        formData.append('name', fullName);
         formData.append('passport_id', passportId.trim());
       }
       formData.append('place_of_birth', placeOfBirth.trim());
@@ -305,7 +305,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
             <>
               <AppInput
                 label="Nama Lengkap"
-                value={user?.name ?? ''}
+                value={fullName}
                 editable={false}
                 containerStyle={styles.inputStyle}
               />

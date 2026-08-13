@@ -526,7 +526,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-              {user?.name?.split(' ')[0] ?? 'Trader'}
+              {(typeof user?.name === 'string' ? user.name.split(' ')[0] : null) ?? 'Trader'}
             </Text>
             {rank && (
               <TouchableOpacity onPress={() => navigation.navigate('MyRank')} activeOpacity={0.7} style={{ marginTop: space.xs }}>
