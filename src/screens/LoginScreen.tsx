@@ -10,7 +10,6 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
 import { authApi } from '@/api/auth';
-import { otpApi } from '@/api/otp';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton, AppInput, GlassCard } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
@@ -47,7 +46,6 @@ export default function LoginScreen() {
     try {
       const step1 = await authApi.loginStep1(email, password);
       await setUserType(step1.type);
-      await otpApi.sendOtp(step1.email, 0, step1.type);
       navigation.navigate('OTP', {
         userId: step1.userId,
         email: step1.email,
