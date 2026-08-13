@@ -1,5 +1,5 @@
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useCallback, useState } from 'react';
@@ -11,9 +11,12 @@ import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton } from '@/components';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
+import { BASE_URL } from '@/api/client';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Review } from '@/types/academy';
+
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Review'>;
 
@@ -29,6 +32,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [failedReviewAvatars, setFailedReviewAvatars] = useState<Set<number>>(new Set());
 
   // ── Fetch reviews ──
 
@@ -242,11 +246,21 @@ export default function ReviewScreen({ route, navigation }: Props) {
           {otherReviews.map(review => (
             <GlassCard key={review.id} elevation={2}>
               <View style={styles.reviewHeader}>
-                <View style={[styles.avatar, { backgroundColor: c.accent.purple }]}>
-                  <Text style={styles.avatarText}>
-                    {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                {review.reviewer_avatar && !failedReviewAvatars.has(review.id) ? (
+                  <Image
+                    source={{ uri: review.reviewer_avatar.startsWith('http')
+                      ? review.reviewer_avatar
+                      : `${STORAGE_HOST}${review.reviewer_avatar}` }}
+                    style={styles.avatarImg}
+                    onError={() => setFailedReviewAvatars(prev => new Set(prev).add(review.id))}
+                  />
+                ) : (
+                  <View style={[styles.avatar, { backgroundColor: c.accent.purple }]}>
+                    <Text style={styles.avatarText}>
+                      {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
                     {review.reviewer_name}
@@ -327,6 +341,9 @@ const styles = StyleSheet.create({
   avatar: {
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
+  },
+  avatarImg: {
+    width: 36, height: 36, borderRadius: 18,
   },
   avatarText: {
     fontSize: 14,

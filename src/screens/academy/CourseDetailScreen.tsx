@@ -48,6 +48,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
   const [enrolling, setEnrolling] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewTotal, setReviewTotal] = useState(0);
+  const [failedReviewAvatars, setFailedReviewAvatars] = useState<Set<number>>(new Set());
 
   // ── Fetch course ──
 
@@ -435,11 +436,21 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
                   {reviews.map(review => (
                     <View key={review.id} style={[styles.reviewItem, { borderColor: c.glass.border }]}>
                       <View style={styles.reviewItemHeader}>
-                        <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
-                        <Text style={styles.reviewAvatarText}>
-                            {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
-                        </Text>
-                        </View>
+                        {review.reviewer_avatar && !failedReviewAvatars.has(review.id) ? (
+                          <Image
+                            source={{ uri: review.reviewer_avatar.startsWith('http')
+                              ? review.reviewer_avatar
+                              : `${STORAGE_HOST}${review.reviewer_avatar}` }}
+                            style={styles.reviewAvatarImg}
+                            onError={() => setFailedReviewAvatars(prev => new Set(prev).add(review.id))}
+                          />
+                        ) : (
+                          <View style={[styles.reviewAvatar, { backgroundColor: c.accent.purple }]}>
+                            <Text style={styles.reviewAvatarText}>
+                              {(typeof review.reviewer_name === 'string' ? review.reviewer_name : '?').charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
                         <View style={{ flex: 1 }}>
                           <Text style={[typography.captionBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
                             {review.reviewer_name}
@@ -617,6 +628,9 @@ const styles = StyleSheet.create({
   reviewAvatar: {
     width: 28, height: 28, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
+  },
+  reviewAvatarImg: {
+    width: 28, height: 28, borderRadius: 14,
   },
   reviewAvatarText: {
     fontSize: 11, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold',

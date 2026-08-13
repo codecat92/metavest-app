@@ -144,6 +144,7 @@ export type Review = {
   rating: number;
   comment: string | null;
   reviewer_name: string;
+  reviewer_avatar?: string | null;
   created_at: string;
 };
 
