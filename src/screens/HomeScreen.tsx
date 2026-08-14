@@ -294,7 +294,7 @@ const tagColors: Record<string, string> = {
 function AcademyCard({ onPress }: { onPress: () => void }) {
   const c = useColors();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
+    <View style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
       <GlassCard elevation={3} style={{ backgroundColor: c.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }}>
         <View style={[acStyles.iconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
           <GraduationCap size={24} color="#FFFFFF" strokeWidth={1.5} />
@@ -307,9 +307,9 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
             Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro, learn at your own pace!
           </Text>
         </View>
-        <AppButton title="Explore" variant="secondary" size="md" />
+        <AppButton title="Explore" variant="secondary" size="md" onPress={onPress} />
       </GlassCard>
-    </TouchableOpacity>
+    </View>
   );
 }
 
