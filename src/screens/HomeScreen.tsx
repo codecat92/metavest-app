@@ -307,13 +307,13 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
       >
         <GraduationCap
           size={110}
-          color={c.bg.primary}
+          color={isDark ? 'rgba(0,0,0,0.5)' : '#FFFFFF'}
           strokeWidth={1}
           style={{
             position: 'absolute',
             top: -4,
             right: -4,
-            opacity: 0.12,
+            opacity: 0.15,
             pointerEvents: 'none',
           }}
         />
