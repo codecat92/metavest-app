@@ -1,7 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { TrendingUp, Shield, Users, BarChart2, Link, Activity } from 'lucide-react-native';
-import { useColors, space, radius } from '@/theme';
+import { useColors, useTheme, space, radius } from '@/theme';
 import GlassCard from './GlassCard';
+
+// Palet khusus light mode — dark mode tetap memakai theme default.
+const LIGHT = {
+  cardBg: '#F2ECFF',
+  cardBorder: 'rgba(139,92,246,0.35)',
+  innerBorder: 'rgba(139,92,246,0.28)',
+  divider: 'rgba(139,92,246,0.20)',
+  tileBg: '#FFFFFF',
+  gold: '#A97E2B',
+};
 
 interface MT5AccountCardProps {
   connected: boolean;
@@ -36,6 +46,7 @@ function StatColumn({
   bordered?: boolean;
 }) {
   const c = useColors();
+  const { isDark } = useTheme();
   return (
     <View
       style={[
@@ -43,7 +54,7 @@ function StatColumn({
         bordered && {
           borderLeftWidth: 1,
           borderRightWidth: 1,
-          borderColor: c.glass.border,
+          borderColor: isDark ? c.glass.border : LIGHT.divider,
         },
       ]}
     >
@@ -68,8 +79,17 @@ function MetricTile({
   valueColor: string;
 }) {
   const c = useColors();
+  const { isDark } = useTheme();
   return (
-    <View style={[cardStyles.tile, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+    <View
+      style={[
+        cardStyles.tile,
+        {
+          backgroundColor: isDark ? c.glass.g1 : LIGHT.tileBg,
+          borderColor: isDark ? c.glass.borderStrong : LIGHT.innerBorder,
+        },
+      ]}
+    >
       <View style={cardStyles.tileHeader}>
         <Icon size={14} color={iconColor} />
         <Text style={[cardStyles.tileLabel, { color: c.text.secondary }]}>{label}</Text>
@@ -88,28 +108,45 @@ export default function MT5AccountCard({
   onCardPress,
 }: MT5AccountCardProps) {
   const c = useColors();
+  const { isDark } = useTheme();
 
   const followingVal = followingCount !== null ? `${followingCount} Traders` : '--';
   const openPosVal = mt5Data?.active_positions != null ? String(mt5Data.active_positions) : '--';
+  const gold = isDark ? c.accent.gold : LIGHT.gold;
 
   return (
     <TouchableOpacity onPress={onCardPress} activeOpacity={connected ? 0.9 : 1} disabled={!connected}>
     <GlassCard
       elevation={3}
-      style={{ borderRadius: 20, padding: 22, borderColor: c.glass.border, marginHorizontal: space['2xl'], marginBottom: space['2xl'] }}
+      style={{
+        borderRadius: 20,
+        padding: 22,
+        borderColor: isDark ? c.glass.border : LIGHT.cardBorder,
+        backgroundColor: isDark ? undefined : LIGHT.cardBg,
+        marginHorizontal: space['2xl'],
+        marginBottom: space['2xl'],
+      }}
     >
       {/* ── EYEBROW ROW ── */}
       <View style={cardStyles.eyebrow}>
-        <Text style={[cardStyles.eyebrowText, { color: c.accent.gold }]}>MT5 ACCOUNT</Text>
+        <Text style={[cardStyles.eyebrowText, { color: gold }]}>MT5 ACCOUNT</Text>
         {connected && mt5Data?.server ? (
-          <View style={[cardStyles.pill, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+          <View
+            style={[
+              cardStyles.pill,
+              {
+                backgroundColor: isDark ? c.glass.g1 : LIGHT.tileBg,
+                borderColor: isDark ? c.glass.borderStrong : LIGHT.innerBorder,
+              },
+            ]}
+          >
             <Text style={[cardStyles.pillText, { color: c.text.secondary }]}>{mt5Data.server}</Text>
           </View>
         ) : null}
       </View>
 
       {/* ── EQUITY HERO ── */}
-      <View style={[cardStyles.hero, { borderBottomColor: c.glass.border }]}>
+      <View style={[cardStyles.hero, { borderBottomColor: isDark ? c.glass.border : LIGHT.divider }]}>
         {connected && serviceError ? (
           <View style={cardStyles.ctaArea}>
             <Text style={[cardStyles.ctaTitle, { color: c.semantic.negative }]}>
@@ -128,7 +165,7 @@ export default function MT5AccountCard({
           </>
         ) : (
           <TouchableOpacity onPress={onConnectPress} activeOpacity={0.7} style={cardStyles.ctaArea}>
-            <Link size={32} color={c.accent.gold} />
+            <Link size={32} color={gold} />
             <Text style={[cardStyles.ctaTitle, { color: c.text.primary }]}>Connect MT5 Account</Text>
             <Text style={[cardStyles.ctaSubtitle, { color: c.text.muted }]}>
               View your trading portfolio in real-time
@@ -161,25 +198,25 @@ export default function MT5AccountCard({
       ) : null}
 
       {/* ── STATS ROW ── */}
-      <View style={[cardStyles.statsRow, { borderTopColor: c.glass.border }]}>
+      <View style={[cardStyles.statsRow, { borderTopColor: isDark ? c.glass.border : LIGHT.divider }]}>
         <StatColumn
           icon={Users}
           value={followingVal}
           label="FOLLOWING"
-          color={c.accent.gold}
+          color={gold}
         />
         <StatColumn
           icon={BarChart2}
           value={connected && mt5Data?.leverage != null ? `1:${mt5Data.leverage}` : '--'}
           label="LEVERAGE"
-          color={c.accent.gold}
+          color={gold}
           bordered
         />
         <StatColumn
           icon={Activity}
           value={openPosVal}
           label="OPEN"
-          color={c.accent.gold}
+          color={gold}
         />
       </View>
     </GlassCard>
