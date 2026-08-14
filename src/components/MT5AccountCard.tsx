@@ -5,12 +5,16 @@ import GlassCard from './GlassCard';
 
 // Palet khusus light mode — dark mode tetap memakai theme default.
 const LIGHT = {
-  cardBg: '#F2ECFF',
-  cardBorder: 'rgba(139,92,246,0.35)',
-  innerBorder: 'rgba(139,92,246,0.28)',
-  divider: 'rgba(139,92,246,0.20)',
+  cardBg: '#131B4A',
+  cardBorder: 'rgba(19,27,74,0.40)',
+  innerBorder: 'rgba(255,255,255,0.16)',
+  divider: 'rgba(255,255,255,0.20)',
   tileBg: '#FFFFFF',
-  gold: '#A97E2B',
+  tileBorder: 'rgba(19,27,74,0.12)',
+  pillBg: 'rgba(255,255,255,0.15)',
+  gold: '#D4AF37',
+  onDark: '#FFFFFF',
+  onDarkMuted: 'rgba(255,255,255,0.72)',
 };
 
 interface MT5AccountCardProps {
@@ -59,8 +63,8 @@ function StatColumn({
       ]}
     >
       <Icon size={16} color={color} />
-      <Text style={[cardStyles.statValue, { color: c.text.primary }]}>{value}</Text>
-      <Text style={[cardStyles.statLabel, { color: c.text.secondary }]}>{label}</Text>
+      <Text style={[cardStyles.statValue, { color: isDark ? c.text.primary : LIGHT.onDark }]}>{value}</Text>
+      <Text style={[cardStyles.statLabel, { color: isDark ? c.text.secondary : LIGHT.onDarkMuted }]}>{label}</Text>
     </View>
   );
 }
@@ -86,7 +90,7 @@ function MetricTile({
         cardStyles.tile,
         {
           backgroundColor: isDark ? c.glass.g1 : LIGHT.tileBg,
-          borderColor: isDark ? c.glass.borderStrong : LIGHT.innerBorder,
+          borderColor: isDark ? c.glass.borderStrong : LIGHT.tileBorder,
         },
       ]}
     >
@@ -135,12 +139,12 @@ export default function MT5AccountCard({
             style={[
               cardStyles.pill,
               {
-                backgroundColor: isDark ? c.glass.g1 : LIGHT.tileBg,
+                backgroundColor: isDark ? c.glass.g1 : LIGHT.pillBg,
                 borderColor: isDark ? c.glass.borderStrong : LIGHT.innerBorder,
               },
             ]}
           >
-            <Text style={[cardStyles.pillText, { color: c.text.secondary }]}>{mt5Data.server}</Text>
+            <Text style={[cardStyles.pillText, { color: isDark ? c.text.secondary : LIGHT.onDarkMuted }]}>{mt5Data.server}</Text>
           </View>
         ) : null}
       </View>
@@ -149,25 +153,25 @@ export default function MT5AccountCard({
       <View style={[cardStyles.hero, { borderBottomColor: isDark ? c.glass.border : LIGHT.divider }]}>
         {connected && serviceError ? (
           <View style={cardStyles.ctaArea}>
-            <Text style={[cardStyles.ctaTitle, { color: c.semantic.negative }]}>
+            <Text style={[cardStyles.ctaTitle, { color: isDark ? c.semantic.negative : '#FCA5A5' }]}>
               Layanan Tidak Tersedia
             </Text>
-            <Text style={[cardStyles.ctaSubtitle, { color: c.text.muted, textAlign: 'center' }]}>
+            <Text style={[cardStyles.ctaSubtitle, { color: isDark ? c.text.muted : LIGHT.onDarkMuted, textAlign: 'center' }]}>
               {serviceError}
             </Text>
           </View>
         ) : connected ? (
           <>
-            <Text style={[cardStyles.equityValue, { color: c.text.primary }]}>
+            <Text style={[cardStyles.equityValue, { color: isDark ? c.text.primary : LIGHT.onDark }]}>
               {mt5Data?.equity != null ? formatCurrency(mt5Data.equity) : '--'}
             </Text>
-            <Text style={[cardStyles.equityLabel, { color: c.text.secondary }]}>Equity</Text>
+            <Text style={[cardStyles.equityLabel, { color: isDark ? c.text.secondary : LIGHT.onDarkMuted }]}>Equity</Text>
           </>
         ) : (
           <TouchableOpacity onPress={onConnectPress} activeOpacity={0.7} style={cardStyles.ctaArea}>
             <Link size={32} color={gold} />
-            <Text style={[cardStyles.ctaTitle, { color: c.text.primary }]}>Connect MT5 Account</Text>
-            <Text style={[cardStyles.ctaSubtitle, { color: c.text.muted }]}>
+            <Text style={[cardStyles.ctaTitle, { color: isDark ? c.text.primary : LIGHT.onDark }]}>Connect MT5 Account</Text>
+            <Text style={[cardStyles.ctaSubtitle, { color: isDark ? c.text.muted : LIGHT.onDarkMuted }]}>
               View your trading portfolio in real-time
             </Text>
           </TouchableOpacity>
@@ -194,7 +198,7 @@ export default function MT5AccountCard({
 
       {/* ── BROKER LINE ── */}
       {connected && mt5Data?.company ? (
-        <Text style={[cardStyles.broker, { color: c.text.muted }]}>{mt5Data.company}</Text>
+        <Text style={[cardStyles.broker, { color: isDark ? c.text.muted : LIGHT.onDarkMuted }]}>{mt5Data.company}</Text>
       ) : null}
 
       {/* ── STATS ROW ── */}
