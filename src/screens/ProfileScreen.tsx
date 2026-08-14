@@ -356,9 +356,21 @@ export default function ProfileScreen({ navigation }: { navigation: ProfileNavPr
               />
             </GlassCard>
           ) : instructorStatus === 'pending' ? (
-            <View style={{ marginBottom: space.md }}>
-              <Badge label="Application Pending" variant="warning" style={{ alignSelf: 'center' }} />
-            </View>
+            <GlassCard elevation={2} style={{ marginBottom: space.md, borderColor: `${colors.accent.gold}40`, borderWidth: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <View style={[styles.settingsIconWrap, { backgroundColor: 'rgba(212,175,55,0.15)' }]}>
+                  <GraduationCap size={18} color={colors.accent.gold} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+                    Aplikasi Anda Sedang Direview
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Tim kami akan memproses permohonan instruktur Anda.
+                  </Text>
+                </View>
+              </View>
+            </GlassCard>
           ) : instructorStatus === 'active' ? (
             <View style={{ marginBottom: space.md }}>
               <Badge label="✓ Verified Instructor" variant="success" style={{ alignSelf: 'center' }} />
