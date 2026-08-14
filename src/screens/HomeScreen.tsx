@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -540,6 +540,12 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, []);
 
+  const handleCloseAnnouncement = () => {
+    if (!announcement) return;
+    notificationApi.markRead(announcement.notification_id).catch(() => {});
+    setShowAnnouncementModal(false);
+  };
+
   const greeting = getGreeting();
   const GreetingIcon = greeting.Icon;
 
@@ -698,32 +704,76 @@ export default function HomeScreen() {
         <Modal visible transparent animationType="fade">
           <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
             <GlassCard elevation={4}>
+              <TouchableOpacity
+                onPress={handleCloseAnnouncement}
+                activeOpacity={0.7}
+                style={{
+                  position: 'absolute', top: space.sm, right: space.sm,
+                  width: 34, height: 34, borderRadius: radius.full,
+                  backgroundColor: colors.glass.g1,
+                  alignItems: 'center', justifyContent: 'center',
+                  zIndex: 1,
+                }}
+              >
+                <X size={18} color={colors.text.muted} />
+              </TouchableOpacity>
+
               <View style={{ gap: space.md }}>
-                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Megaphone size={30} color={colors.accent.gold} />
+                <View style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  backgroundColor: `${colors.accent.gold}26`,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Megaphone size={24} color={colors.accent.gold} />
                 </View>
-                <Text style={[typography.label, { color: '#B8860B', letterSpacing: 1, fontFamily: 'DMSans-Bold' }]}>
-                  PENGUMUMAN
-                </Text>
-                <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-                  {announcement.post.title}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  {announcement.post.poster_name} · {new Date(announcement.post.created_at).toLocaleString()}
-                </Text>
+
+                <View style={{ gap: space.md }}>
+                  <View style={{
+                    alignSelf: 'flex-start',
+                    backgroundColor: colors.accent.gold,
+                    borderRadius: radius.full,
+                    paddingHorizontal: space.lg,
+                    paddingVertical: space.xs,
+                  }}>
+                    <Text style={[typography.label, {
+                      color: isDark ? colors.bg.primary : colors.text.primary,
+                      letterSpacing: 1, fontFamily: 'DMSans-Bold',
+                    }]}>
+                      PENGUMUMAN
+                    </Text>
+                  </View>
+
+                  <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
+                    {announcement.post.title}
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                    <View style={{
+                      width: 20, height: 20, borderRadius: 10,
+                      backgroundColor: `${colors.accent.purple}26`,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <User size={12} color={colors.accent.purple} />
+                    </View>
+                    <Text style={[typography.caption, { color: colors.text.muted }]}>
+                      {announcement.post.poster_name} · {new Date(announcement.post.created_at).toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ borderTopWidth: 1, borderTopColor: colors.glass.border }} />
+
                 <ScrollView style={{ maxHeight: 220 }} showsVerticalScrollIndicator={false}>
                   <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>
                     {announcement.post.content}
                   </Text>
                 </ScrollView>
+
                 <AppButton
                   title="Tutup"
                   variant="primary"
-                  onPress={() => {
-                    notificationApi.markRead(announcement.notification_id).catch(() => {});
-                    setShowAnnouncementModal(false);
-                  }}
-                  style={{ marginTop: space.md, alignSelf: 'stretch' }}
+                  onPress={handleCloseAnnouncement}
+                  style={{ marginTop: space.md, alignSelf: 'stretch', borderRadius: radius.lg }}
                 />
               </View>
             </GlassCard>
