@@ -41,18 +41,19 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
   const [comments, setComments] = useState<Record<number, ForumComment[]>>({});
   const [commentStates, setCommentStates] = useState<Record<number, PostCommentState>>({});
   const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
+  const [postFilter, setPostFilter] = useState<'all' | 'announcement'>('all');
 
   const loadPosts = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const res = await forumApi.getPosts(1);
+      const res = await forumApi.getPosts(1, postFilter);
       setPosts(res.data ?? []);
     } catch (e) {
       console.log('Forum load failed:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [postFilter]);
 
   useFocusEffect(
     useCallback(() => { setLoading(true); loadPosts(); }, [loadPosts])
@@ -170,6 +171,21 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
           }
         />
 
+        {/* ── Filter toggle: Semua / Pengumuman ── */}
+        <View style={styles.filterRow}>
+          {(['all', 'announcement'] as const).map(t => (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setPostFilter(t)}
+              style={[styles.filterBtn, postFilter === t && styles.filterBtnActive]}
+            >
+              <Text style={[styles.filterText, postFilter === t && styles.filterTextActive]}>
+                {t === 'all' ? 'Semua' : 'Pengumuman'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {loading ? (
           <View style={{ paddingHorizontal: space['2xl'], gap: space.md }}>
             {[1, 2, 3].map(i => (
@@ -196,24 +212,32 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
                 const postComments = comments[post.id] ?? [];
                 const commentState = commentStates[post.id] ?? { text: '', replyToId: null };
                 const isLiked = likedPostIds.has(post.id);
+                const isAnnouncement = post.poster_type === 3;
                 return (
-                  <GlassCard key={post.id} elevation={2}>
+                  <GlassCard
+                    key={post.id}
+                    elevation={2}
+                    style={isAnnouncement ? styles.announcementCard : undefined}
+                  >
                     <TouchableOpacity onPress={() => handleExpand(post.id)} activeOpacity={0.8}>
                       <View style={styles.cardHeader}>
                         <View style={styles.authorRow}>
-                          {post.poster_profile_image ? (
+                          {post.poster_profile_image && !isAnnouncement ? (
                             <Image
                               source={{ uri: post.poster_profile_image.startsWith('http') ? post.poster_profile_image : `${STORAGE_HOST}/uploads/profilepic/${post.poster_profile_image.split(/[\\/]/).pop()}` }}
                               style={styles.avatarImg}
                             />
                           ) : (
-                            <View style={styles.avatar}>
-                              <User size={14} color={colors.accent.purple} />
+                            <View style={[styles.avatar, isAnnouncement && styles.announcementAvatar]}>
+                              <User size={14} color={isAnnouncement ? '#8B5CF6' : colors.accent.purple} />
                             </View>
                           )}
-                          <View>
-                            <Text style={[typography.captionBold, { color: colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
-                              {typeof post.poster_name === 'string' ? post.poster_name : 'User'}
+                          <View style={{ flex: 1 }}>
+                            {isAnnouncement && (
+                              <Text style={styles.announcementBadge}>📢 PENGUMUMAN</Text>
+                            )}
+                            <Text style={[typography.captionBold, { color: isAnnouncement ? '#B8860B' : colors.text.primary, fontFamily: 'DMSans-Bold' }]}>
+                              {typeof post.poster_name === 'string' ? post.poster_name : 'Admin'}
                             </Text>
                 <Text style={[typography.label, { color: colors.text.secondary }]}>
                   {post.created_at ? new Date(post.created_at).toLocaleString() : ''}
@@ -422,5 +446,38 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.glass.border,
     color: colors.text.primary, fontSize: 14, textAlignVertical: 'top',
     marginBottom: space.lg, fontFamily: 'DMSans',
+  },
+
+  filterRow: {
+    flexDirection: 'row', gap: space.sm,
+    paddingHorizontal: space['2xl'], marginBottom: space.lg,
+  },
+  filterBtn: {
+    paddingHorizontal: space.lg, paddingVertical: space.sm,
+    borderRadius: radius.full, borderWidth: 1,
+    borderColor: colors.glass.border,
+    backgroundColor: colors.glass.g1,
+  },
+  filterBtnActive: {
+    backgroundColor: colors.accent.purple,
+    borderColor: colors.accent.purple,
+  },
+  filterText: {
+    fontSize: 12, fontWeight: '600',
+    color: colors.text.secondary, fontFamily: 'DMSans-SemiBold',
+  },
+  filterTextActive: { color: '#fff' },
+
+  announcementCard: {
+    borderColor: colors.accent.gold,
+    borderWidth: 1.5,
+  },
+  announcementAvatar: {
+    backgroundColor: 'rgba(212,175,55,0.20)',
+  },
+  announcementBadge: {
+    fontSize: 10, fontWeight: '700',
+    color: '#B8860B', letterSpacing: 0.5,
+    fontFamily: 'DMSans-Bold', marginBottom: 2,
   },
 });

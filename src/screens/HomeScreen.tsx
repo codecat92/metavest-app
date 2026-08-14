@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -14,6 +14,7 @@ import { signalsApi } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
 import { copytradeApi } from '@/api/copytrade';
 import { notificationApi } from '@/api/notifications';
+import { forumApi, LatestAnnouncement } from '@/api/forum';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -469,6 +470,8 @@ export default function HomeScreen() {
   const [mt5Data, setMt5Data] = useState<any>(null);
   const [mt5ServiceError, setMt5ServiceError] = useState<string | null>(null);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [announcement, setAnnouncement] = useState<LatestAnnouncement | null>(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const navigation = useNavigation<any>();
 
   useFocusEffect(
@@ -483,6 +486,14 @@ export default function HomeScreen() {
         if (walletRes.status === 'fulfilled') setMpBalance(walletRes.value.data?.balance ?? 0);
       });
       notificationApi.getUnreadCount().then(res => setUnreadNotifCount(res.data.count)).catch(() => {});
+      forumApi.getLatestAnnouncement()
+        .then(res => {
+          if (res.data) {
+            setAnnouncement(res.data);
+            setShowAnnouncementModal(true);
+          }
+        })
+        .catch(() => {});
     }, [])
   );
 
@@ -675,6 +686,43 @@ export default function HomeScreen() {
                   title="Got it"
                   variant="primary"
                   onPress={() => setShowPammLockModal(false)}
+                  style={{ marginTop: space.md, alignSelf: 'stretch' }}
+                />
+              </View>
+            </GlassCard>
+          </View>
+        </Modal>
+      )}
+
+      {showAnnouncementModal && announcement && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
+            <GlassCard elevation={4}>
+              <View style={{ gap: space.md }}>
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Megaphone size={30} color={colors.accent.gold} />
+                </View>
+                <Text style={[typography.label, { color: '#B8860B', letterSpacing: 1, fontFamily: 'DMSans-Bold' }]}>
+                  PENGUMUMAN
+                </Text>
+                <Text style={[typography.h4, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
+                  {announcement.post.title}
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  {announcement.post.poster_name} · {new Date(announcement.post.created_at).toLocaleString()}
+                </Text>
+                <ScrollView style={{ maxHeight: 220 }} showsVerticalScrollIndicator={false}>
+                  <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>
+                    {announcement.post.content}
+                  </Text>
+                </ScrollView>
+                <AppButton
+                  title="Tutup"
+                  variant="primary"
+                  onPress={() => {
+                    notificationApi.markRead(announcement.notification_id).catch(() => {});
+                    setShowAnnouncementModal(false);
+                  }}
                   style={{ marginTop: space.md, alignSelf: 'stretch' }}
                 />
               </View>

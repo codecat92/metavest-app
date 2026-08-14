@@ -25,6 +25,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
     Profile: 'Profile',
     Portfolio: 'Portfolio',
     Forum: 'Forum',
+    Announcement: 'Forum',
   };
 
   const loadData = useCallback(async () => {

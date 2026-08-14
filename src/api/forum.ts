@@ -34,9 +34,23 @@ export interface ForumListResponse {
   data_count: number;
 }
 
+export interface LatestAnnouncement {
+  notification_id: number;
+  post: {
+    id: number;
+    title: string;
+    content: string;
+    poster_name: string;
+    created_at: string;
+  };
+}
+
 export const forumApi = {
-  getPosts: (page = 1) =>
-    api.get<ForumListResponse>(`/forums/posts/all?page=${page}`),
+  getPosts: (page = 1, type?: 'all' | 'announcement' | 'discussion') =>
+    api.get<ForumListResponse>(`/forums/posts/all?page=${page}${type && type !== 'all' ? `&type=${type}` : ''}`),
+
+  getLatestAnnouncement: () =>
+    api.get<ApiResponse<LatestAnnouncement | null>>('/forums/announcements/latest'),
 
   getPostsByAuthor: (posterId: string, page = 1) =>
     api.get<ForumListResponse>(`/forums/users/posts/all?page=${page}&poster_id=${posterId}`),
