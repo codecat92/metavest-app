@@ -5,16 +5,16 @@ import GlassCard from './GlassCard';
 
 // Palet khusus light mode — dark mode tetap memakai theme default.
 const LIGHT = {
-  cardBg: '#131B4A',
-  cardBorder: 'rgba(19,27,74,0.40)',
-  innerBorder: 'rgba(255,255,255,0.16)',
-  divider: 'rgba(255,255,255,0.20)',
+  cardBg: '#7C3AED',
+  cardBorder: 'rgba(124,58,237,0.40)',
+  innerBorder: 'rgba(255,255,255,0.18)',
+  divider: 'rgba(255,255,255,0.25)',
   tileBg: '#FFFFFF',
-  tileBorder: 'rgba(19,27,74,0.12)',
-  pillBg: 'rgba(255,255,255,0.15)',
-  gold: '#D4AF37',
+  tileBorder: 'rgba(124,58,237,0.15)',
+  pillBg: 'rgba(255,255,255,0.18)',
+  gold: '#F7E8B0',
   onDark: '#FFFFFF',
-  onDarkMuted: 'rgba(255,255,255,0.72)',
+  onDarkMuted: 'rgba(255,255,255,0.75)',
 };
 
 interface MT5AccountCardProps {
