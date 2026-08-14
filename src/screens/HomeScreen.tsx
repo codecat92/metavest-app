@@ -300,20 +300,20 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
       <GlassCard
         elevation={3}
         style={{
-          backgroundColor: isDark ? c.accent.gold : c.accent.purple,
-          borderColor: isDark ? 'rgba(212,175,55,0.40)' : 'rgba(124,58,237,0.40)',
+          backgroundColor: isDark ? undefined : c.accent.purple,
+          borderColor: isDark ? c.glass.border : 'rgba(124,58,237,0.40)',
           position: 'relative',
         }}
       >
         <GraduationCap
-          size={110}
-          color={isDark ? 'rgba(0,0,0,0.5)' : '#FFFFFF'}
+          size={180}
+          color={isDark ? 'rgba(212,175,55,0.18)' : '#FFFFFF'}
           strokeWidth={1}
           style={{
             position: 'absolute',
             top: -4,
             right: -4,
-            opacity: 0.15,
+            opacity: .7,
             pointerEvents: 'none',
           }}
         />
@@ -321,14 +321,14 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
           <GraduationCap size={24} color="#FFFFFF" strokeWidth={1.5} />
         </View>
         <View style={acStyles.textWrap}>
-          <Text style={[typography.h3, { color: c.bg.primary, fontFamily: 'Manrope-Bold' }]}>
+          <Text style={[typography.h3, { color: isDark ? c.text.primary : c.bg.primary, fontFamily: 'Manrope-Bold' }]}>
             Metavest Academy
           </Text>
-          <Text style={[typography.body, { color: c.bg.primary, marginTop: space.sm, opacity: 0.8 }]}>
+          <Text style={[typography.body, { color: isDark ? c.text.secondary : c.bg.primary, marginTop: space.sm, opacity: 0.8 }]}>
             Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro, learn at your own pace!
           </Text>
         </View>
-        <AppButton title="Explore" variant={isDark ? 'primary' : 'secondary'} size="md" onPress={onPress} />
+        <AppButton title="Explore" variant="secondary" size="md" onPress={onPress} />
       </GlassCard>
     </View>
   );
