@@ -302,8 +302,21 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
         style={{
           backgroundColor: isDark ? c.accent.gold : c.accent.purple,
           borderColor: isDark ? 'rgba(212,175,55,0.40)' : 'rgba(124,58,237,0.40)',
+          position: 'relative',
         }}
       >
+        <GraduationCap
+          size={110}
+          color={c.bg.primary}
+          strokeWidth={1}
+          style={{
+            position: 'absolute',
+            top: -4,
+            right: -4,
+            opacity: 0.12,
+            pointerEvents: 'none',
+          }}
+        />
         <View style={[acStyles.iconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
           <GraduationCap size={24} color="#FFFFFF" strokeWidth={1.5} />
         </View>
