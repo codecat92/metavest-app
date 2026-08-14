@@ -9,6 +9,7 @@ import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
 import { getToken, BASE_URL } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
 
@@ -25,6 +26,7 @@ export default function TradersScreen() {
   const [followMap, setFollowMap] = useState<Record<string, number>>({});
   const [brokenAvatars, setBrokenAvatars] = useState<Set<string>>(new Set());
   const alert = useCustomAlert();
+  const { user, userType } = useAuth();
 
   const loadTraders = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -81,10 +83,15 @@ export default function TradersScreen() {
     }
   };
 
-  const sorted = traders.filter(t =>
-    (typeof t.name === 'string' ? t.name : '').toLowerCase().includes(search.toLowerCase()) ||
-    (typeof t.description === 'string' ? t.description : '').toLowerCase().includes(search.toLowerCase())
-  );
+  const currentTraderId = userType === 'trader' ? (user as any)?.id : null;
+  const isTraderViewer = userType === 'trader';
+
+  const sorted = traders
+    .filter(t => t.id !== currentTraderId)
+    .filter(t =>
+      (typeof t.name === 'string' ? t.name : '').toLowerCase().includes(search.toLowerCase()) ||
+      (typeof t.description === 'string' ? t.description : '').toLowerCase().includes(search.toLowerCase())
+    );
 
   if (!getToken()) {
     return (
@@ -169,14 +176,20 @@ export default function TradersScreen() {
                         <Text style={styles.bio} numberOfLines={2}>{trader.description}</Text>
                       ) : null}
                     </View>
-                    <TouchableOpacity
-                      onPress={() => isFollowed ? handleUnfollow(trader.id) : handleFollow(trader.id)}
-                      style={[styles.followBtn, isFollowed && styles.followBtnActive]}
-                    >
-                      <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
-                        {isFollowed ? 'Following' : 'Follow'}
-                      </Text>
-                    </TouchableOpacity>
+                    {isTraderViewer ? (
+                      <View style={[styles.followBtn, { backgroundColor: colors.glass.g1 }]}>
+                        <Text style={[styles.followBtnText, { color: colors.text.muted }]}>Trader</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => isFollowed ? handleUnfollow(trader.id) : handleFollow(trader.id)}
+                        style={[styles.followBtn, isFollowed && styles.followBtnActive]}
+                      >
+                        <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
+                          {isFollowed ? 'Following' : 'Follow'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   <View style={styles.statsRow}>

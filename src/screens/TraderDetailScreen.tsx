@@ -18,6 +18,7 @@ import type { CourseListItem } from '@/types/academy';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
+import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -29,6 +30,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
   const { traderId } = route.params;
   const c = useColors();
   const { showAlert } = useCustomAlert();
+  const { userType } = useAuth();
 
   const [trader, setTrader] = useState<UserTrader | null>(null);
   const [loading, setLoading] = useState(true);
@@ -227,19 +229,21 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
                 {trader.description || 'No description provided'}
               </Text>
 
-              <TouchableOpacity
-                onPress={() => followed ? handleUnfollow() : handleFollow()}
-                disabled={followUpdating}
-                style={[styles.followBtn, followed && styles.followBtnActive]}
-              >
-                {followUpdating ? (
-                  <ActivityIndicator size="small" color={followed ? c.accent.purple : c.text.primary} />
-                ) : (
-                  <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
-                    {followed ? 'Following' : 'Follow'}
-                  </Text>
-                )}
-              </TouchableOpacity>
+              {userType === 'trader' ? null : (
+                <TouchableOpacity
+                  onPress={() => followed ? handleUnfollow() : handleFollow()}
+                  disabled={followUpdating}
+                  style={[styles.followBtn, followed && styles.followBtnActive]}
+                >
+                  {followUpdating ? (
+                    <ActivityIndicator size="small" color={followed ? c.accent.purple : c.text.primary} />
+                  ) : (
+                    <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
+                      {followed ? 'Following' : 'Follow'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={styles.statsRow}>
