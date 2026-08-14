@@ -306,14 +306,14 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
         }}
       >
         <GraduationCap
-          size={180}
+          size={190}
           color={isDark ? 'rgba(212,175,55,0.18)' : '#FFFFFF'}
-          strokeWidth={1}
+          strokeWidth={.8}
           style={{
             position: 'absolute',
-            top: -4,
+            top: -1,
             right: -4,
-            opacity: .7,
+            opacity: .6,
             pointerEvents: 'none',
           }}
         />
@@ -498,7 +498,10 @@ export default function HomeScreen() {
             const data = accountRes.data;
             setMt5Data({ ...data.mt5, active_positions: data.active_positions });
           } catch (err: any) {
-            setMt5ServiceError(err.message || 'Layanan MT5 sedang tidak tersedia');
+            // Log teknis untuk debugging (tidak ditampilkan ke user)
+            console.log('MT5 account fetch failed:', err?.message || err);
+            // Pesan user-friendly, non-teknis
+            setMt5ServiceError('Koneksi ke server trading sedang terganggu. Silakan coba lagi beberapa saat.');
           }
         } catch {
           setMt5Connected(false);
