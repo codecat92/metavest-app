@@ -293,9 +293,17 @@ const tagColors: Record<string, string> = {
 // KOMPONEN: AcademyCard — Kartu promo Metavest Academy dengan tombol CTA
 function AcademyCard({ onPress }: { onPress: () => void }) {
   const c = useColors();
+  const { isDark } = useTheme();
+
   return (
     <View style={{ marginHorizontal: space['2xl'], marginBottom: 28 }}>
-      <GlassCard elevation={3} style={{ backgroundColor: c.accent.purple, borderColor: 'rgba(124,58,237,0.40)' }}>
+      <GlassCard
+        elevation={3}
+        style={{
+          backgroundColor: isDark ? c.accent.gold : c.accent.purple,
+          borderColor: isDark ? 'rgba(212,175,55,0.40)' : 'rgba(124,58,237,0.40)',
+        }}
+      >
         <View style={[acStyles.iconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
           <GraduationCap size={24} color="#FFFFFF" strokeWidth={1.5} />
         </View>
@@ -307,7 +315,7 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
             Master forex, crypto, and trading strategies with our expert-led courses. From beginner to pro, learn at your own pace!
           </Text>
         </View>
-        <AppButton title="Explore" variant="secondary" size="md" onPress={onPress} />
+        <AppButton title="Explore" variant={isDark ? 'primary' : 'secondary'} size="md" onPress={onPress} />
       </GlassCard>
     </View>
   );
