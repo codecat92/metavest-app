@@ -25,7 +25,6 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
     Profile: 'Profile',
     Portfolio: 'Portfolio',
     Forum: 'Forum',
-    Announcement: 'Forum',
   };
 
   const loadData = useCallback(async () => {
@@ -115,7 +114,7 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
                 }
                 if (n.target_screen === 'Consent') {
                   navigation.navigate('ConsentDetail', { consentCode: n.target_params ?? 'registration' });
-                } else if (n.target_screen === 'Forum') {
+                } else if (n.target_screen === 'Forum' || n.target_screen === 'Announcement') {
                   navigation.navigate('Forum', { scrollToPostId: Number(n.target_params) || undefined });
                 } else if (target) {
                   navigation.navigate('Tabs', { screen: target });
