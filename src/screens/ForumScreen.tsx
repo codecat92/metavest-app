@@ -41,7 +41,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
   const [comments, setComments] = useState<Record<number, ForumComment[]>>({});
   const [commentStates, setCommentStates] = useState<Record<number, PostCommentState>>({});
   const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
-  const [postFilter, setPostFilter] = useState<'all' | 'announcement'>('all');
+  const [postFilter, setPostFilter] = useState<'all' | 'announcement' | 'discussion'>('all');
   const [loadingMore, setLoadingMore] = useState(false);
 
   const pageRef = useRef(1);
@@ -343,16 +343,16 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
         }
       />
 
-      {/* ── Filter toggle: Semua / Pengumuman ── */}
+      {/* ── Filter toggle: Semua / Pengumuman / Post ── */}
       <View style={styles.filterRow}>
-        {(['all', 'announcement'] as const).map(t => (
+        {(['all', 'announcement', 'discussion'] as const).map(t => (
           <TouchableOpacity
             key={t}
             onPress={() => setPostFilter(t)}
             style={[styles.filterBtn, postFilter === t && styles.filterBtnActive]}
           >
             <Text style={[styles.filterText, postFilter === t && styles.filterTextActive]}>
-              {t === 'all' ? 'Semua' : 'Pengumuman'}
+              {t === 'all' ? 'Semua' : t === 'announcement' ? 'Pengumuman' : 'Post'}
             </Text>
           </TouchableOpacity>
         ))}
