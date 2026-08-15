@@ -6,52 +6,16 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ArrowLeft, Shield, Award, Star, Trophy, Gem, Lock,
+  ArrowLeft, Shield, Star, Trophy, Lock,
 } from 'lucide-react-native';
 import { getToken, BASE_URL } from '@/api/client';
+import { rankIcons, rankColors, tierColors, type RankProgress } from '@/constants/rank';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-interface RankProgress {
-  current_rank: number;
-  rank_name: string;
-  invite_count: number;
-  total_deposit: number;
-  next_rank: {
-    rank: number;
-    rank_name: string;
-    min_invites: number;
-    min_deposit: number;
-  } | null;
-}
-
 type Props = NativeStackScreenProps<RootStackParamList, 'MyRank'>;
-
-const rankIcons: Record<number, React.ComponentType<{ size: number; color: string }>> = {
-  1: Shield,
-  2: Award,
-  3: Star,
-  4: Trophy,
-  5: Gem,
-};
-
-const rankColors: Record<number, string> = {
-  1: '#9CA3AF',
-  2: '#CD7F32',
-  3: '#A8A8A8',
-  4: '#FFD700',
-  5: '#E01E5A',
-};
-
-const tierColors: Record<number, { ring: string; gradient: string }> = {
-  1: { ring: '#b8bcc9', gradient: '#3a3f4d' },
-  2: { ring: '#d99a5f', gradient: '#4a3020' },
-  3: { ring: '#c9cbd6', gradient: '#3a3d4a' },
-  4: { ring: '#f0c96b', gradient: '#4a3f10' },
-  5: { ring: '#c9a8f0', gradient: '#2a2450' },
-};
 
 const allRanks = [
   { rank: 5, label: 'Platinum', min_invites: 1000, min_deposit: 100000 },

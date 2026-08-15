@@ -17,7 +17,7 @@ import { notificationApi } from '@/api/notifications';
 import { forumApi, LatestAnnouncement } from '@/api/forum';
 import { BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard } from '@/components';
+import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -657,6 +657,9 @@ export default function HomeScreen() {
 
         {/* ── FEATURE CARDS: Kartu Copy Trading + PAMM ── */}
         <FeatureCards onNavigate={onNavigate} pammLocked={userType === 'trader'} />
+
+        {/* ── RANK PREVIEW CARD: Entrypoint ke My Rank ── */}
+        <RankPreviewCard />
 
         {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
         <AcademyCard onPress={() => navigation.navigate('Academy')} />
