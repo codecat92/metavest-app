@@ -1,6 +1,6 @@
 import {
   View, Text, FlatList, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator, Modal, Image
+  TouchableOpacity, TextInput, ActivityIndicator, Modal, Image, Share
 } from 'react-native';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,6 +41,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
   const [comments, setComments] = useState<Record<number, ForumComment[]>>({});
   const [commentStates, setCommentStates] = useState<Record<number, PostCommentState>>({});
   const [likedPostIds, setLikedPostIds] = useState<Set<number>>(new Set());
+  const [sharedPostIds, setSharedPostIds] = useState<Set<number>>(new Set());
   const [postFilter, setPostFilter] = useState<'all' | 'announcement' | 'discussion'>('all');
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -74,8 +75,19 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
     }
   }, [postFilter]);
 
+  const loadReactions = useCallback(async () => {
+    if (!getToken()) return;
+    try {
+      const res = await forumApi.getMyReactions();
+      setLikedPostIds(new Set(res.data?.liked_ids ?? []));
+      setSharedPostIds(new Set(res.data?.shared_ids ?? []));
+    } catch (e) {
+      console.log('Reactions load failed:', e);
+    }
+  }, []);
+
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadPosts(); }, [loadPosts])
+    useCallback(() => { setLoading(true); loadPosts(); loadReactions(); }, [loadPosts, loadReactions])
   );
 
   useEffect(() => {
@@ -149,9 +161,14 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
 
   const handleLike = async (postId: number) => {
     try {
-      await forumApi.likePost(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: (p.likes ?? 0) + 1 } : p));
-      setLikedPostIds(prev => new Set(prev).add(postId));
+      const res = await forumApi.likePost(postId);
+      const d = res.data;
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: d.likes } : p));
+      setLikedPostIds(prev => {
+        const next = new Set(prev);
+        if (d.liked) next.add(postId); else next.delete(postId);
+        return next;
+      });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
@@ -159,8 +176,22 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
 
   const handleShare = async (postId: number) => {
     try {
-      await forumApi.sharePost(postId);
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, shares: (p.shares ?? 0) + 1 } : p));
+      const res = await forumApi.sharePost(postId);
+      const d = res.data;
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, shares: d.shares } : p));
+      setSharedPostIds(prev => {
+        const next = new Set(prev);
+        if (d.shared) next.add(postId); else next.delete(postId);
+        return next;
+      });
+      if (d.shared) {
+        const post = posts.find(p => p.id === postId);
+        try {
+          await Share.share({
+            message: post ? `${post.title}\n\n${post.content}` : '',
+          });
+        } catch {}
+      }
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
     }
@@ -201,6 +232,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
     const postComments = comments[item.id] ?? [];
     const commentState = commentStates[item.id] ?? { text: '', replyToId: null };
     const isLiked = likedPostIds.has(item.id);
+    const isShared = sharedPostIds.has(item.id);
     const isAnnouncement = item.poster_type === 3;
     return (
       <GlassCard elevation={2} style={isAnnouncement ? styles.announcementCard : undefined}>
@@ -257,7 +289,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleShare(item.id)} style={styles.footerBtn}>
-              <Share2 size={14} color={colors.text.secondary} />
+              <Share2 size={14} color={isShared ? colors.accent.purple : colors.text.secondary} />
               <Text style={[typography.label, { color: colors.text.secondary }]}>
                 {item.shares ?? 0}
               </Text>

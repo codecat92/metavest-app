@@ -78,8 +78,11 @@ export const forumApi = {
     }),
 
   likePost: (id: number) =>
-    api.get<ApiResponse<any>>(`/forums/users/posts/like/${id}`),
+    api.get<ApiResponse<{ liked: boolean; likes: number }>>(`/forums/users/posts/like/${id}`),
 
   sharePost: (id: number) =>
-    api.get<ApiResponse<any>>(`/forums/users/posts/share/${id}`),
+    api.get<ApiResponse<{ shared: boolean; shares: number }>>(`/forums/users/posts/share/${id}`),
+
+  getMyReactions: () =>
+    api.get<ApiResponse<{ liked_ids: number[]; shared_ids: number[] }>>('/forums/users/posts/reactions'),
 };
