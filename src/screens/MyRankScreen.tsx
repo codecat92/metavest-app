@@ -1,5 +1,5 @@
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
@@ -17,6 +17,16 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyRank'>;
 
+interface LeaderboardEntry {
+  id: string;
+  name: string;
+  rank: number;
+  rank_name: string;
+  total_deposit: number;
+  user_type: number;
+  profile_image_src: string | null;
+}
+
 const allRanks = [
   { rank: 5, label: 'Platinum', min_invites: 1000, min_deposit: 100000 },
   { rank: 4, label: 'Gold',     min_invites: 100,  min_deposit: 25000 },
@@ -29,6 +39,8 @@ export default function MyRankScreen({ navigation }: Props) {
   const c = useColors();
   const [data, setData] = useState<RankProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     const token = getToken();
@@ -46,7 +58,28 @@ export default function MyRankScreen({ navigation }: Props) {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { setLoading(true); loadData(); }, [loadData]));
+  const loadLeaderboard = useCallback(async () => {
+    const token = getToken();
+    if (!token) { setLeaderboardLoading(false); return; }
+    try {
+      const res = await fetch(`${BASE_URL}/profile/rank-leaderboard`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      setLeaderboard(Array.isArray(json.data) ? json.data : []);
+    } catch {
+      // ignore
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    setLeaderboardLoading(true);
+    loadData();
+    loadLeaderboard();
+  }, [loadData, loadLeaderboard]));
 
   const formatBalance = (amount: number) => `${amount.toLocaleString('en-US')} MP`;
 
@@ -222,6 +255,59 @@ export default function MyRankScreen({ navigation }: Props) {
                   );
                 })}
               </View>
+            </View>
+
+            {/* Leaderboard */}
+            <View style={{ marginBottom: space['3xl'] }}>
+              <Text style={[typography.h4, { color: c.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
+                Papan Peringkat
+              </Text>
+              {leaderboardLoading ? (
+                <GlassCard><Skeleton height={120} /></GlassCard>
+              ) : leaderboard.length === 0 ? null : (
+                <GlassCard elevation={2} noPadding>
+                  {leaderboard.map((entry, idx) => {
+                    const pos = idx + 1;
+                    const RankIcon = rankIcons[entry.rank] ?? Shield;
+                    const tier = tierColors[entry.rank] ?? tierColors[1];
+                    const medalColor = pos === 1 ? '#FFD700' : pos === 2 ? '#C0C0C0' : pos === 3 ? '#CD7F32' : undefined;
+                    return (
+                      <View
+                        key={`${entry.id}-${entry.user_type}`}
+                        style={{
+                          flexDirection: 'row', alignItems: 'center', gap: space.md,
+                          padding: space.md,
+                          borderBottomWidth: idx < leaderboard.length - 1 ? 1 : 0,
+                          borderBottomColor: c.glass.border,
+                        }}
+                      >
+                        <Text style={[typography.bodyBold, { width: 24, textAlign: 'center', color: medalColor ?? c.text.secondary, fontFamily: 'Manrope-Bold' }]}>
+                          {pos}
+                        </Text>
+                        {entry.profile_image_src ? (
+                          <Image source={{ uri: entry.profile_image_src }} style={{ width: 34, height: 34, borderRadius: 17 }} />
+                        ) : (
+                          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c.glass.g2, alignItems: 'center', justifyContent: 'center' }}>
+                            <RankIcon size={16} color={tier.ring} />
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
+                            {entry.name}
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: 2 }}>
+                            <RankIcon size={12} color={tier.ring} />
+                            <Text style={[typography.caption, { color: c.text.secondary }]}>{entry.rank_name}</Text>
+                          </View>
+                        </View>
+                        <Text style={[typography.captionBold, { color: c.text.secondary, fontFamily: 'DMSans-Bold' }]}>
+                          {formatBalance(entry.total_deposit)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </GlassCard>
+              )}
             </View>
           </>
         ) : (
