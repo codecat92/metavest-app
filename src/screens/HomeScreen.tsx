@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Animated, Easing, RefreshControl, Modal
+  TouchableOpacity, Animated, Easing, RefreshControl, Modal, Image
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import { walletApi } from '@/api/wallet';
 import { copytradeApi } from '@/api/copytrade';
 import { notificationApi } from '@/api/notifications';
 import { forumApi, LatestAnnouncement } from '@/api/forum';
+import { BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -24,6 +25,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const CARD_WIDTH = 150;
 const CARD_GAP = 12;
+const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
 
 function getGreeting(): { text: string; Icon: React.ComponentType<{ size: number; color: string }> } {
   const h = new Date().getHours();
@@ -748,13 +750,20 @@ export default function HomeScreen() {
                   </Text>
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-                    <View style={{
-                      width: 20, height: 20, borderRadius: 10,
-                      backgroundColor: `${colors.accent.purple}26`,
-                      alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <User size={12} color={colors.accent.purple} />
-                    </View>
+                    {announcement.post.poster_profile_image ? (
+                      <Image
+                        source={{ uri: announcement.post.poster_profile_image.startsWith('http') ? announcement.post.poster_profile_image : `${STORAGE_HOST}/uploads/profilepic/${announcement.post.poster_profile_image.split(/[\\/]/).pop()}` }}
+                        style={{ width: 20, height: 20, borderRadius: 10 }}
+                      />
+                    ) : (
+                      <View style={{
+                        width: 20, height: 20, borderRadius: 10,
+                        backgroundColor: `${colors.accent.purple}26`,
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <User size={12} color={colors.accent.purple} />
+                      </View>
+                    )}
                     <Text style={[typography.caption, { color: colors.text.muted }]}>
                       {announcement.post.poster_name} · {new Date(announcement.post.created_at).toLocaleString()}
                     </Text>

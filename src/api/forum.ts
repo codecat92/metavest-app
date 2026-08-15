@@ -41,6 +41,7 @@ export interface LatestAnnouncement {
     title: string;
     content: string;
     poster_name: string;
+    poster_profile_image?: string | null;
     created_at: string;
   };
 }

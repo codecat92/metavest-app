@@ -207,7 +207,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
         <TouchableOpacity onPress={() => handleExpand(item.id)} activeOpacity={0.8}>
           <View style={styles.cardHeader}>
             <View style={styles.authorRow}>
-              {item.poster_profile_image && !isAnnouncement ? (
+              {item.poster_profile_image ? (
                 <Image
                   source={{ uri: item.poster_profile_image.startsWith('http') ? item.poster_profile_image : `${STORAGE_HOST}/uploads/profilepic/${item.poster_profile_image.split(/[\\/]/).pop()}` }}
                   style={styles.avatarImg}
