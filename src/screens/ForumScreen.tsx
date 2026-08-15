@@ -343,7 +343,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
         }
       />
 
-      {/* ── Filter toggle: Semua / Pengumuman / Post ── */}
+      {/* ── Filter toggle: Semua / Pengumuman / Discussion ── */}
       <View style={styles.filterRow}>
         {(['all', 'announcement', 'discussion'] as const).map(t => (
           <TouchableOpacity
@@ -352,7 +352,7 @@ export default function ForumScreen({ navigation, route }: ForumProps) {
             style={[styles.filterBtn, postFilter === t && styles.filterBtnActive]}
           >
             <Text style={[styles.filterText, postFilter === t && styles.filterTextActive]}>
-              {t === 'all' ? 'Semua' : t === 'announcement' ? 'Pengumuman' : 'Post'}
+              {t === 'all' ? 'Semua' : t === 'announcement' ? 'Pengumuman' : 'Discussion'}
             </Text>
           </TouchableOpacity>
         ))}
