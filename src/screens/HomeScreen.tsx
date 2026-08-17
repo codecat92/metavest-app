@@ -220,8 +220,8 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
   const c = useColors();
   const features = [
     {
-      label: 'Copy Trading',
-      desc: 'Auto-copy trades to your MT5 account',
+      label: 'My MT5',
+      desc: 'Connect to your MT5 terminal',
       screen: 'copytrade',
       Icon: Copy,
       locked: false,
