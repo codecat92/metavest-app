@@ -234,6 +234,13 @@ export default function MarketScreen({ navigation }: MarketProps) {
                 </View>
               ))}
             </View>
+
+            {/* Footnote: data source (golden accent) */}
+            <View style={styles.footnote}>
+              <Text style={[typography.label, { color: colors.accent.gold, textAlign: 'center' }]}>
+                Market data provided by Twelve Data · twelvedata.com
+              </Text>
+            </View>
           </>
         )}
       </ScrollView>
@@ -300,5 +307,13 @@ const styles = StyleSheet.create({
     flex: 1, padding: space.md, borderRadius: radius.md, alignItems: 'center',
     backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.border,
+  },
+  footnote: {
+    paddingHorizontal: space['2xl'],
+    marginTop: space.xl,
+    marginBottom: space['2xl'],
+    paddingTop: space.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212,175,55,0.25)',
   },
 });
