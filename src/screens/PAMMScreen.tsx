@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bannerCard: {
-    aspectRatio: 1.6, borderRadius: 15, marginRight: space.md,
+    aspectRatio: 4 / 3, borderRadius: 15, marginRight: space.md,
     backgroundColor: colors.glass.g2,
     borderWidth: 1, borderColor: colors.glass.borderStrong,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
