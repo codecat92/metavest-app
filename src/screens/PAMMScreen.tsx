@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Building2, ChevronRight, Lock } from 'lucide-react-native';
 import { pammApi, BrokerWithDetail, PammBanner } from '@/api/pamm';
 import { getToken } from '@/api/client';
+import { resolveAssetUrl } from '@/utils/assetUrl';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Skeleton, AppButton } from '@/components';
 import { useAuth } from '@/context/AuthContext';
@@ -18,7 +19,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type PAMMProps = NativeStackScreenProps<RootStackParamList, 'PAMM'>;
 
 export default function PAMMScreen({ navigation }: PAMMProps) {
-  const STAGING_HOST = 'http://157.66.4.40:8081';
   const colors = useColors();
   const { userType } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
@@ -166,24 +166,27 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                   <Animated.View
                     style={[styles.carouselTrack, { transform: [{ translateX }] }]}
                   >
-                    {[...activeBanners, ...activeBanners].map((b, i) => (
-                      <View key={`${b.id}-${i}`} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
-                        {b.image_url ? (
-                          <Image
-                            source={{ uri: STAGING_HOST + b.image_url }}
-                            style={styles.bannerImage}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={styles.bannerPlaceholder}>
-                            <Building2 size={48} color="rgba(139,92,246,0.3)" />
-                          </View>
-                        )}
-                        {b.title ? (
-                          <Text style={styles.bannerTitle}>{b.title}</Text>
-                        ) : null}
-                      </View>
-                    ))}
+                    {[...activeBanners, ...activeBanners].map((b, i) => {
+                      const bannerUri = resolveAssetUrl(b.image_url);
+                      return (
+                        <View key={`${b.id}-${i}`} style={[styles.bannerCard, { width: screenWidth - space['2xl'] * 2 }]}>
+                          {bannerUri ? (
+                            <Image
+                              source={{ uri: bannerUri }}
+                              style={styles.bannerImage}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={styles.bannerPlaceholder}>
+                              <Building2 size={48} color="rgba(139,92,246,0.3)" />
+                            </View>
+                          )}
+                          {b.title ? (
+                            <Text style={styles.bannerTitle}>{b.title}</Text>
+                          ) : null}
+                        </View>
+                      );
+                    })}
                   </Animated.View>
                 </View>
                 {activeBanners.length > 1 && (
@@ -213,7 +216,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                         <View style={styles.brokerAvatar}>
                           {broker.detail?.logo_url ? (
                             <Image
-                              source={{ uri: STAGING_HOST + broker.detail.logo_url }}
+                              source={{ uri: resolveAssetUrl(broker.detail.logo_url) as string }}
                               style={styles.brokerLogo}
                               resizeMode="contain"
                             />
