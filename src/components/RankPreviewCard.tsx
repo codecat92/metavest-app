@@ -5,7 +5,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ChevronRight, Shield } from 'lucide-react-native';
 import { getToken, BASE_URL } from '@/api/client';
 import { useColors, space, typography } from '@/theme';
-import { GlassCard, Skeleton } from '@/components';
+import GlassCard from '@/components/GlassCard';
+import Skeleton from '@/components/Skeleton';
 import { rankIcons, tierColors, type RankProgress } from '@/constants/rank';
 
 export default function RankPreviewCard() {

@@ -72,19 +72,22 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     anim.start();
   }, [totalWidth, cardWidth, translateX]);
 
-  // Start the marquee when the screen is focused (and when banners load), and
-  // stop it on blur / unmount. Deferred to the next frame to avoid a native-driver
-  // race where the loop starts before the carousel view has mounted.
-  useFocusEffect(
-    useCallback(() => {
-      if (totalBanners <= 1) return;
-      const raf = requestAnimationFrame(() => startScroll(0));
-      return () => {
-        cancelAnimationFrame(raf);
-        if (loopRef.current) loopRef.current.stop();
-      };
-    }, [totalBanners, startScroll, translateX])
-  );
+  // Start the marquee when banners are available — mirror MarqueeMarkets:
+  // a plain effect that starts the native loop directly (no setValue/stop/RAF).
+  useEffect(() => {
+    if (totalBanners <= 1) return;
+    const anim = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: -totalWidth,
+        duration: (totalWidth / cardWidth) * 4000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    loopRef.current = anim;
+    anim.start();
+    return () => anim.stop();
+  }, [totalBanners, totalWidth, cardWidth, translateX]);
 
   // Track which dot is active
   useEffect(() => {
