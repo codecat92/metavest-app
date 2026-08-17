@@ -57,6 +57,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
 
   // Start smooth auto-scroll (like MarqueeMarkets)
   const startScroll = useCallback((fromOffset: number) => {
+    if (totalWidth <= 0) return;
     if (loopRef.current) loopRef.current.stop();
     translateX.setValue(fromOffset);
     const anim = Animated.loop(
@@ -71,18 +72,17 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     anim.start();
   }, [totalWidth, cardWidth, translateX]);
 
-  useEffect(() => {
-    if (totalBanners <= 1) return;
-    startScroll(0);
-    return () => { if (loopRef.current) loopRef.current.stop(); };
-  }, [totalBanners, startScroll]);
-
-  // Restart animation when returning to this screen
+  // Start the marquee when the screen is focused (and when banners load), and
+  // stop it on blur / unmount. Deferred to the next frame to avoid a native-driver
+  // race where the loop starts before the carousel view has mounted.
   useFocusEffect(
     useCallback(() => {
       if (totalBanners <= 1) return;
-      const currentOffset = Number(JSON.stringify(translateX));
-      startScroll(currentOffset);
+      const raf = requestAnimationFrame(() => startScroll(0));
+      return () => {
+        cancelAnimationFrame(raf);
+        if (loopRef.current) loopRef.current.stop();
+      };
     }, [totalBanners, startScroll, translateX])
   );
 
