@@ -647,8 +647,13 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => navigation.navigate('EconomicsCalendar')}>
               <Text style={[typography.caption, { color: colors.accent.gold, fontWeight: '600' }]}>Calendar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Market')}>
-              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>See all</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Market')}
+              activeOpacity={0.8}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+            >
+              <Text style={[typography.caption, { color: colors.accent.purple, fontWeight: '600' }]}>See all markets</Text>
+              <ChevronRight size={14} color={colors.accent.purple} />
             </TouchableOpacity>
           </View>
         </View>
