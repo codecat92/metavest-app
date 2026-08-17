@@ -30,6 +30,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const cardWidth = screenWidth - space['2xl'] * 2 + space.md;
   const translateX = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const currentOffsetRef = useRef(0);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -72,26 +73,22 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     anim.start();
   }, [totalWidth, cardWidth, translateX]);
 
-  // Start the marquee when banners are available — mirror MarqueeMarkets:
-  // a plain effect that starts the native loop directly (no setValue/stop/RAF).
+  // Auto-start once banners load. Deferred one frame via RAF so the native
+  // Animated node is attached before .start() runs (fixes the dropped native
+  // animation command on first mount).
   useEffect(() => {
     if (totalBanners <= 1) return;
-    const anim = Animated.loop(
-      Animated.timing(translateX, {
-        toValue: -totalWidth,
-        duration: (totalWidth / cardWidth) * 4000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    loopRef.current = anim;
-    anim.start();
-    return () => anim.stop();
-  }, [totalBanners, totalWidth, cardWidth, translateX]);
+    const raf = requestAnimationFrame(() => startScroll(0));
+    return () => {
+      cancelAnimationFrame(raf);
+      if (loopRef.current) loopRef.current.stop();
+    };
+  }, [totalBanners, startScroll]);
 
   // Track which dot is active
   useEffect(() => {
     const id = translateX.addListener(({ value }) => {
+      currentOffsetRef.current = value; // track last offset for touch-resume
       const raw = Math.abs(value) % totalWidth;
       const idx = Math.floor(raw / cardWidth) % totalBanners;
       setBannerIdx(idx);
@@ -106,9 +103,8 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   }, []);
   const handleTouchEnd = useCallback(() => {
     pausedRef.current = false;
-    const currentOffset = Number(JSON.stringify(translateX));
-    startScroll(currentOffset);
-  }, [startScroll, translateX]);
+    startScroll(currentOffsetRef.current);
+  }, [startScroll]);
 
   if (userType === 'trader') {
     return (
