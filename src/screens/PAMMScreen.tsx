@@ -31,6 +31,7 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
   const translateX = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
   const currentOffsetRef = useRef(0);
+  const hasStartedRef = useRef(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -73,17 +74,15 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
     anim.start();
   }, [totalWidth, cardWidth, translateX]);
 
-  // Auto-start once banners load. Deferred one frame via RAF so the native
-  // Animated node is attached before .start() runs (fixes the dropped native
-  // animation command on first mount).
+  // When the screen regains focus, the loading skeleton unmounts/remounts the carousel
+  // as a brand-new native view. Reset the start flag and stop the old loop (its native
+  // view is being torn down) so onLayout can trigger a fresh start after each mount.
   useEffect(() => {
-    if (totalBanners <= 1) return;
-    const raf = requestAnimationFrame(() => startScroll(0));
-    return () => {
-      cancelAnimationFrame(raf);
+    if (loading) {
+      hasStartedRef.current = false;
       if (loopRef.current) loopRef.current.stop();
-    };
-  }, [totalBanners, startScroll]);
+    }
+  }, [loading]);
 
   // Track which dot is active
   useEffect(() => {
@@ -164,6 +163,14 @@ export default function PAMMScreen({ navigation }: PAMMProps) {
                 >
                   <Animated.View
                     style={[styles.carouselTrack, { transform: [{ translateX }] }]}
+                    onLayout={() => {
+                      // onLayout fires only after the native view is attached & measured —
+                      // a real lifecycle guarantee (unlike a frame-count guess). Start once
+                      // per mount.
+                      if (totalBanners <= 1 || hasStartedRef.current) return;
+                      hasStartedRef.current = true;
+                      startScroll(0);
+                    }}
                   >
                     {[...activeBanners, ...activeBanners].map((b, i) => {
                       const bannerUri = resolveAssetUrl(b.image_url);
