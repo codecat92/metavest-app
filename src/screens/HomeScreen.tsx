@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Copy, Wallet, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -223,14 +223,14 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
       label: 'My MT5',
       desc: 'Connect to your MT5 terminal',
       screen: 'copytrade',
-      Icon: Copy,
+      Icon: Monitor,
       locked: false,
     },
     {
       label: 'PAMM',
       desc: 'Explore PAMM brokers',
       screen: 'pamm',
-      Icon: Wallet,
+      Icon: Landmark,
       locked: pammLocked,
     },
   ];
