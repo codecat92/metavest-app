@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -270,6 +270,29 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
         </TouchableOpacity>
       ))}
     </View>
+  );
+}
+
+// KOMPONEN: EconomicCalendarCard — Entry point ke Economic Calendar
+function EconomicCalendarCard({ onPress }: { onPress: () => void }) {
+  const c = useColors();
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={ecStyles.wrap}>
+      <GlassCard elevation={2} style={ecStyles.card}>
+        <View style={ecStyles.iconWrap}>
+          <Calendar size={22} color={colors.accent.gold} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>
+            Economic Calendar
+          </Text>
+          <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]}>
+            Track upcoming market-moving events
+          </Text>
+        </View>
+        <ChevronRight size={18} color={c.text.secondary} />
+      </GlassCard>
+    </TouchableOpacity>
   );
 }
 
@@ -644,9 +667,6 @@ export default function HomeScreen() {
             Markets
           </Text>
           <View style={{ flexDirection: 'row', gap: space.lg }}>
-            <TouchableOpacity onPress={() => navigation.navigate('EconomicsCalendar')}>
-              <Text style={[typography.caption, { color: colors.accent.gold, fontWeight: '600' }]}>Calendar</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate('Market')}
               activeOpacity={0.8}
@@ -660,7 +680,10 @@ export default function HomeScreen() {
         {/* ── MARKET CAROUSEL: Kartu Forex berjalan horizontal (EUR/USD, GBP/USD, dll) ── */}
         <MarqueeMarkets />
 
-        {/* ── FEATURE CARDS: Kartu Copy Trading + PAMM ── */}
+        {/* ── ECONOMIC CALENDAR CARD: Entry point ke Economic Calendar ── */}
+        <EconomicCalendarCard onPress={() => navigation.navigate('EconomicsCalendar')} />
+
+        {/* ── FEATURE CARDS: Kartu My MT5 + PAMM ── */}
         <FeatureCards onNavigate={onNavigate} pammLocked={userType === 'trader'} />
 
         {/* ── RANK PREVIEW CARD: Entrypoint ke My Rank ── */}
@@ -898,4 +921,18 @@ const acStyles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   textWrap: { marginBottom: space.lg },
+});
+
+// STYLE: ecStyles — Gaya untuk komponen EconomicCalendarCard
+const ecStyles = StyleSheet.create({
+  wrap: { marginHorizontal: space['2xl'], marginBottom: 28 },
+  card: {
+    flexDirection: 'row', alignItems: 'center', gap: space.md,
+    borderColor: 'rgba(212,175,55,0.4)',
+  },
+  iconWrap: {
+    width: 44, height: 44, borderRadius: radius.lg,
+    backgroundColor: 'rgba(212,175,55,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
 });
