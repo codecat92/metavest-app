@@ -1,15 +1,14 @@
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { useRef, useState, useEffect } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react-native';
+import { ArrowLeft, Shield } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomAlert } from '@/context/AlertContext';
-import { authApi, getPushToken } from '@/api/auth';
-import { getLastPushToken } from '@/api/auth';
+import { authApi } from '@/api/auth';
 import { otpApi } from '@/api/otp';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { AppButton } from '@/components';
@@ -27,15 +26,10 @@ export default function OTPScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [stagingOtp, setStagingOtp] = useState<string | null>(null);
-  const [pushToken, setPushToken] = useState<string>('');
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    otpApi.sendOtp(email, 0, type ?? 'user').then(res => {
-      setStagingOtp(res.data.otp_code);
-    }).catch(() => {});
-    getPushToken().then(t => setPushToken(t)).catch(() => {});
+    otpApi.sendOtp(email, 0, type ?? 'user').catch(() => {});
   }, []);
 
   const handleVerify = async () => {
@@ -58,8 +52,7 @@ export default function OTPScreen() {
   const handleResend = async () => {
     setResending(true);
     try {
-      const res = await otpApi.sendOtp(email, 0, type ?? 'user');
-      setStagingOtp(res.data.otp_code);
+      await otpApi.sendOtp(email, 0, type ?? 'user');
       alert.showAlert({ title: 'OTP Sent', message: 'A new code has been sent to your email', type: 'success' });
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Failed to resend', type: 'error' });
@@ -84,32 +77,6 @@ export default function OTPScreen() {
         <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginTop: space.sm }]}>
           A verification code has been sent to{' '}
           <Text style={{ color: colors.accent.purple, fontWeight: '700' }}>{email}</Text>
-        </Text>
-      </View>
-
-      {stagingOtp && (
-        <View style={[styles.stagingBanner, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.30)' }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs }}>
-            <AlertTriangle size={18} color="#F59E0B" />
-            <Text style={[typography.captionBold, { color: '#F59E0B', fontFamily: 'DMSans-Bold' }]}>
-              SISTEM OTP INI HANYA UNTUK STAGING!
-            </Text>
-          </View>
-          <Text style={[typography.bodyBold, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
-            Your code: {stagingOtp}
-          </Text>
-        </View>
-      )}
-
-      <View style={[styles.stagingBanner, { backgroundColor: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)' }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.xs }}>
-          <AlertTriangle size={18} color={colors.accent.purple} />
-          <Text style={[typography.captionBold, { color: colors.accent.purple, fontFamily: 'DMSans-Bold' }]}>
-            ⚡ PUSH TOKEN
-          </Text>
-        </View>
-        <Text style={[typography.bodyBold, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold', fontSize: 12 }]}>
-          {pushToken || getLastPushToken() || 'Loading...'}
         </Text>
       </View>
 
@@ -170,9 +137,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
   },
   resendBtn: { alignItems: 'center', paddingVertical: space.sm },
-  stagingBanner: {
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: space.lg, paddingVertical: space.md,
-    marginBottom: space.xl, alignItems: 'center',
-  },
 });
