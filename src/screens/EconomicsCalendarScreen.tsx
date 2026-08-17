@@ -181,6 +181,13 @@ export default function EconomicsCalendarScreen({ navigation }: EconProps) {
           />
         )}
       </ScrollView>
+
+      {/* Sticky data-source footnote (golden accent) */}
+      <View style={styles.footnote}>
+        <Text style={[typography.label, { color: colors.accent.gold, textAlign: 'center' }]}>
+          Economic calendar data provided by Forex Factory · forexfactory.com
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -218,4 +225,11 @@ const styles = StyleSheet.create({
   },
   dayLine: { flex: 1, height: 1, backgroundColor: colors.glass.border },
   impactDot: { width: 6, height: 6, borderRadius: 3 },
+  footnote: {
+    paddingHorizontal: space['2xl'],
+    paddingVertical: space.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212,175,55,0.25)',
+    backgroundColor: colors.bg.primary,
+  },
 });
