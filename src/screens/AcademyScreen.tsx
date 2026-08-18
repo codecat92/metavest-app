@@ -36,6 +36,8 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'courses' | 'instructors'>('courses');
+  const [courseFilter, setCourseFilter] = useState<'all' | 'free' | 'paid'>('all');
+  const courseFilterRef = useRef<'all' | 'free' | 'paid'>('all');
 
   const coursePage = useRef(1);
   const instructorPage = useRef(1);
@@ -47,7 +49,8 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
   // ── Data fetching ──
 
   const fetchCourses = useCallback(async (page: number) => {
-    const res = await academyNewApi.getCourses(page);
+    const f = courseFilterRef.current;
+    const res = await academyNewApi.getCourses(page, f === 'all' ? undefined : f);
     const { items, pagination } = res.data;
     hasMoreCourses.current = pagination.current_page < pagination.last_page;
     if (page === 1) {
@@ -56,6 +59,15 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
       setCourses(prev => [...prev, ...items]);
     }
   }, []);
+
+  const handleCourseFilterChange = useCallback((f: 'all' | 'free' | 'paid') => {
+    if (f === courseFilterRef.current) return;
+    setCourseFilter(f);
+    courseFilterRef.current = f;
+    coursePage.current = 1;
+    hasMoreCourses.current = false;
+    fetchCourses(1).catch(() => {});
+  }, [fetchCourses]);
 
   const fetchInstructors = useCallback(async (page: number) => {
     const res = await academyNewApi.getInstructors(page);
@@ -285,6 +297,23 @@ export default function AcademyScreen({ navigation }: AcademyProps) {
         </TouchableOpacity>
       </View>
 
+      {/* Course type filter */}
+      {tab === 'courses' && (
+        <View style={styles.filterRow}>
+          {(['all', 'free', 'paid'] as const).map(f => (
+            <TouchableOpacity
+              key={f}
+              onPress={() => handleCourseFilterChange(f)}
+              style={[styles.filterChip, courseFilter === f && styles.filterChipActive]}
+            >
+              <Text style={[styles.filterChipText, courseFilter === f && styles.filterChipTextActive]}>
+                {f === 'all' ? 'All' : f === 'free' ? 'Free' : 'Paid'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Content */}
       {loading ? (
         <View style={{ paddingHorizontal: space['2xl'], gap: space.sm }}>
@@ -406,6 +435,26 @@ const styles = StyleSheet.create({
   tabBtnActive: { backgroundColor: colors.accent.purple, borderColor: colors.accent.purple },
   tabText: { fontSize: 12, fontWeight: '700', color: colors.text.secondary, fontFamily: 'DMSans-Bold' },
   tabTextActive: { color: '#fff' },
+
+  filterRow: {
+    flexDirection: 'row', gap: space.sm,
+    paddingHorizontal: space['2xl'], marginBottom: space.lg,
+  },
+  filterChip: {
+    paddingHorizontal: space.lg, paddingVertical: space.sm,
+    borderRadius: radius.full, borderWidth: 1,
+    backgroundColor: colors.glass.g1,
+    borderColor: colors.glass.border,
+  },
+  filterChipActive: {
+    backgroundColor: colors.accent.gold,
+    borderColor: colors.accent.gold,
+  },
+  filterChipText: {
+    fontSize: 12, fontWeight: '600',
+    color: colors.text.secondary, fontFamily: 'DMSans-SemiBold',
+  },
+  filterChipTextActive: { color: '#0E1439' },
 
   listContent: { paddingHorizontal: space['2xl'], paddingBottom: 100, gap: space.sm },
 

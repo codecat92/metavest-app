@@ -82,7 +82,7 @@ export default function PortfolioScreen() {
     `${amount.toLocaleString('en-US')} MP`;
 
   const isCredit = (item: WalletTransaction) =>
-    item.type_label === 'Topup' || item.type_label === 'Refund';
+    item.type_label === 'Topup' || item.type_label === 'Refund' || item.type_label === 'Academy Earning';
 
   const isApproved = (item: WalletTransaction) =>
     item.status_label === 'Approved';
@@ -135,6 +135,7 @@ export default function PortfolioScreen() {
       case 'Purchase':   return <ShoppingBag size={18} color={colors.semantic.negative} />;
       case 'Refund':     return <RotateCcw size={18} color={colors.semantic.positive} />;
       case 'Adjustment': return <ArrowDownRight size={18} color={colors.semantic.negative} />;
+      case 'Academy Earning': return <TrendingUp size={18} color={colors.semantic.positive} />;
       default:           return <ArrowDownRight size={18} color={colors.semantic.negative} />;
     }
   };

@@ -10,8 +10,10 @@ export interface Wallet {
 
 export interface WalletTransaction {
   id: string;
-  type: 'topup' | 'purchase' | 'refund' | 'adjustment';
-  status: 'pending' | 'approved' | 'rejected';
+  type: number;
+  status: number;
+  type_label: string;
+  status_label: string;
   amount: number;
   balance_before: number;
   balance_after: number | null;

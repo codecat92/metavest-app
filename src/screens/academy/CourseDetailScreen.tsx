@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity, ActivityIndicator,
+  TouchableOpacity, ActivityIndicator, Modal,
 } from 'react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -46,6 +46,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [showPayConfirm, setShowPayConfirm] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewTotal, setReviewTotal] = useState(0);
   const [failedReviewAvatars, setFailedReviewAvatars] = useState<Set<number>>(new Set());
@@ -137,6 +138,25 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
 
   const instructorInitial = (typeof course?.instructor.name === 'string' ? course.instructor.name : '?').charAt(0).toUpperCase();
 
+  const doEnroll = useCallback(async () => {
+    setEnrolling(true);
+    try {
+      await academyNewApi.enroll(courseId);
+      setEnrolled(true);
+      setCourse(prev => prev ? { ...prev, total_students: prev.total_students + 1 } : prev);
+      showAlert({ title: 'Success', message: 'Enrolled successfully!', type: 'success' });
+    } catch (e: any) {
+      showAlert({ title: 'Error', message: e?.message ?? 'Failed to enroll' });
+    } finally {
+      setEnrolling(false);
+    }
+  }, [courseId, showAlert]);
+
+  const handleConfirmPay = useCallback(() => {
+    setShowPayConfirm(false);
+    doEnroll();
+  }, [doEnroll]);
+
   const handleEnroll = useCallback(async () => {
     if (!isLoggedIn) {
       navigation.navigate('Login' as any);
@@ -173,18 +193,12 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
       }
       return;
     }
-    setEnrolling(true);
-    try {
-      await academyNewApi.enroll(courseId);
-      setEnrolled(true);
-      setCourse(prev => prev ? { ...prev, total_students: prev.total_students + 1 } : prev);
-      showAlert({ title: 'Success', message: 'Enrolled successfully!', type: 'success' });
-    } catch (e: any) {
-      showAlert({ title: 'Error', message: e?.message ?? 'Failed to enroll' });
-    } finally {
-      setEnrolling(false);
+    if (course?.type === 'paid') {
+      setShowPayConfirm(true);
+      return;
     }
-  }, [isLoggedIn, enrolled, courseId, navigation, showAlert, course, progress]);
+    await doEnroll();
+  }, [isLoggedIn, enrolled, course, courseId, navigation, showAlert, progress, doEnroll]);
 
   // ── Loading ──
 
@@ -498,7 +512,7 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
           </View>
         ) : (
           <AppButton
-            title={!isLoggedIn ? 'Login to Enroll' : checkingEnrollment ? 'Loading...' : enrolled ? 'Continue Learning' : 'Enroll Now — Free'}
+            title={!isLoggedIn ? 'Login to Enroll' : checkingEnrollment ? 'Loading...' : enrolled ? 'Continue Learning' : (course.type === 'paid' ? `Enroll Now — ${course.price} MP` : 'Enroll Now — Free')}
             variant="primary"
             size="lg"
             onPress={handleEnroll}
@@ -508,6 +522,27 @@ export default function CourseDetailScreen({ route, navigation }: Props) {
           />
         )}
       </View>
+
+      {showPayConfirm && course && (
+        <Modal visible transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
+            <GlassCard elevation={4}>
+              <View style={{ alignItems: 'center', gap: space.md }}>
+                <Text style={[typography.h4, { color: c.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
+                  Konfirmasi Pembelian
+                </Text>
+                <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center' }]}>
+                  Anda akan membayar {course.price} MP untuk course ini
+                </Text>
+                <View style={{ flexDirection: 'row', gap: space.md, alignSelf: 'stretch', marginTop: space.md }}>
+                  <AppButton title="Batal" variant="ghost" onPress={() => setShowPayConfirm(false)} style={{ flex: 1 }} />
+                  <AppButton title="Setuju" variant="primary" onPress={handleConfirmPay} style={{ flex: 1 }} />
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }

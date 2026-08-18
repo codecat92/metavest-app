@@ -60,10 +60,10 @@ async function academyFetch<T>(
 export const academyNewApi = {
   // ── Public (no token required) ──
 
-  /** List published courses — paginated */
-  getCourses: (page = 1) =>
+  /** List published courses — paginated, optional type filter (free/paid) */
+  getCourses: (page = 1, type?: 'free' | 'paid') =>
     academyFetch<AcademyPaginatedResponse<CourseListItem>>(
-      `/academy/courses?page=${page}`,
+      `/academy/courses?page=${page}${type ? `&type=${type}` : ''}`,
     ),
 
   /** Single course detail */

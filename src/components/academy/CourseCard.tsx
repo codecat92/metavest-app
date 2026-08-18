@@ -51,21 +51,26 @@ export default function CourseCard({ course, onPress }: CourseCardProps) {
         {/* ── Thumbnail 16:9 ── */}
         <View style={styles.thumbWrap}>
           {imageSrc ? (
-            <>
-              {console.log('🖼️ rendering image:', imageSrc)}
-              <Image
-                source={{ uri: imageSrc }}
-                style={styles.thumb}
-                resizeMode="cover"
-                onError={(e) => console.log('❌ Image error:', e.nativeEvent.error)}
-                onLoad={() => console.log('✅ Image loaded!')}
-              />
-            </>
+            <Image
+              source={{ uri: imageSrc }}
+              style={styles.thumb}
+              resizeMode="cover"
+            />
           ) : (
             <View style={[styles.thumbPlaceholder, { backgroundColor: c.glass.g2 }]}>
               <BookOpen size={32} color={c.text.muted} />
             </View>
           )}
+
+          {/* FREE / PAID tag */}
+          <View style={[
+            styles.priceTag,
+            { backgroundColor: course.type === 'paid' ? 'rgba(212,175,55,0.92)' : 'rgba(34,197,94,0.92)' },
+          ]}>
+            <Text style={styles.priceTagText}>
+              {course.type === 'paid' ? `PAID · ${course.price} MP` : 'FREE'}
+            </Text>
+          </View>
         </View>
 
         {/* ── Info ── */}
@@ -144,6 +149,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  priceTag: {
+    position: 'absolute',
+    top: space.sm,
+    left: space.sm,
+    paddingHorizontal: space.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  priceTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#fff',
+    fontFamily: 'DMSans-Bold',
   },
 
   badgeRow: {

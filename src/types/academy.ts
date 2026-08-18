@@ -14,6 +14,8 @@ export type CourseStatus =
 
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 
+export type CourseType = 'free' | 'paid';
+
 export type InstructorStatus =
   | 'pending'
   | 'active'
@@ -95,6 +97,8 @@ export type CourseListItem = {
   description: string;
   thumbnail_url: string | null;
   level: CourseLevel;
+  type: CourseType;
+  price: number;
   specialization: string;
   instructor: CourseInstructor;
   average_rating: number;
