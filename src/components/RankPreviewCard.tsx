@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ChevronRight, Shield } from 'lucide-react-native';
 import { getToken, BASE_URL } from '@/api/client';
-import { useColors, space, typography } from '@/theme';
+import { useColors, useTheme, space, typography } from '@/theme';
 import GlassCard from '@/components/GlassCard';
 import Skeleton from '@/components/Skeleton';
 import { rankIcons, tierColors, type RankProgress } from '@/constants/rank';
@@ -12,6 +12,7 @@ import { rankIcons, tierColors, type RankProgress } from '@/constants/rank';
 export default function RankPreviewCard() {
   const navigation = useNavigation<any>();
   const c = useColors();
+  const { isDark } = useTheme();
   const [data, setData] = useState<RankProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,14 +57,14 @@ export default function RankPreviewCard() {
     <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('MyRank')} style={styles.wrap}>
       <GlassCard elevation={3} style={{ overflow: 'hidden', padding: 0 }}>
         <LinearGradient
-          colors={[tier.gradient, '#1b2140']}
+          colors={isDark ? [tier.gradient, '#1b2140'] : [tier.gradientLight, c.bg.elevated]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ padding: space.xl }}
         >
           <View
             pointerEvents="none"
-            style={{ position: 'absolute', top: -16, right: -24, opacity: 0.10 }}
+            style={{ position: 'absolute', top: -16, right: -24, opacity: isDark ? 0.10 : 0.16 }}
           >
             <RankIcon size={110} color={tier.ring} />
           </View>
@@ -89,7 +90,7 @@ export default function RankPreviewCard() {
                 <Text style={[typography.caption, { color: c.text.secondary }]}>Menuju {next.rank_name}</Text>
                 <Text style={[typography.caption, { color: tier.ring }]}>{pct}%</Text>
               </View>
-              <View style={{ height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
+              <View style={{ height: 5, borderRadius: 3, backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <View style={{ height: 5, borderRadius: 3, backgroundColor: tier.ring, width: `${pct}%` }} />
               </View>
             </View>

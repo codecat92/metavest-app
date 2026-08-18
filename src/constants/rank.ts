@@ -32,10 +32,10 @@ export const rankColors: Record<number, string> = {
   5: '#E01E5A',
 };
 
-export const tierColors: Record<number, { ring: string; gradient: string }> = {
-  1: { ring: '#b8bcc9', gradient: '#3a3f4d' },
-  2: { ring: '#d99a5f', gradient: '#4a3020' },
-  3: { ring: '#c9cbd6', gradient: '#3a3d4a' },
-  4: { ring: '#f0c96b', gradient: '#4a3f10' },
-  5: { ring: '#c9a8f0', gradient: '#2a2450' },
+export const tierColors: Record<number, { ring: string; gradient: string; gradientLight: string }> = {
+  1: { ring: '#b8bcc9', gradient: '#3a3f4d', gradientLight: '#ccd3dd' },
+  2: { ring: '#d99a5f', gradient: '#4a3020', gradientLight: '#ecc9a6' },
+  3: { ring: '#c9cbd6', gradient: '#3a3d4a', gradientLight: '#e2e7ee' },
+  4: { ring: '#f0c96b', gradient: '#4a3f10', gradientLight: '#f8e6b0' },
+  5: { ring: '#c9a8f0', gradient: '#2a2450', gradientLight: '#e8e0f8' },
 };
