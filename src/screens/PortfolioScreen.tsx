@@ -766,6 +766,14 @@ export default function PortfolioScreen() {
                   <Text style={[typography.caption, { color: colors.text.secondary }]}>Type</Text>
                   <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold' }]}>{selectedTransaction.type_label ?? selectedTransaction.type}</Text>
                 </View>
+                {selectedTransaction.reference_name ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: space.md }}>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>Purchase Item</Text>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, fontFamily: 'DMSans-SemiBold', flex: 1, textAlign: 'right' }]}>
+                      {selectedTransaction.reference_name}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={[typography.caption, { color: colors.text.secondary }]}>Amount</Text>
                   <Text style={[typography.bodyBold, {

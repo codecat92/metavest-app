@@ -18,6 +18,9 @@ export interface WalletTransaction {
   balance_before: number;
   balance_after: number | null;
   rejection_reason: string | null;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  reference_name?: string | null;
   created_at: string;
 }
 
