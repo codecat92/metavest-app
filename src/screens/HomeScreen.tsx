@@ -360,14 +360,17 @@ function AcademyCard({ onPress }: { onPress: () => void }) {
   );
 }
 
-// KOMPONEN: AnimatedNewsFeed — Daftar berita dengan animasi scroll vertikal otomatis
+// KOMPONEN: AnimatedNewsFeed — Daftar berita scroll manual dengan loop tak berujung
 let globalNewsCache: { title: string; time: string; tag: string }[] | null = null;
 let globalNewsCacheTime = 0;
 const CACHE_TTL = 15 * 60 * 1000;
 
-function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
+function AnimatedNewsFeed({ onPress, onItemPress }: {
+  onPress: () => void;
+  onItemPress?: (item: { title: string; time: string; tag: string }) => void;
+}) {
   const d = useColors();
-  const translateY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
   const [items, setItems] = useState<{ title: string; time: string; tag: string }[]>([]);
 
   useFocusEffect(
@@ -414,53 +417,72 @@ function AnimatedNewsFeed({ onPress }: { onPress: () => void }) {
   const VISIBLE_COUNT = 4;
   const ITEM_HEIGHT = 72;
   const totalHeight = VISIBLE_COUNT * ITEM_HEIGHT;
+  const rowPitch = ITEM_HEIGHT + space.sm;               // tinggi tiap item = height + marginBottom
+  const segmentHeight = displayItems.length * rowPitch;  // tinggi SATU segmen
+  const looped = [...displayItems, ...displayItems, ...displayItems];
 
+  // Saat pertama mount / data berubah → scroll ke segmen tengah (posisi normal)
   useEffect(() => {
     if (!hasArticles) return;
-    const anim = Animated.loop(
-      Animated.timing(translateY, {
-        toValue: -totalHeight,
-        duration: Math.max(displayItems.length * 8000, 12000),
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [totalHeight, hasArticles]);
+    const id = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y: segmentHeight, animated: false });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [segmentHeight, hasArticles]);
 
-  const doubled = [...displayItems, ...displayItems];
+  // Loop tak berujung: begitu user hampir keluar segmen tengah, lompat ke segmen seberang
+  const handleMomentumScrollEnd = (e: any) => {
+    const y = e.nativeEvent.contentOffset.y;
+    if (y < segmentHeight * 0.5) {
+      scrollRef.current?.scrollTo({ y: y + segmentHeight, animated: false });
+    } else if (y > segmentHeight * 1.5) {
+      scrollRef.current?.scrollTo({ y: y - segmentHeight, animated: false });
+    }
+  };
 
   const renderItem = (item: { title: string; time: string; tag: string }, key: number) => {
     const tagColor = tagColors[item.tag] ?? d.text.secondary;
     return (
-      <View key={key} style={newsStyles.item}>
-        <View style={[newsStyles.tag, {
-          backgroundColor: `${tagColor}18`,
-          borderColor: `${tagColor}44`,
-        }]}>
-          <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
+      <TouchableOpacity
+        key={key}
+        onPress={() => (onItemPress ? onItemPress(item) : onPress())}
+        activeOpacity={0.9}
+      >
+        <View style={newsStyles.item}>
+          <View style={[newsStyles.tag, {
+            backgroundColor: `${tagColor}18`,
+            borderColor: `${tagColor}44`,
+          }]}>
+            <Text style={[newsStyles.tagText, { color: tagColor }]}>{item.tag}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[newsStyles.title, { color: d.text.primary }]} numberOfLines={2}>{item.title}</Text>
+            <Text style={[newsStyles.time, { color: d.text.secondary }]}>{item.time}</Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[newsStyles.title, { color: d.text.primary }]} numberOfLines={2}>{item.title}</Text>
-          <Text style={[newsStyles.time, { color: d.text.secondary }]}>{item.time}</Text>
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <View style={{ height: totalHeight, overflow: 'hidden', position: 'relative' }}>
-        {hasArticles ? (
-          <Animated.View style={{ transform: [{ translateY }] }}>
-            {doubled.map((item, i) => renderItem(item, i))}
-          </Animated.View>
-        ) : (
-          renderItem(displayItems[0], 0)
-        )}
+    <View>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: space.sm }}>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={newsStyles.seeAllBtn}>
+          <Text style={[newsStyles.seeAllText, { color: d.accent.purple }]}>Lihat Semua →</Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+
+      <ScrollView
+        ref={scrollRef}
+        style={{ height: totalHeight }}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        scrollEnabled={hasArticles}
+        onMomentumScrollEnd={hasArticles ? handleMomentumScrollEnd : undefined}
+      >
+        {hasArticles ? looped.map((item, i) => renderItem(item, i)) : renderItem(displayItems[0], 0)}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -480,6 +502,16 @@ const newsStyles = StyleSheet.create({
   tagText: { fontSize: 10, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   title: { fontSize: 12, fontWeight: '600', color: colors.text.primary, lineHeight: 17, fontFamily: 'DMSans-SemiBold' },
   time: { fontSize: 11, color: colors.text.secondary, marginTop: space.xs, fontFamily: 'DMSans' },
+  seeAllBtn: {
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+    borderRadius: radius.sm,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'DMSans-Bold',
+  },
 });
 
 export default function HomeScreen() {
@@ -709,7 +741,7 @@ export default function HomeScreen() {
 
       {showPammLockModal && (
         <Modal visible transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.95)', justifyContent: 'center', padding: space.xl }}>
             <GlassCard elevation={4}>
               <View style={{ alignItems: 'center', gap: space.md }}>
                 <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center' }}>
@@ -735,7 +767,7 @@ export default function HomeScreen() {
 
       {showAnnouncementModal && announcement && (
         <Modal visible transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.85)', justifyContent: 'center', padding: space.xl }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.95)', justifyContent: 'center', padding: space.xl }}>
             <GlassCard elevation={4}>
               <TouchableOpacity
                 onPress={handleCloseAnnouncement}
