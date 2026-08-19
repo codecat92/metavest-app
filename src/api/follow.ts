@@ -9,6 +9,8 @@ export interface UserTrader {
   status: number;
   follower_count?: number;
   follow_status?: string;
+  is_trader_subscribed?: boolean;
+  subscription_price?: number;
   created_at?: string;
 }
 

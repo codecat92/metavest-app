@@ -7,11 +7,12 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
+import { walletApi } from '@/api/wallet';
 import { getToken, BASE_URL } from '@/api/client';
-import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, EmptyState, Skeleton, Badge } from '@/components';
+import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 
 const avatarColors = [colors.accent.purple, colors.accent.gold, colors.semantic.positive, colors.semantic.negative, '#8855CC'];
 const STORAGE_HOST = BASE_URL.replace(/\/api$/, '');
@@ -22,32 +23,25 @@ export default function TradersScreen() {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
-  const [followMap, setFollowMap] = useState<Record<string, number>>({});
+  const [subscribedSet, setSubscribedSet] = useState<Set<string>>(new Set());
   const [brokenAvatars, setBrokenAvatars] = useState<Set<string>>(new Set());
-  const alert = useCustomAlert();
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
   const { user, userType } = useAuth();
 
   const loadTraders = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
     try {
-      const [activeRes, followedRes] = await Promise.all([
-        followApi.getActive(1),
-        followApi.getFollowed(1),
-      ]);
+      const activeRes = await followApi.getActive(1);
       setTraders(activeRes.data ?? []);
 
-      const followed = new Set<string>();
+      const subscribed = new Set<string>();
       (activeRes.data ?? []).forEach(t => {
-        if (t.follow_status === '1') followed.add(t.id);
+        if (t.is_trader_subscribed) subscribed.add(t.id);
       });
-      setFollowedSet(followed);
+      setSubscribedSet(subscribed);
 
-      const map: Record<string, number> = {};
-      (followedRes.data ?? []).forEach((f: any) => {
-        if (f.trader_id) map[f.trader_id] = f.id;
-      });
-      setFollowMap(map);
+      walletApi.getBalance().then(r => setWalletBalance(r.data?.balance ?? 0)).catch(() => {});
     } catch (e) {
       console.log('Failed to load traders:', e);
     } finally {
@@ -59,29 +53,10 @@ export default function TradersScreen() {
     useCallback(() => { setLoading(true); loadTraders(); }, [loadTraders])
   );
 
-  const handleFollow = async (traderId: string) => {
-    try {
-      await followApi.follow(traderId);
-      setFollowedSet(prev => { const n = new Set(prev); n.add(traderId); return n; });
-      alert.showAlert({ title: 'Success', message: 'You are now following this trader', type: 'success' });
-      setTimeout(() => loadTraders(), 500);
-    } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
-    }
-  };
-
-  const handleUnfollow = async (traderId: string) => {
-    const followId = followMap[traderId];
-    if (!followId) return;
-    try {
-      await followApi.unfollow(followId, traderId);
-      setFollowedSet(prev => { const n = new Set(prev); n.delete(traderId); return n; });
-      alert.showAlert({ title: 'Done', message: 'Unfollowed this trader', type: 'success' });
-      setTimeout(() => loadTraders(), 500);
-    } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
-    }
-  };
+  const handleSubscribed = useCallback((traderId: string, newBalance: number) => {
+    setSubscribedSet(prev => new Set(prev).add(traderId));
+    setWalletBalance(newBalance);
+  }, []);
 
   const currentTraderId = userType === 'trader' ? (user as any)?.id : null;
   const isTraderViewer = userType === 'trader';
@@ -139,7 +114,7 @@ export default function TradersScreen() {
         ) : (
           <View style={styles.cardList}>
             {sorted.map((trader, i) => {
-              const isFollowed = followedSet.has(trader.id);
+              const isSubscribed = subscribedSet.has(trader.id);
               const isBroken = brokenAvatars.has(trader.id);
               const initials = (typeof trader.name === 'string' ? trader.name : 'TR').substring(0, 2).toUpperCase();
               const avatarColor = avatarColors[i % avatarColors.length];
@@ -182,11 +157,18 @@ export default function TradersScreen() {
                       </View>
                     ) : (
                       <TouchableOpacity
-                        onPress={() => isFollowed ? handleUnfollow(trader.id) : handleFollow(trader.id)}
-                        style={[styles.followBtn, isFollowed && styles.followBtnActive]}
+                        onPress={() => setSubscribeModal({
+                          trader: {
+                            id: trader.id,
+                            name: trader.name ?? 'Trader',
+                            avatar_url: trader.profile_image_src ?? null,
+                          },
+                          price: trader.subscription_price ?? 0,
+                        })}
+                        style={[styles.followBtn, isSubscribed && styles.followBtnActive]}
                       >
-                        <Text style={[styles.followBtnText, isFollowed && styles.followBtnTextActive]}>
-                          {isFollowed ? 'Following' : 'Follow'}
+                        <Text style={[styles.followBtnText, isSubscribed && styles.followBtnTextActive]}>
+                          {isSubscribed ? 'Subscribed' : 'Subscribe Signal'}
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -216,6 +198,15 @@ export default function TradersScreen() {
           </View>
         )}
       </ScrollView>
+
+      <SubscribeTraderModal
+        visible={subscribeModal !== null}
+        trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
+        price={subscribeModal?.price ?? 0}
+        walletBalance={walletBalance}
+        onClose={() => setSubscribeModal(null)}
+        onSubscribed={handleSubscribed}
+      />
     </SafeAreaView>
   );
 }
