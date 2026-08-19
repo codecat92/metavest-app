@@ -194,7 +194,7 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
 
           {/* ── Price Type ── */}
           <View>
-            <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>SIGNAL PRICE</Text>
+            <Text style={[typography.captionBold, { color: c.text.secondary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>SIGNAL PRICE (MONTHLY)</Text>
             <View style={styles.segmentedRow}>
               <TouchableOpacity onPress={() => setPrice(1)} style={[styles.segBtn, price === 1 && { backgroundColor: c.semantic.positive, borderColor: c.semantic.positive }, price !== 1 && { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <Text style={[typography.captionBold, { color: price === 1 ? '#fff' : c.text.secondary }]}>FREE</Text>
@@ -203,11 +203,14 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
                 <Text style={[typography.captionBold, { color: price === 2 ? '#1A1A2E' : c.text.secondary }]}>PAID</Text>
               </TouchableOpacity>
             </View>
+            <Text style={[typography.label, { color: c.text.muted, marginTop: space.sm }]}>
+              Harga berlangganan per bulan (Metapoint) untuk akses semua signal berbayar dari trader ini.
+            </Text>
             {price === 2 && (
               <View style={{ marginTop: space.sm }}>
                 <TextInput
                   style={[fieldStyle, { borderColor: errors.priceValue ? c.semantic.negative : c.glass.border }]}
-                  placeholder="Price value"
+                  placeholder="Harga per bulan (MP)"
                   placeholderTextColor={c.text.muted}
                   keyboardType="numeric"
                   value={priceValue}
