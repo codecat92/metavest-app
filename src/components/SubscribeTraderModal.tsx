@@ -2,10 +2,11 @@ import { View, Text, Modal, Image, StyleSheet } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { AlertTriangle, Gem } from 'lucide-react-native';
-import { signalsApi, TraderSubscriptionSuccess } from '@/api/signals';
+import { signalsApi, TraderSubscriptionSuccess, TraderSubscriptionError } from '@/api/signals';
 import { BASE_URL } from '@/api/client';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
+import { useCustomAlert } from '@/context/AlertContext';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -37,6 +38,7 @@ export default function SubscribeTraderModal({
 }: Props) {
   const navigation = useNavigation<ModalNavProp>();
   const c = useColors();
+  const { showAlert } = useCustomAlert();
   const [subscribing, setSubscribing] = useState(false);
   const [insufficient, setInsufficient] = useState(false);
 
@@ -61,13 +63,22 @@ export default function SubscribeTraderModal({
         onClose();
       } else if (res.status === 402) {
         setInsufficient(true);
+      } else {
+        const err = (res.data as TraderSubscriptionError)?.error
+          ?? (res.data as any)?.message
+          ?? 'Subscribe failed. Please try again.';
+        showAlert({ title: 'Error', message: err, type: 'error' });
       }
-    } catch (e) {
-      console.log('Subscribe failed:', e);
+    } catch (e: any) {
+      showAlert({
+        title: 'Error',
+        message: e?.message || 'Subscribe failed. Check your connection and try again.',
+        type: 'error',
+      });
     } finally {
       setSubscribing(false);
     }
-  }, [subscribing, trader.id, walletBalance, onClose, onSubscribed]);
+  }, [subscribing, trader.id, walletBalance, onClose, onSubscribed, showAlert]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

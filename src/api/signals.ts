@@ -133,7 +133,12 @@ export const signalsApi = {
       },
       body: JSON.stringify({ trader_id: traderId }),
     });
-    const json = await res.json();
+    let json: any = {};
+    try {
+      json = await res.json();
+    } catch {
+      json = {};
+    }
     return { status: res.status, data: json };
   },
 
