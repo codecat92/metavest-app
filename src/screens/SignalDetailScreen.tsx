@@ -2,19 +2,22 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, ActivityIndicator, Linking, Image, Share,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useCallback, useEffect, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
-  Share2, Zap, Clock, Target, Eye, AlertTriangle, Tag, Gem, User,
+  Share2, Zap, Clock, Target, Eye, AlertTriangle, Tag, Gem, User, Lock,
 } from 'lucide-react-native';
 import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
+import { walletApi } from '@/api/wallet';
 import { useCustomAlert } from '@/context/AlertContext';
-import { colors, useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard } from '@/components';
+import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -34,6 +37,7 @@ async function saveLikedIds(ids: number[]) {
 export default function SignalDetailScreen() {
   const route = useRoute<any>();
   const c = useColors();
+  const { isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const alert = useCustomAlert();
   const signalId: number = route.params?.signalId;
@@ -42,12 +46,16 @@ export default function SignalDetailScreen() {
   const [liked, setLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(0);
   const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
+  const [subscribed, setSubscribed] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       const res = await signalsApi.getById(signalId);
       const s = res.data;
       setSignal(s);
+      setSubscribed(s.is_trader_subscribed ?? false);
       setLocalLikes(s.likes ?? 0);
       const cachedIds = await getLikedIds();
       setLiked(s.is_liked === 1 || cachedIds.includes(signalId));
@@ -63,8 +71,14 @@ export default function SignalDetailScreen() {
     settingsApi.getTradeUrl().then(res => {
       if (res.data?.url) setTradeUrl(res.data.url);
     }).catch(() => {});
+    walletApi.getBalance().then(res => setWalletBalance(res.data?.balance ?? 0)).catch(() => {});
     loadData();
   }, [loadData]);
+
+  const handleSubscribed = useCallback((traderId: string, newBalance: number) => {
+    setSubscribed(true);
+    setWalletBalance(newBalance);
+  }, []);
 
   const handleLike = async () => {
     if (!signal) return;
@@ -116,6 +130,58 @@ export default function SignalDetailScreen() {
   const pairName = signal.currency_name ?? `Pair #${signal.currency}`;
   const typeName = signal.signal_type_name ?? 'SIGNAL';
   const rt = signal.risk_reward_ratio;
+  const isPaid = (signal.price_value ?? 0) > 0;
+  const locked = isPaid && !subscribed;
+
+  const sensitiveSection = (
+    <>
+      {/* Price Card */}
+      <GlassCard elevation={2} style={styles.priceCard}>
+        <View style={styles.priceRow}>
+          {[
+            { label: 'Entry', value: formatPrice(signal.open_price, signal.currency), color: c.text.primary },
+            { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency), color: c.semantic.positive },
+            { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency), color: c.semantic.negative },
+          ].map((p) => (
+            <View key={p.label} style={styles.priceItem}>
+              <Text style={[styles.priceLabel, { color: c.text.secondary }]}>{p.label}</Text>
+              <Text style={[styles.priceValue, { color: p.color }]}>{p.value}</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+
+      {/* Trading Info */}
+      <GlassCard elevation={2} style={styles.infoCard}>
+        <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADING INFO</Text>
+        <View style={styles.metricsRow}>
+          <View style={styles.metricItem}>
+            <Target size={14} color={c.accent.purple} />
+            <Text style={[styles.metricLabel, { color: c.text.secondary }]}>R:R</Text>
+            <Text style={[styles.metricValue, { color: c.accent.purple }]}>{rt ? `1:${rt}` : '-'}</Text>
+          </View>
+          <View style={styles.metricItem}>
+            <Clock size={14} color={c.accent.gold} />
+            <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Risk/Trade</Text>
+            <Text style={[styles.metricValue, { color: c.text.primary }]}>{signal.risk_per_one_trade ?? '-'}</Text>
+          </View>
+          <View style={styles.metricItem}>
+            {signal.price_value > 0 ? <Gem size={14} color={c.accent.gold} /> : <Tag size={14} color={c.semantic.positive} />}
+            <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Price</Text>
+            <Text style={[styles.metricValue, { color: signal.price_value > 0 ? c.accent.gold : c.semantic.positive }]}>{signal.price_value > 0 ? 'PAID' : 'FREE'}</Text>
+          </View>
+        </View>
+      </GlassCard>
+
+      {/* Notes */}
+      {signal.notes ? (
+        <GlassCard elevation={2} style={styles.infoCard}>
+          <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADER NOTES</Text>
+          <Text style={[styles.notesText, { color: c.text.secondary }]}>{signal.notes}</Text>
+        </GlassCard>
+      ) : null}
+    </>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -165,43 +231,42 @@ export default function SignalDetailScreen() {
           <Text style={[styles.pairType, { color: c.text.secondary }]}>{typeName}</Text>
         </View>
 
-        {/* Price Card */}
-        <GlassCard elevation={2} style={styles.priceCard}>
-          <View style={styles.priceRow}>
-            {[
-              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency), color: c.text.primary },
-              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency), color: c.semantic.positive },
-              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency), color: c.semantic.negative },
-            ].map((p) => (
-              <View key={p.label} style={styles.priceItem}>
-                <Text style={[styles.priceLabel, { color: c.text.secondary }]}>{p.label}</Text>
-                <Text style={[styles.priceValue, { color: p.color }]}>{p.value}</Text>
+        {locked ? (
+          <View style={styles.lockedBox}>
+            {sensitiveSection}
+            <BlurView
+              intensity={isDark ? 25 : 40}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(10,13,22,0.86)' : 'rgba(255,255,255,0.86)' }]} />
+            <View style={styles.lockOverlay}>
+              <View style={styles.lockCircle}>
+                <Lock size={18} color={c.accent.gold} />
               </View>
-            ))}
-          </View>
-        </GlassCard>
-
-        {/* Trading Info */}
-        <GlassCard elevation={2} style={styles.infoCard}>
-          <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADING INFO</Text>
-          <View style={styles.metricsRow}>
-            <View style={styles.metricItem}>
-              <Target size={14} color={c.accent.purple} />
-              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>R:R</Text>
-              <Text style={[styles.metricValue, { color: c.accent.purple }]}>{rt ? `1:${rt}` : '-'}</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Clock size={14} color={c.accent.gold} />
-              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Risk/Trade</Text>
-              <Text style={[styles.metricValue, { color: c.text.primary }]}>{signal.risk_per_one_trade ?? '-'}</Text>
-            </View>
-            <View style={styles.metricItem}>
-              {signal.price_value > 0 ? <Gem size={14} color={c.accent.gold} /> : <Tag size={14} color={c.semantic.positive} />}
-              <Text style={[styles.metricLabel, { color: c.text.secondary }]}>Price</Text>
-              <Text style={[styles.metricValue, { color: signal.price_value > 0 ? c.accent.gold : c.semantic.positive }]}>{signal.price_value > 0 ? 'PAID' : 'FREE'}</Text>
+              <Text style={[styles.lockTitle, { color: c.text.primary }]}>Subscribe to unlock</Text>
+              <Text style={[styles.lockSubtitle, { color: c.text.secondary }]}>
+                {signal.subscription_price ?? 0} MP / month · unlock all paid signals from this trader
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSubscribeModal({
+                  trader: {
+                    id: signal.trader_id ?? '',
+                    name: signal.trader_name ?? 'Trader',
+                    avatar_url: signal.trader_avatar_url ?? null,
+                  },
+                  price: signal.subscription_price ?? 0,
+                })}
+                activeOpacity={0.85}
+                style={[styles.subscribeBtn, { backgroundColor: c.accent.purple }]}
+              >
+                <Text style={styles.subscribeBtnText}>Subscribe</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </GlassCard>
+        ) : (
+          sensitiveSection
+        )}
 
         {/* Engagement */}
         <GlassCard elevation={2} style={styles.infoCard}>
@@ -224,14 +289,6 @@ export default function SignalDetailScreen() {
             </View>
           </View>
         </GlassCard>
-
-        {/* Notes */}
-        {signal.notes ? (
-          <GlassCard elevation={2} style={styles.infoCard}>
-            <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>TRADER NOTES</Text>
-            <Text style={[styles.notesText, { color: c.text.secondary }]}>{signal.notes}</Text>
-          </GlassCard>
-        ) : null}
 
         {/* Disclaimer */}
         <View style={styles.disclaimerRow}>
@@ -260,6 +317,15 @@ export default function SignalDetailScreen() {
           <Text style={[styles.actionText, { color: c.bg.deep }]}>Open MT5</Text>
         </TouchableOpacity>
       </View>
+
+      <SubscribeTraderModal
+        visible={subscribeModal !== null}
+        trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
+        price={subscribeModal?.price ?? 0}
+        walletBalance={walletBalance}
+        onClose={() => setSubscribeModal(null)}
+        onSubscribed={handleSubscribed}
+      />
     </SafeAreaView>
   );
 }
@@ -319,6 +385,38 @@ const styles = StyleSheet.create({
   metricValue: { fontSize: 15, fontWeight: '700', fontFamily: 'Manrope-Bold', marginTop: 2 },
 
   notesText: { fontSize: 13, lineHeight: 20, fontFamily: 'DMSans' },
+
+  lockedBox: {
+    position: 'relative',
+    overflow: 'hidden',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    borderRadius: 20,
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    padding: space.lg,
+  },
+  lockCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: space.xs,
+  },
+  lockTitle: { fontSize: 16, fontWeight: '800', fontFamily: 'Manrope-Bold', textAlign: 'center' },
+  lockSubtitle: { fontSize: 12, fontFamily: 'DMSans', textAlign: 'center' },
+  subscribeBtn: {
+    marginTop: space.xs,
+    paddingHorizontal: space.lg, paddingVertical: space.sm,
+    borderRadius: radius.sm,
+  },
+  subscribeBtnText: {
+    fontSize: 13, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold',
+  },
 
   disclaimerRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,

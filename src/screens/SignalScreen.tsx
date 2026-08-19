@@ -235,7 +235,9 @@ export default function SignalScreen() {
                 <TouchableOpacity
                   key={signal.id}
                   activeOpacity={0.9}
-                  onPress={() => navigation.navigate('SignalDetail', { signalId: signal.id })}
+                  onPress={() => {
+                    if (isUnlocked) navigation.navigate('SignalDetail', { signalId: signal.id });
+                  }}
                   style={[styles.cardOuter, { backgroundColor: colors.glass.g2, borderColor: colors.glass.borderStrong }, expanded && { borderColor: colors.glass.borderStrong }]}
                 >
                   <View style={styles.cardInner}>
@@ -336,6 +338,7 @@ export default function SignalScreen() {
                               tint={isDark ? 'dark' : 'light'}
                               style={StyleSheet.absoluteFill}
                             />
+                            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(10,13,22,0.86)' : 'rgba(255,255,255,0.86)' }]} />
                             <View style={styles.lockOverlay}>
                               <View style={styles.lockCircle}>
                                 <Lock size={16} color={colors.accent.gold} />
