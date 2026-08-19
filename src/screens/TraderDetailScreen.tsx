@@ -1,22 +1,24 @@
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity, ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Zap, Users, GraduationCap, MessageSquare,
-  ShieldCheck, ShieldOff, ChevronRight,
+  ShieldCheck, ShieldOff, ChevronRight, Gem,
 } from 'lucide-react-native';
 import { getToken, BASE_URL, api, ApiResponse } from '@/api/client';
-import { followApi, UserTrader } from '@/api/follow';
+import { UserTrader } from '@/api/follow';
 import { signalsApi, Signal } from '@/api/signals';
+import { walletApi } from '@/api/wallet';
 import { forumApi, ForumPost } from '@/api/forum';
 import { academyNewApi } from '@/api/academyNew';
 import type { CourseListItem } from '@/types/academy';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
+import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList } from '@/types/navigation';
@@ -35,9 +37,11 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
   const [trader, setTrader] = useState<UserTrader | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [followed, setFollowed] = useState(false);
-  const [followUpdating, setFollowUpdating] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [subPrice, setSubPrice] = useState(0);
+  const [subscribed, setSubscribed] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
 
   const [signals, setSignals] = useState<Signal[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
@@ -54,7 +58,13 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
       instructorId ? academyNewApi.getInstructor(instructorId) : Promise.resolve(null),
     ]);
 
-    if (sigRes.status === 'fulfilled') setSignals((sigRes.value?.data ?? []).slice(0, 3));
+    if (sigRes.status === 'fulfilled') {
+      const full = sigRes.value?.data ?? [];
+      setSignals(full.slice(0, 3));
+      const paid = full.find(s => (s.subscription_price ?? 0) > 0);
+      setSubPrice(paid?.subscription_price ?? 0);
+      setSubscribed(full.some(s => s.is_trader_subscribed));
+    }
     if (forumRes.status === 'fulfilled') setForumPosts((forumRes.value?.data ?? []).slice(0, 3));
     if (acaRes.status === 'fulfilled' && acaRes.value) {
       setAcademyCourses((acaRes.value.data?.courses ?? []).slice(0, 3));
@@ -69,7 +79,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
 
       const res = await api.get<ApiResponse<UserTrader>>(`/user-traders/detail/${traderId}`);
       setTrader(res.data);
-      setFollowed(String(res.data.follow_status) === '1');
+      walletApi.getBalance().then(r => setWalletBalance(r.data?.balance ?? 0)).catch(() => {});
       loadSummaries(res.data);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load trader');
@@ -86,36 +96,10 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
     }, [loadTrader]),
   );
 
-  const handleFollow = async () => {
-    if (!trader || followUpdating) return;
-    setFollowUpdating(true);
-    try {
-      await followApi.follow(trader.id);
-      setFollowed(true);
-      showAlert({ title: 'Success', message: 'You are now following this trader', type: 'success' });
-    } catch (e: any) {
-      showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
-    } finally {
-      setFollowUpdating(false);
-    }
-  };
-
-  const handleUnfollow = async () => {
-    if (!trader || followUpdating) return;
-    setFollowUpdating(true);
-    try {
-      const followList = await followApi.getFollowed(1);
-      const record = (followList.data ?? []).find((f: any) => f.trader_id === trader.id);
-      if (!record) return;
-      await followApi.unfollow(record.id, trader.id);
-      setFollowed(false);
-      showAlert({ title: 'Done', message: 'Unfollowed this trader', type: 'success' });
-    } catch (e: any) {
-      showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
-    } finally {
-      setFollowUpdating(false);
-    }
-  };
+  const handleSubscribed = useCallback((traderId: string, newBalance: number) => {
+    setSubscribed(true);
+    setWalletBalance(newBalance);
+  }, []);
 
   if (loading) {
     return (
@@ -231,17 +215,23 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
 
               {userType === 'trader' ? null : (
                 <TouchableOpacity
-                  onPress={() => followed ? handleUnfollow() : handleFollow()}
-                  disabled={followUpdating}
-                  style={[styles.followBtn, followed && styles.followBtnActive]}
+                  onPress={() => setSubscribeModal({
+                    trader: {
+                      id: trader.id,
+                      name: trader.name ?? 'Trader',
+                      avatar_url: trader.profile_image_src ?? null,
+                    },
+                    price: subPrice,
+                  })}
+                  activeOpacity={0.85}
+                  style={[styles.subscribeBtn, subscribed && styles.subscribeBtnActive]}
                 >
-                  {followUpdating ? (
-                    <ActivityIndicator size="small" color={followed ? c.accent.purple : c.text.primary} />
-                  ) : (
-                    <Text style={[styles.followBtnText, followed && styles.followBtnTextActive]}>
-                      {followed ? 'Following' : 'Follow'}
-                    </Text>
-                  )}
+                  <Gem size={14} color={subscribed ? c.accent.purple : '#fff'} />
+                  <Text style={[styles.subscribeBtnText, subscribed && styles.subscribeBtnTextActive]}>
+                    {subscribed
+                      ? 'Subscribed'
+                      : `Subscribe Signal${subPrice > 0 ? ` · ${subPrice} MP` : ''}`}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -401,6 +391,15 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
 
         <View style={{ height: space['3xl'] }} />
       </ScrollView>
+
+      <SubscribeTraderModal
+        visible={subscribeModal !== null}
+        trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
+        price={subscribeModal?.price ?? 0}
+        walletBalance={walletBalance}
+        onClose={() => setSubscribeModal(null)}
+        onSubscribed={handleSubscribed}
+      />
     </SafeAreaView>
   );
 }
@@ -436,17 +435,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.full, borderWidth: 1,
   },
 
-  followBtn: {
+  subscribeBtn: {
     height: 40, paddingHorizontal: space['2xl'], borderRadius: radius.md,
     backgroundColor: 'rgba(139,92,246,1)', alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: space.xs,
     marginTop: space.sm,
   },
-  followBtnActive: {
+  subscribeBtnActive: {
     backgroundColor: 'rgba(139,92,246,0.15)',
     borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
   },
-  followBtnText: { fontSize: 14, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
-  followBtnTextActive: { color: '#8B5CF6' },
+  subscribeBtnText: { fontSize: 14, fontWeight: '700', color: '#fff', fontFamily: 'DMSans-Bold' },
+  subscribeBtnTextActive: { color: '#8B5CF6' },
 
   statsRow: {
     flexDirection: 'row',
