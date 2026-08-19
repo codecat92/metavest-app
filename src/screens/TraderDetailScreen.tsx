@@ -61,8 +61,10 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
     if (sigRes.status === 'fulfilled') {
       const full = sigRes.value?.data ?? [];
       setSignals(full.slice(0, 3));
-      const paid = full.find(s => (s.subscription_price ?? 0) > 0);
-      setSubPrice(paid?.subscription_price ?? 0);
+      const paid = full.find(s => (s.subscription_price ?? 0) > 0 || (s.price_value ?? 0) > 0);
+      setSubPrice(paid
+        ? ((paid.subscription_price ?? 0) > 0 ? (paid.subscription_price ?? 0) : (paid.price_value ?? 0))
+        : 0);
       setSubscribed(full.some(s => s.is_trader_subscribed));
     }
     if (forumRes.status === 'fulfilled') setForumPosts((forumRes.value?.data ?? []).slice(0, 3));

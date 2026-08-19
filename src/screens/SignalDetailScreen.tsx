@@ -132,6 +132,7 @@ export default function SignalDetailScreen() {
   const rt = signal.risk_reward_ratio;
   const isPaid = (signal.price_value ?? 0) > 0;
   const locked = isPaid && !subscribed;
+  const subPrice = (signal.subscription_price ?? 0) > 0 ? (signal.subscription_price ?? 0) : (signal.price_value ?? 0);
 
   const sensitiveSection = (
     <>
@@ -240,29 +241,29 @@ export default function SignalDetailScreen() {
               style={StyleSheet.absoluteFill}
             />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(10,13,22,0.86)' : 'rgba(255,255,255,0.86)' }]} />
-            <View style={styles.lockOverlay}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.lockOverlay}
+              onPress={() => setSubscribeModal({
+                trader: {
+                  id: signal.trader_id ?? '',
+                  name: signal.trader_name ?? 'Trader',
+                  avatar_url: signal.trader_avatar_url ?? null,
+                },
+                price: subPrice,
+              })}
+            >
               <View style={styles.lockCircle}>
                 <Lock size={18} color={c.accent.gold} />
               </View>
               <Text style={[styles.lockTitle, { color: c.text.primary }]}>Subscribe to unlock</Text>
               <Text style={[styles.lockSubtitle, { color: c.text.secondary }]}>
-                {signal.subscription_price ?? 0} MP / month · unlock all paid signals from this trader
+                {subPrice} MP / month · unlock all paid signals from this trader
               </Text>
-              <TouchableOpacity
-                onPress={() => setSubscribeModal({
-                  trader: {
-                    id: signal.trader_id ?? '',
-                    name: signal.trader_name ?? 'Trader',
-                    avatar_url: signal.trader_avatar_url ?? null,
-                  },
-                  price: signal.subscription_price ?? 0,
-                })}
-                activeOpacity={0.85}
-                style={[styles.subscribeBtn, { backgroundColor: c.accent.purple }]}
-              >
+              <View style={[styles.subscribeBtn, { backgroundColor: c.accent.purple }]}>
                 <Text style={styles.subscribeBtnText}>Subscribe</Text>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
           </View>
         ) : (
           sensitiveSection
