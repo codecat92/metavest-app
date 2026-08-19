@@ -2,18 +2,21 @@ import {
   View, Text, ScrollView, StyleSheet,
   TouchableOpacity, ActivityIndicator, Linking, Image, TextInput,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   X, Search, TrendingUp, TrendingDown,
-  Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List,
+  Clock, Copy, ExternalLink, AlertTriangle, Tag, Gem, Plus, List, Lock,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signalsApi, Signal, formatPrice } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
+import { walletApi } from '@/api/wallet';
 import { getToken, BASE_URL } from '@/api/client';
-import { colors, useColors, space, radius, typography } from '@/theme';
+import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
+import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -38,6 +41,7 @@ const getCurrencyBadge = (currencyName: string): { label: string; isGold: boolea
 export default function SignalScreen() {
   const navigation = useNavigation<SignalNavProp>();
   const colors = useColors();
+  const { isDark } = useTheme();
   const { userType } = useAuth();
   const isTrader = userType === 'trader';
   const [signals, setSignals] = useState<Signal[]>([]);
@@ -47,6 +51,9 @@ export default function SignalScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
+  const [subscribedTraderIds, setSubscribedTraderIds] = useState<Set<string>>(new Set());
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
 
   const loadSignals = useCallback(async () => {
     try {
@@ -56,12 +63,22 @@ export default function SignalScreen() {
         return;
       }
       const response = await signalsApi.getAll(1);
-      setSignals(response.data ?? []);
+      const data = response.data ?? [];
+      setSignals(data);
+      const subs = new Set<string>();
+      data.forEach(s => { if (s.is_trader_subscribed) subs.add(s.trader_id ?? ''); });
+      setSubscribedTraderIds(subs);
+      walletApi.getBalance().then(res => setWalletBalance(res.data?.balance ?? 0)).catch(() => {});
     } catch (e) {
       console.log('Signal load failed:', e);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleSubscribed = useCallback((traderId: string, newBalance: number) => {
+    setSubscribedTraderIds(prev => new Set(prev).add(traderId));
+    setWalletBalance(newBalance);
   }, []);
 
   useFocusEffect(
@@ -185,6 +202,34 @@ export default function SignalScreen() {
               const typeName = signal.signal_type_name ?? 'SIGNAL';
               const rr = signal.risk_reward_ratio;
               const currencyBadge = getCurrencyBadge(pairName);
+              const traderId = signal.trader_id ?? '';
+              const isPaid = (signal.price_value ?? 0) > 0;
+              const isUnlocked = !isPaid || subscribedTraderIds.has(traderId);
+
+              const statsGridAndNotes = (
+                <>
+                  <View style={styles.expandedStats}>
+                    {[
+                        { label: 'Entry', value: formatPrice(signal.open_price, signal.currency) },
+                        { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency) },
+                        { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency) },
+                      { label: 'R:R', value: rr ? `1:${rr}` : '-' },
+                    ].map((item) => (
+                      <View key={item.label} style={{ alignItems: 'center' }}>
+                        <Text style={[typography.label, { color: colors.text.secondary }]}>
+                          {item.label}
+                        </Text>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2, fontFamily: 'DMSans-Bold' }]}>
+                          {item.value}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {signal.notes ? (
+                    <Text style={styles.notes}>{signal.notes}</Text>
+                  ) : null}
+                </>
+              );
 
               return (
                 <TouchableOpacity
@@ -283,26 +328,43 @@ export default function SignalScreen() {
 
                     {expanded && (
                       <View style={styles.expandedSection}>
-                        <View style={styles.expandedStats}>
-                          {[
-                              { label: 'Entry', value: formatPrice(signal.open_price, signal.currency) },
-                              { label: 'Take Profit', value: formatPrice(signal.take_profit, signal.currency) },
-                              { label: 'Stop Loss', value: formatPrice(signal.stop_loss, signal.currency) },
-                            { label: 'R:R', value: rr ? `1:${rr}` : '-' },
-                          ].map((item) => (
-                            <View key={item.label} style={{ alignItems: 'center' }}>
-                              <Text style={[typography.label, { color: colors.text.secondary }]}>
-                                {item.label}
+                        {isPaid && !isUnlocked ? (
+                          <View style={styles.lockedBox}>
+                            {statsGridAndNotes}
+                            <BlurView
+                              intensity={isDark ? 25 : 40}
+                              tint={isDark ? 'dark' : 'light'}
+                              style={StyleSheet.absoluteFill}
+                            />
+                            <View style={styles.lockOverlay}>
+                              <View style={styles.lockCircle}>
+                                <Lock size={16} color={colors.accent.gold} />
+                              </View>
+                              <Text style={[typography.bodyBold, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
+                                Subscribe to unlock
                               </Text>
-                              <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2, fontFamily: 'DMSans-Bold' }]}>
-                                {item.value}
+                              <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center' }]}>
+                                {signal.subscription_price ?? 0} MP / month · unlock all paid signals from this trader
                               </Text>
+                              <TouchableOpacity
+                                onPress={() => setSubscribeModal({
+                                  trader: {
+                                    id: traderId,
+                                    name: signal.trader_name ?? 'Trader',
+                                    avatar_url: signal.trader_avatar_url ?? null,
+                                  },
+                                  price: signal.subscription_price ?? 0,
+                                })}
+                                activeOpacity={0.85}
+                                style={styles.subscribeBtn}
+                              >
+                                <Text style={styles.subscribeBtnText}>Subscribe</Text>
+                              </TouchableOpacity>
                             </View>
-                          ))}
-                        </View>
-                        {signal.notes ? (
-                          <Text style={styles.notes}>{signal.notes}</Text>
-                        ) : null}
+                          </View>
+                        ) : (
+                          statsGridAndNotes
+                        )}
                       </View>
                     )}
 
@@ -363,6 +425,15 @@ export default function SignalScreen() {
           <Plus size={24} color="#fff" />
         </TouchableOpacity>
       )}
+
+      <SubscribeTraderModal
+        visible={subscribeModal !== null}
+        trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
+        price={subscribeModal?.price ?? 0}
+        walletBalance={walletBalance}
+        onClose={() => setSubscribeModal(null)}
+        onSubscribed={handleSubscribed}
+      />
     </SafeAreaView>
   );
 }
@@ -440,6 +511,34 @@ const styles = StyleSheet.create({
   expandedSection: {
     marginTop: space.lg, paddingTop: space.lg,
     borderTopWidth: 1, borderTopColor: colors.glass.border,
+  },
+  lockedBox: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: radius.sm,
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    padding: space.lg,
+  },
+  lockCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.glass.g1,
+    borderWidth: 1, borderColor: colors.glass.border,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: space.xs,
+  },
+  subscribeBtn: {
+    marginTop: space.xs,
+    backgroundColor: colors.accent.purple,
+    paddingHorizontal: space.lg, paddingVertical: space.sm,
+    borderRadius: radius.sm,
+  },
+  subscribeBtnText: {
+    fontSize: 13, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold',
   },
   expandedStats: {
     flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.md,

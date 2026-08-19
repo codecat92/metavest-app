@@ -1,4 +1,4 @@
-import { api, ApiResponse } from './client';
+import { api, ApiResponse, getToken, BASE_URL } from './client';
 
 export interface Signal {
   id: number;
@@ -29,6 +29,8 @@ export interface Signal {
   total_signals: number;
   info: Record<string, any> | null;
   payment_info: Record<string, any> | null;
+  is_trader_subscribed: boolean; // computed server-side, true if active subscription exists for current user+trader
+  subscription_price?: number;   // metapoints/month, only present when price_value > 0
 }
 
 export interface SignalListResponse {
@@ -75,6 +77,19 @@ export function formatPrice(value: any, currencyId: number): string {
   return normalized.toFixed(decimals);
 }
 
+export interface TraderSubscriptionSuccess {
+  expires_at: string;
+  metapoint_paid: number;
+  wallet_balance: number;
+}
+
+export interface TraderSubscriptionError {
+  error: string;
+  required?: number;
+  balance?: number;
+  expires_at?: string;
+}
+
 export const signalsApi = {
   getAll: (page = 1) =>
     api.get<SignalListResponse>(`/signals/all?page=${page}`),
@@ -102,6 +117,25 @@ export const signalsApi = {
 
   execute: (id: number) =>
     api.post<ApiResponse<any>>('/signals/execute', { id }),
+
+  /**
+   * Subscribe ke trader (bulanan, Metapoint). Pakai raw fetch agar body 402/409
+   * yang terstruktur bisa dibaca (api.post helper membuang body pada non-2xx).
+   */
+  subscribeTrader: async (traderId: string): Promise<{ status: number; data: TraderSubscriptionSuccess | TraderSubscriptionError }> => {
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/trader-subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ trader_id: traderId }),
+    });
+    const json = await res.json();
+    return { status: res.status, data: json };
+  },
 
   // Trader CRUD
   create: (data: CreateSignalRequest) =>
