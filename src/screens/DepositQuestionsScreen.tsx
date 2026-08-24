@@ -17,12 +17,17 @@ export default function DepositQuestionsScreen({ navigation, route }: Props) {
   const c = useColors();
   const { user } = useAuth();
   const { brokerId, employment_status, annual_salary, savings_investments_approx_value } = route.params;
+  const [brokerName, setBrokerName] = useState('');
 
   useEffect(() => {
     navigation.setOptions({ gestureEnabled: false, headerLeft: () => null });
     const handler = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => handler.remove();
   }, [navigation]);
+
+  useEffect(() => {
+    pammApi.getBrokerDetail(brokerId).then(r => setBrokerName(r.data?.name ?? '')).catch(() => {});
+  }, [brokerId]);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -70,7 +75,7 @@ export default function DepositQuestionsScreen({ navigation, route }: Props) {
 
       await pammApi.addPammSubmission(brokerId, user?.name ?? '');
 
-      Alert.alert('Berhasil', 'Pendaftaran PAMM berhasil dikirim, menunggu verifikasi admin', [
+      Alert.alert('Berhasil', `Anda sudah menyelesaikan tahapan daftar ${brokerName || 'broker'}`, [
         { text: 'OK', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] }) },
       ]);
     } catch (err: any) {

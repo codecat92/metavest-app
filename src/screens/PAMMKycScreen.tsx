@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { ArrowLeft, Camera } from 'lucide-react-native';
 import { consentApi, ConsentData } from '@/api/consent';
+import { pammApi } from '@/api/pamm';
 import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, Skeleton } from '@/components';
@@ -45,6 +46,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   const [dobError, setDobError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const [addressError, setAddressError] = useState('');
+  const [brokerName, setBrokerName] = useState('');
 
   const loadConsent = useCallback(async () => {
     setConsentLoading(true);
@@ -88,6 +90,10 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
   useEffect(() => {
     navigation.setOptions({ gestureEnabled: !(showConsentModal || showJdrConsentModal) });
   }, [showConsentModal, showJdrConsentModal, navigation]);
+
+  useEffect(() => {
+    pammApi.getBrokerDetail(brokerId).then(r => setBrokerName(r.data?.name ?? '')).catch(() => {});
+  }, [brokerId]);
 
   const handleConsentAgreed = () => {
     setConsentAgreed(true);
@@ -216,7 +222,7 @@ export default function PAMMKycScreen({ navigation, route }: Props) {
         throw new Error(json.message || 'Upload failed');
       }
 
-      Alert.alert('Berhasil', 'Data berhasil dikirim, menunggu verifikasi admin', [
+      Alert.alert('Berhasil', `Data berhasil dikirim untuk daftar ${brokerName || 'broker'}, menunggu verifikasi admin`, [
         { text: 'Lanjut', onPress: () => navigation.navigate('KYCFinancial', { brokerId }) },
       ]);
     } catch (err: any) {

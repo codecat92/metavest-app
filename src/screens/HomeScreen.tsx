@@ -228,7 +228,7 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
     },
     {
       label: 'PAMM',
-      desc: 'Explore PAMM brokers',
+      desc: 'Explore available brokers',
       screen: 'pamm',
       Icon: Landmark,
       locked: pammLocked,
@@ -468,7 +468,7 @@ function AnimatedNewsFeed({ onPress, onItemPress }: {
     <View>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: space.sm }}>
         <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={newsStyles.seeAllBtn}>
-          <Text style={[newsStyles.seeAllText, { color: d.accent.purple }]}>Lihat Semua →</Text>
+          <Text style={[newsStyles.seeAllText, { color: d.accent.purple }]}>Lihat Semua News →</Text>
         </TouchableOpacity>
       </View>
 

@@ -298,7 +298,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
         ) : pammStatus === 'not_registered' ? (
           <View style={{ paddingHorizontal: space['2xl'], marginTop: space.md }}>
             <AppButton
-              title="Daftar PAMM"
+              title={`Daftar ${broker.name}`}
               variant="primary"
               loading={submittingPamm}
               onPress={handleDaftarPamm}
@@ -373,7 +373,7 @@ export default function PAMMDetailScreen({ navigation, route }: Props) {
             borderColor: colors.glass.border, alignItems: 'center',
           }}>
             <Text style={[typography.bodyBold, { color: colors.semantic.positive }]}>
-              ✓ Sudah Terdaftar PAMM
+              ✓ Sudah Terdaftar {broker.name}
             </Text>
           </View>
         )}
