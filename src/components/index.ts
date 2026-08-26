@@ -8,3 +8,4 @@ export { default as EmptyState } from './EmptyState';
 export { default as BackgroundGlow } from './BackgroundGlow';
 export { default as MT5AccountCard } from './MT5AccountCard';
 export { default as RankPreviewCard } from './RankPreviewCard';
+export { default as MaintenanceModal } from './MaintenanceModal';

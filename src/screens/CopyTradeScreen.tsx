@@ -13,7 +13,7 @@ import { copytradeApi, Mt5Account } from '@/api/copytrade';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, AppInput, Badge, EmptyState } from '@/components';
+import { GlassCard, AppButton, AppInput, Badge, EmptyState, MaintenanceModal } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -35,6 +35,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const [password, setPassword] = useState('');
   const [server, setServer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showMaintenance, setShowMaintenance] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -339,12 +340,17 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
             <Text style={[styles.emptySub, { color: c.text.secondary }]}>
               Automatically copy trades from your followed traders to your MT5 account.
             </Text>
-            <TouchableOpacity onPress={() => setShowForm(true)} style={[styles.connectBtn, { backgroundColor: c.accent.purple }]}>
+            <TouchableOpacity onPress={() => setShowMaintenance(true)} style={[styles.connectBtn, { backgroundColor: c.accent.purple }]}>
               <Text style={[styles.connectBtnText, { color: c.text.primary }]}>Connect MT5 Account</Text>
             </TouchableOpacity>
           </GlassCard>
         )}
       </ScrollView>
+
+      <MaintenanceModal
+        visible={showMaintenance}
+        onClose={() => setShowMaintenance(false)}
+      />
     </SafeAreaView>
   );
 }

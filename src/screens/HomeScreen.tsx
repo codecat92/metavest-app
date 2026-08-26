@@ -17,7 +17,7 @@ import { notificationApi } from '@/api/notifications';
 import { forumApi, LatestAnnouncement } from '@/api/forum';
 import { BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard } from '@/components';
+import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard, MaintenanceModal } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -520,6 +520,7 @@ export default function HomeScreen() {
   const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showPammLockModal, setShowPammLockModal] = useState(false);
+  const [showMt5Maintenance, setShowMt5Maintenance] = useState(false);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
   const [mpBalance, setMpBalance] = useState<number | null>(null);
@@ -685,8 +686,8 @@ export default function HomeScreen() {
             mt5Data={mt5Data}
             serviceError={mt5ServiceError}
             followingCount={followingCount}
-            onConnectPress={() => navigation.navigate('CopyTrade')}
-            onCardPress={() => navigation.navigate('CopyTrade')}
+            onConnectPress={() => setShowMt5Maintenance(true)}
+            onCardPress={() => setShowMt5Maintenance(true)}
           />
         )}
 
@@ -852,6 +853,11 @@ export default function HomeScreen() {
           </View>
         </Modal>
       )}
+
+      <MaintenanceModal
+        visible={showMt5Maintenance}
+        onClose={() => setShowMt5Maintenance(false)}
+      />
     </View>
   );
 }
