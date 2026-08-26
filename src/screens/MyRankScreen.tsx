@@ -35,6 +35,10 @@ const allRanks = [
   { rank: 1, label: 'Steel',    min_invites: 0,    min_deposit: 0 },
 ];
 
+// Temporary gate: leaderboard hidden until infrastructure is ready.
+// Flip to true to re-enable the "Papan Peringkat" section.
+const LEADERBOARD_ENABLED = false;
+
 export default function MyRankScreen({ navigation }: Props) {
   const c = useColors();
   const [data, setData] = useState<RankProgress | null>(null);
@@ -78,7 +82,7 @@ export default function MyRankScreen({ navigation }: Props) {
     setLoading(true);
     setLeaderboardLoading(true);
     loadData();
-    loadLeaderboard();
+    if (LEADERBOARD_ENABLED) loadLeaderboard();
   }, [loadData, loadLeaderboard]));
 
   const formatBalance = (amount: number) => `${amount.toLocaleString('en-US')} MP`;
@@ -258,6 +262,7 @@ export default function MyRankScreen({ navigation }: Props) {
             </View>
 
             {/* Leaderboard */}
+            {LEADERBOARD_ENABLED ? (
             <View style={{ marginBottom: space['3xl'] }}>
               <Text style={[typography.h4, { color: c.text.primary, marginBottom: space.md, fontFamily: 'Manrope-Bold' }]}>
                 Papan Peringkat
@@ -309,6 +314,50 @@ export default function MyRankScreen({ navigation }: Props) {
                 </GlassCard>
               )}
             </View>
+            ) : (
+            <GlassCard elevation={3} style={{ marginBottom: space['3xl'], overflow: 'hidden', padding: 0 }}>
+              <LinearGradient
+                colors={['#2a2350', '#161a38']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: space.xl, position: 'relative' }}
+              >
+                <View style={{ position: 'absolute', right: -30, bottom: -20, opacity: 0.08 }}>
+                  <Trophy size={180} color={c.accent.gold} />
+                </View>
+
+                <View style={{
+                  width: 84, height: 84, borderRadius: 42,
+                  borderWidth: 2, borderColor: 'rgba(212,175,55,0.50)',
+                  backgroundColor: 'rgba(212,175,55,0.08)',
+                  alignItems: 'center', justifyContent: 'center',
+                  alignSelf: 'center', marginBottom: space.lg,
+                }}>
+                  <Trophy size={40} color={c.accent.gold} />
+                </View>
+
+                <View style={{ alignSelf: 'center', backgroundColor: c.accent.gold, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.xs }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1, color: '#0A0A0A', fontFamily: 'DMSans-Bold' }}>
+                    LEADERBOARD
+                  </Text>
+                </View>
+
+                <Text style={{ fontSize: 22, fontWeight: '700', color: '#e8e9ee', textAlign: 'center', fontFamily: 'Manrope-Bold', marginTop: space.md }}>
+                  Leader Board Rank
+                </Text>
+
+                <View style={{ alignSelf: 'center', marginTop: space.md, backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.40)', borderRadius: radius.full, paddingHorizontal: space.md, paddingVertical: space.xs }}>
+                  <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: c.accent.gold, fontFamily: 'DMSans-Bold' }}>
+                    COMING SOON
+                  </Text>
+                </View>
+
+                <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.md }]}>
+                  Fitur ini sedang disiapkan dan akan segera hadir.
+                </Text>
+              </LinearGradient>
+            </GlassCard>
+            )}
           </>
         ) : (
           <View style={{ paddingTop: 60, alignItems: 'center' }}>
