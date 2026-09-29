@@ -23,7 +23,8 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
   const screenMap: Record<string, string> = {
     Consent: 'ConsentDetail',
     Profile: 'Profile',
-    Portfolio: 'Portfolio',
+    Portfolio: 'Wallet',
+    Wallet: 'Wallet',
     Forum: 'Forum',
   };
 

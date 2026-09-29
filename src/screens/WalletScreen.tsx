@@ -23,11 +23,11 @@ import { StorageAccessFramework } from 'expo-file-system/legacy';
 import { colors, useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState, Badge } from '@/components';
 
-export default function PortfolioScreen() {
+export default function WalletScreen() {
   const alert = useCustomAlert();
   const colors = useColors();
   const { user } = useAuth();
-  const [portfolioData, setPortfolioData] = useState<{
+  const [walletData, setWalletData] = useState<{
     wallet: Wallet | null;
     history: WalletTransaction[];
     walletBalance: WalletBalance | null;
@@ -58,14 +58,14 @@ export default function PortfolioScreen() {
         followApi.getFollowed(1),
       ]);
       const followedIds = new Set((followRes.data ?? []).map(f => f.trader_id));
-      setPortfolioData({
+      setWalletData({
         wallet: walletRes.data ?? null,
         history: transactionsRes.data ?? [],
         walletBalance: balanceRes.data ?? null,
         followed: (activeRes.data ?? []).filter(t => followedIds.has(t.id)),
       });
     } catch (e) {
-      console.log('Portfolio load failed:', e);
+      console.log('Wallet load failed:', e);
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export default function PortfolioScreen() {
     useCallback(() => { setLoading(true); loadData(); }, [loadData])
   );
 
-  const { wallet, history, walletBalance, followed } = portfolioData;
+  const { wallet, history, walletBalance, followed } = walletData;
   const balance = wallet?.balance ?? 0;
 
   const formatBalance = (amount: number) =>
@@ -191,7 +191,7 @@ export default function PortfolioScreen() {
   if (!getToken()) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]} edges={['top']}>
-        <EmptyState icon={<WalletIcon size={40} color={colors.text.secondary} />} title="Login to see portfolio" />
+        <EmptyState icon={<WalletIcon size={40} color={colors.text.secondary} />} title="Login to see your wallet" />
       </SafeAreaView>
     );
   }
@@ -201,7 +201,7 @@ export default function PortfolioScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={[typography.h2, { color: colors.text.primary, fontFamily: 'Manrope-Bold' }]}>
-            Portfolio
+            Wallet
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary }]}>
             Your wallet & follows

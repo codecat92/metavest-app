@@ -6,7 +6,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useCallback } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { Home, Zap, Users, BarChart2, User } from 'lucide-react-native';
+import { Home, Zap, Users, Wallet, User } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AlertProvider } from '@/context/AlertContext';
@@ -17,7 +17,9 @@ import LoginScreen from '@/screens/LoginScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import SignalScreen from '@/screens/SignalScreen';
 import TradersScreen from '@/screens/TradersScreen';
-import PortfolioScreen from '@/screens/PortfolioScreen';
+import WalletScreen from '@/screens/WalletScreen';
+import WalletComingSoonScreen from '@/screens/WalletComingSoonScreen';
+import { FEATURES } from '@/constants/features';
 import ProfileScreen from '@/screens/ProfileScreen';
 import PAMMScreen from '@/screens/PAMMScreen';
 import PAMMDetailScreen from '@/screens/PAMMDetailScreen';
@@ -84,7 +86,7 @@ function TabNavigator() {
             Home,
             Signals: Zap,
             Traders: Users,
-            Portfolio: BarChart2,
+            Wallet,
             Profile: User,
           };
           const Icon = icons[route.name];
@@ -95,7 +97,10 @@ function TabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Signals" component={SignalScreen} />
       <Tab.Screen name="Traders" component={TradersScreen} />
-      <Tab.Screen name="Portfolio" component={PortfolioScreen} />
+      <Tab.Screen
+        name="Wallet"
+        component={FEATURES.WALLET_UNDER_DEVELOPMENT ? WalletComingSoonScreen : WalletScreen}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

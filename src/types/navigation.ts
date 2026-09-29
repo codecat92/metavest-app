@@ -57,7 +57,7 @@ export type TabParamList = {
   Home: undefined;
   Signals: undefined;
   Traders: undefined;
-  Portfolio: undefined;
+  Wallet: undefined;
   Profile: undefined;
 };
 

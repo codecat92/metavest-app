@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, BarChart2, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -185,7 +185,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const actions = [
     { label: 'Signals', screen: 'signals', Icon: Zap },
     { label: 'Traders', screen: 'traders', Icon: Users },
-    { label: 'Portfolio', screen: 'portfolio', Icon: BarChart2 },
+    { label: 'Wallet', screen: 'wallet', Icon: Wallet },
     { label: 'Forum', screen: 'forum', Icon: MessageCircle },
   ];
 
@@ -586,7 +586,7 @@ export default function HomeScreen() {
       return;
     }
     const map: Record<string, string> = {
-      signals: 'Signals', traders: 'Traders', portfolio: 'Portfolio',
+      signals: 'Signals', traders: 'Traders', wallet: 'Wallet',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
     };
     if (map[screen]) navigation.navigate(map[screen]);
@@ -656,7 +656,7 @@ export default function HomeScreen() {
             )}
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity onPress={() => navigation.navigate('Portfolio')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => navigation.navigate('Wallet')} activeOpacity={0.7}>
             <View style={styles.mpBadge}>
               <Zap size={13} color={colors.accent.gold} fill={colors.accent.gold} />
               <Text style={styles.mpText}>{mpBalance !== null ? formatMP(mpBalance) : '--'}</Text>
@@ -691,8 +691,11 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Portfolio / Forum) ── */}
+        {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Wallet / Forum) ── */}
         <QuickActions onNavigate={onNavigate} />
+
+        {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
+        <AcademyCard onPress={() => navigation.navigate('Academy')} />
 
         {/* ── SECTION HEADER: Markets + Link Calendar / See all ── */}
         <View style={styles.sectionHeader}>
@@ -713,17 +716,14 @@ export default function HomeScreen() {
         {/* ── MARKET CAROUSEL: Kartu Forex berjalan horizontal (EUR/USD, GBP/USD, dll) ── */}
         <MarqueeMarkets />
 
+        {/* ── RANK PREVIEW CARD: Entrypoint ke My Rank ── */}
+        <RankPreviewCard />
+
         {/* ── ECONOMIC CALENDAR CARD: Entry point ke Economic Calendar ── */}
         <EconomicCalendarCard onPress={() => navigation.navigate('EconomicsCalendar')} />
 
         {/* ── FEATURE CARDS: Kartu My MT5 + PAMM ── */}
         <FeatureCards onNavigate={onNavigate} pammLocked={userType === 'trader'} />
-
-        {/* ── RANK PREVIEW CARD: Entrypoint ke My Rank ── */}
-        <RankPreviewCard />
-
-        {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
-        <AcademyCard onPress={() => navigation.navigate('Academy')} />
 
         {/* ── SECTION HEADER: Latest News + Ikon Panah Kanan ── */}
         <View style={styles.sectionHeader}>

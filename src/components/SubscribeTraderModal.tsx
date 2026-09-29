@@ -96,7 +96,7 @@ export default function SubscribeTraderModal({
               <AppButton
                 title="Top Up"
                 variant="primary"
-                onPress={() => navigation.navigate('Portfolio')}
+                onPress={() => navigation.navigate('Wallet')}
                 style={styles.btn}
               />
               <AppButton title="Tutup" variant="ghost" onPress={onClose} style={styles.btn} />
