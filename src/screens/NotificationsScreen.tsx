@@ -117,6 +117,8 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
                   navigation.navigate('ConsentDetail', { consentCode: n.target_params ?? 'registration' });
                 } else if (n.target_screen === 'Forum' || n.target_screen === 'Announcement') {
                   navigation.navigate('Forum', { scrollToPostId: Number(n.target_params) || undefined });
+                } else if (n.target_screen === 'PAMM') {
+                  navigation.navigate('PAMM');
                 } else if (target) {
                   navigation.navigate('Tabs', { screen: target });
                 }

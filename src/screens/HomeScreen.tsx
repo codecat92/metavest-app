@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Lock, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -215,8 +215,8 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   );
 }
 
-// KOMPONEN: FeatureCards — Dua kartu fitur (Copy Trading + PAMM)
-function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => void; pammLocked: boolean }) {
+// KOMPONEN: FeatureCards — Kartu fitur (My MT5 selalu; PAMM hanya jika user di-enable admin)
+function FeatureCards({ onNavigate, showPamm }: { onNavigate: (s: string) => void; showPamm: boolean }) {
   const c = useColors();
   const features = [
     {
@@ -224,15 +224,13 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
       desc: 'Connect to your MT5 terminal',
       screen: 'copytrade',
       Icon: Monitor,
-      locked: false,
     },
-    {
+    ...(showPamm ? [{
       label: 'PAMM',
       desc: 'Explore available brokers',
       screen: 'pamm',
       Icon: Landmark,
-      locked: pammLocked,
-    },
+    }] : []),
   ];
 
   return (
@@ -245,11 +243,6 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
           style={{ flex: 1 }}
         >
           <GlassCard elevation={2} style={fcStyles.card}>
-            {f.locked && (
-              <View style={fcStyles.lockBadge}>
-                <Lock size={12} color={c.accent.gold} />
-              </View>
-            )}
             <View style={[fcStyles.iconWrap, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
               <f.Icon size={28} color="#8B5CF6" strokeWidth={1.5} />
             </View>
@@ -261,11 +254,6 @@ function FeatureCards({ onNavigate, pammLocked }: { onNavigate: (s: string) => v
             <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
               {f.desc}
             </Text>
-            {f.locked && (
-              <Text style={[typography.caption, { color: c.text.muted, textAlign: 'center', marginTop: 4 }]}>
-                Investor only
-              </Text>
-            )}
           </GlassCard>
         </TouchableOpacity>
       ))}
@@ -515,11 +503,10 @@ const newsStyles = StyleSheet.create({
 });
 
 export default function HomeScreen() {
-  const { user, userType } = useAuth();
+  const { user, userType, refreshUser } = useAuth();
   const colors = useColors();
   const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [showPammLockModal, setShowPammLockModal] = useState(false);
   const [showMt5Maintenance, setShowMt5Maintenance] = useState(false);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
@@ -534,6 +521,8 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Refresh profile so admin-controlled flags (e.g. pamm_enabled) reflect on focus
+      refreshUser();
       Promise.allSettled([
         followApi.getFollowed(1),
         signalsApi.getFollowed(1),
@@ -552,7 +541,7 @@ export default function HomeScreen() {
           }
         })
         .catch(() => {});
-    }, [])
+    }, [refreshUser])
   );
 
   useFocusEffect(
@@ -581,10 +570,6 @@ export default function HomeScreen() {
   );
 
   const onNavigate = (screen: string) => {
-    if (screen === 'pamm' && userType === 'trader') {
-      setShowPammLockModal(true);
-      return;
-    }
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', wallet: 'Wallet',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
@@ -623,6 +608,10 @@ export default function HomeScreen() {
     if (amount >= 10_000) return `${Math.round(amount / 1_000)}K MP`;
     return `${amount.toLocaleString()} MP`;
   };
+
+  // PAMM entry point: hidden by default; only shown when an admin enabled it for
+  // this regular user (pamm_enabled). Traders never see it.
+  const showPamm = userType === 'user' && user?.pamm_enabled === 1;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
@@ -722,8 +711,8 @@ export default function HomeScreen() {
         {/* ── ECONOMIC CALENDAR CARD: Entry point ke Economic Calendar ── */}
         <EconomicCalendarCard onPress={() => navigation.navigate('EconomicsCalendar')} />
 
-        {/* ── FEATURE CARDS: Kartu My MT5 + PAMM ── */}
-        <FeatureCards onNavigate={onNavigate} pammLocked={userType === 'trader'} />
+        {/* ── FEATURE CARDS: Kartu My MT5 (+ PAMM jika diaktifkan admin) ── */}
+        <FeatureCards onNavigate={onNavigate} showPamm={showPamm} />
 
         {/* ── SECTION HEADER: Latest News + Ikon Panah Kanan ── */}
         <View style={styles.sectionHeader}>
@@ -739,32 +728,6 @@ export default function HomeScreen() {
           <AnimatedNewsFeed onPress={() => navigation.navigate('News')} />
         </View>
       </ScrollView>
-
-      {showPammLockModal && (
-        <Modal visible transparent animationType="fade">
-          <View style={{ flex: 1, backgroundColor: 'rgba(6,9,16,0.95)', justifyContent: 'center', padding: space.xl }}>
-            <GlassCard elevation={4}>
-              <View style={{ alignItems: 'center', gap: space.md }}>
-                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(212,175,55,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Lock size={30} color={colors.accent.gold} />
-                </View>
-                <Text style={[typography.h4, { color: colors.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
-                  PAMM — Investors Only
-                </Text>
-                <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center' }]}>
-                  Trader accounts cannot access PAMM. This feature is only available for regular investor accounts.
-                </Text>
-                <AppButton
-                  title="Got it"
-                  variant="primary"
-                  onPress={() => setShowPammLockModal(false)}
-                  style={{ marginTop: space.md, alignSelf: 'stretch' }}
-                />
-              </View>
-            </GlassCard>
-          </View>
-        </Modal>
-      )}
 
       {showAnnouncementModal && announcement && (
         <Modal visible transparent animationType="fade">
@@ -937,14 +900,6 @@ const fcStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-  },
-  lockBadge: {
-    position: 'absolute', top: 10, right: 10,
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: 'rgba(212,175,55,0.15)',
-    borderWidth: 1, borderColor: 'rgba(212,175,55,0.40)',
-    alignItems: 'center', justifyContent: 'center',
-    zIndex: 1,
   },
   iconWrap: {
     width: 56, height: 56, borderRadius: radius.xl,

@@ -11,6 +11,7 @@ interface User {
   name: string;
   email: string;
   profile_image_src: string | null;
+  pamm_enabled?: number;
 }
 
 interface AuthContextType {

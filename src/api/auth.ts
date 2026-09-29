@@ -51,6 +51,7 @@ export interface User {
   referral_code_2: string;
   ktp_verified: number;
   passport_verified: number;
+  pamm_enabled?: number;
 }
 
 export interface RegisterPayload {
