@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
-  ArrowLeft, Send, Image as ImageIcon, MoreVertical, UserPlus, UserMinus, X, Crown,
+  ArrowLeft, Send, Image as ImageIcon, MoreVertical, UserPlus, UserMinus, X, Crown, Info,
 } from 'lucide-react-native';
 import { chatApi, ChatMessage, ChatGroupDetail, ChatMember, ChatUserSearch } from '@/api/chat';
 import { getToken } from '@/api/client';
@@ -47,6 +47,7 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
   const [detail, setDetail] = useState<ChatGroupDetail | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]); // newest-first
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [showManage, setShowManage] = useState(false);
@@ -59,6 +60,7 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
   const newestIdRef = useRef(0);
   const messagesRef = useRef<ChatMessage[]>([]);
   messagesRef.current = messages;
+  const accessDeniedRef = useRef(false);
 
   const markRead = useCallback((id: number) => {
     if (id > 0) chatApi.markRead(groupId, id).catch(() => {});
@@ -71,19 +73,25 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
         chatApi.messages(groupId, undefined, 30),
       ]);
       setDetail(detailRes.data);
+      setAccessDenied(false);
+      accessDeniedRef.current = false;
       const asc = msgRes.data ?? [];
       const desc = [...asc].reverse();
       setMessages(desc);
       newestIdRef.current = desc[0]?.id ?? 0;
       markRead(newestIdRef.current);
     } catch (e) {
+      // Bukan anggota aktif, grup dibubarkan, atau tidak ditemukan
       console.log('Chat room load failed:', e);
+      accessDeniedRef.current = true;
+      setAccessDenied(true);
     } finally {
       setLoading(false);
     }
   }, [groupId, markRead]);
 
   const poll = useCallback(async () => {
+    if (accessDeniedRef.current) return;
     try {
       const res = await chatApi.latestMessages(groupId, newestIdRef.current, 50);
       const incoming = res.data ?? [];
@@ -281,15 +289,17 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
-            {detail?.name ?? route.params.groupName ?? 'Grup'}
+            {detail?.name ?? route.params.groupName ?? 'Grup Chat'}
           </Text>
           <Text style={[typography.caption, { color: c.text.muted }]}>
             {detail ? `${detail.member_count} anggota` : ''}
           </Text>
         </View>
+        {!accessDenied && (
         <TouchableOpacity onPress={openManage} style={styles.backBtn}>
           <MoreVertical size={20} color={c.text.secondary} />
         </TouchableOpacity>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -299,6 +309,34 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
       >
         {loading ? (
           <ActivityIndicator size="large" color={c.accent.purple} style={{ marginTop: 40 }} />
+        ) : accessDenied ? (
+          <View style={styles.deniedWrap}>
+            <View style={[styles.deniedIcon, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
+              <Info size={30} color={c.accent.purple} />
+            </View>
+            <Text style={[typography.h4, { color: c.text.primary, textAlign: 'center', marginTop: space.md, fontFamily: 'Manrope-Bold' }]}>
+              Kamu belum menjadi anggota grup ini
+            </Text>
+            <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center', marginTop: space.sm }]}>
+              Terima undangan terlebih dahulu di halaman Grup Chat untuk dapat bergabung.
+            </Text>
+            <AppButton
+              title="Buka Grup Chat"
+              variant="primary"
+              onPress={() => navigation.navigate('ChatGroups')}
+              style={{ marginTop: space.xl, alignSelf: 'stretch' }}
+            />
+            <AppButton
+              title="Kembali"
+              variant="ghost"
+              onPress={() => navigation.goBack()}
+              style={{ marginTop: space.sm, alignSelf: 'stretch' }}
+            />
+          </View>
+        ) : messages.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <EmptyState icon={<Send size={32} color={c.text.secondary} />} title="Belum ada pesan" subtitle="Mulai percakapan" />
+          </View>
         ) : (
           <FlatList
             data={messages}
@@ -308,34 +346,32 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
             contentContainerStyle={{ padding: space.lg, gap: space.sm }}
             onEndReached={loadOlder}
             onEndReachedThreshold={0.3}
-            ListEmptyComponent={
-              <View style={{ transform: [{ scaleY: -1 }] }}>
-                <EmptyState icon={<Send size={32} color={c.text.secondary} />} title="Belum ada pesan" subtitle="Mulai percakapan" />
-              </View>
-            }
+            keyboardShouldPersistTaps="handled"
           />
         )}
 
-        <View style={[styles.inputBar, { borderTopColor: c.glass.border, backgroundColor: c.bg.primary }]}>
-          <TouchableOpacity onPress={handlePickImage} style={styles.attachBtn} disabled={sending}>
-            <ImageIcon size={22} color={c.accent.purple} />
-          </TouchableOpacity>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Tulis pesan..."
-            placeholderTextColor={c.text.muted}
-            style={[styles.input, { color: c.text.primary, backgroundColor: c.glass.g1, borderColor: c.glass.border }]}
-            multiline
-          />
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={sending || !input.trim()}
-            style={[styles.sendBtn, { backgroundColor: input.trim() ? c.accent.purple : 'rgba(139,92,246,0.3)' }]}
-          >
-            <Send size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        {!accessDenied && (
+          <View style={[styles.inputBar, { borderTopColor: c.glass.border, backgroundColor: c.bg.primary }]}>
+            <TouchableOpacity onPress={handlePickImage} style={styles.attachBtn} disabled={sending}>
+              <ImageIcon size={22} color={c.accent.purple} />
+            </TouchableOpacity>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Tulis pesan..."
+              placeholderTextColor={c.text.muted}
+              style={[styles.input, { color: c.text.primary, backgroundColor: c.glass.g1, borderColor: c.glass.border }]}
+              multiline
+            />
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={sending || !input.trim()}
+              style={[styles.sendBtn, { backgroundColor: input.trim() ? c.accent.purple : 'rgba(139,92,246,0.3)' }]}
+            >
+              <Send size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* Manage group modal */}
@@ -470,6 +506,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md, paddingVertical: space.sm, fontFamily: 'DMSans',
   },
   sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  deniedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space['2xl'] },
+  deniedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', padding: space.xl },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   memberAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
