@@ -12,6 +12,7 @@ export interface ChatGroupListItem {
   id: string;
   name: string;
   description: string | null;
+  avatar: string | null;
   leader_id: string;
   member_count: number;
   unread_count: number;
@@ -23,6 +24,7 @@ export interface ChatGroupDetail {
   id: string;
   name: string;
   description: string | null;
+  avatar: string | null;
   leader_id: string;
   is_leader: boolean;
   member_count: number;
@@ -67,8 +69,11 @@ export const chatApi = {
   listGroups: (page = 1) =>
     api.get<ApiResponse<ChatGroupListItem[]>>(`/chat/groups?page=${page}`),
 
-  createGroup: (name: string, description?: string) =>
-    api.post<ApiResponse<ChatGroupDetail>>('/chat/groups', { name, description }),
+  createGroup: (name: string, description?: string, avatar?: string) =>
+    api.post<ApiResponse<ChatGroupDetail>>('/chat/groups', { name, description, avatar }),
+
+  updateAvatar: (id: string, avatar: string) =>
+    api.post<ApiResponse<{ avatar: string | null }>>(`/chat/groups/${id}/avatar`, { avatar }),
 
   groupDetail: (id: string) =>
     api.get<ApiResponse<ChatGroupDetail>>(`/chat/groups/${id}`),

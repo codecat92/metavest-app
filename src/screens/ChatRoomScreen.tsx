@@ -11,6 +11,7 @@ import {
   ArrowLeft, Send, Image as ImageIcon, MoreVertical, UserPlus, UserMinus, X, Crown, Info,
 } from 'lucide-react-native';
 import { chatApi, ChatMessage, ChatGroupDetail, ChatMember, ChatUserSearch } from '@/api/chat';
+import { getChatAvatar, CHAT_AVATARS } from '@/constants/chatAvatars';
 import { getToken } from '@/api/client';
 import { useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
@@ -174,6 +175,15 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
     } finally { setSending(false); }
   };
 
+  const handleUpdateAvatar = async (key: string) => {
+    try {
+      await chatApi.updateAvatar(groupId, key);
+      setDetail(prev => (prev ? { ...prev, avatar: key } : prev));
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Gagal memperbarui logo', type: 'error' });
+    }
+  };
+
   const openManage = async () => {
     setShowManage(true);
     try {
@@ -277,6 +287,7 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
   };
 
   const initial = (detail?.name ?? route.params.groupName ?? 'G').charAt(0).toUpperCase();
+  const headerAvatar = getChatAvatar(detail?.avatar);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -284,8 +295,10 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={20} color={c.text.secondary} />
         </TouchableOpacity>
-        <View style={[styles.headerAvatar, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-          <Text style={{ color: c.accent.purple, fontWeight: '800', fontFamily: 'Manrope-Bold' }}>{initial}</Text>
+        <View style={[styles.headerAvatar, { backgroundColor: headerAvatar ? `${headerAvatar.color}22` : 'rgba(139,92,246,0.15)' }]}>
+          {headerAvatar
+            ? <headerAvatar.Icon size={20} color={headerAvatar.color} />
+            : <Text style={{ color: c.accent.purple, fontWeight: '800', fontFamily: 'Manrope-Bold' }}>{initial}</Text>}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
@@ -386,6 +399,27 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+              {detail?.is_leader && (
+                <View style={{ marginBottom: space.lg }}>
+                  <Text style={[typography.bodyBold, { color: c.text.primary, marginBottom: space.sm, fontFamily: 'DMSans-SemiBold' }]}>Logo Grup</Text>
+                  <View style={styles.avatarGrid}>
+                    {CHAT_AVATARS.map(a => {
+                      const selected = detail.avatar === a.key;
+                      return (
+                        <TouchableOpacity
+                          key={a.key}
+                          onPress={() => handleUpdateAvatar(a.key)}
+                          activeOpacity={0.8}
+                          style={[styles.avatarOption, { backgroundColor: `${a.color}22`, borderColor: selected ? a.color : c.glass.border }]}
+                        >
+                          <a.Icon size={20} color={a.color} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.sm }}>
                 <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-SemiBold' }]}>Anggota</Text>
                 {detail?.is_leader && (
@@ -506,6 +540,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md, paddingVertical: space.sm, fontFamily: 'DMSans',
   },
   sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  avatarOption: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
+  },
   deniedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space['2xl'] },
   deniedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },

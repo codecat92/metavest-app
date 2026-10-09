@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, MessageSquare, Users, Check, X } from 'lucide-react-native';
 import { chatApi, ChatGroupListItem, ChatInvite } from '@/api/chat';
+import { getChatAvatar, CHAT_AVATARS } from '@/constants/chatAvatars';
 import { getToken } from '@/api/client';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, AppInput, EmptyState } from '@/components';
@@ -27,6 +28,7 @@ export default function ChatGroupsScreen({ navigation }: Props) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newAvatar, setNewAvatar] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -75,8 +77,8 @@ export default function ChatGroupsScreen({ navigation }: Props) {
     if (!newName.trim()) { alert.showAlert({ title: 'Error', message: 'Nama grup wajib diisi', type: 'error' }); return; }
     setCreating(true);
     try {
-      await chatApi.createGroup(newName.trim(), newDesc.trim() || undefined);
-      setShowCreate(false); setNewName(''); setNewDesc('');
+      await chatApi.createGroup(newName.trim(), newDesc.trim() || undefined, newAvatar || undefined);
+      setShowCreate(false); setNewName(''); setNewDesc(''); setNewAvatar(null);
       await load();
     } catch (e: any) {
       alert.showAlert({ title: 'Error', message: e.message || 'Gagal membuat grup', type: 'error' });
@@ -103,41 +105,45 @@ export default function ChatGroupsScreen({ navigation }: Props) {
     }
   };
 
-  const renderGroup = ({ item }: { item: ChatGroupListItem }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => navigation.navigate('ChatRoom', { groupId: item.id, groupName: item.name })}
-    >
-      <GlassCard elevation={2}>
-        <View style={styles.row}>
-          <View style={[styles.avatar, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-            <MessageSquare size={20} color={c.accent.purple} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.sm }}>
-              <Text style={[typography.bodyBold, { color: c.text.primary, flex: 1, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
-                {item.name}
+  const renderGroup = ({ item }: { item: ChatGroupListItem }) => {
+    const av = getChatAvatar(item.avatar);
+    const avColor = av?.color ?? c.accent.purple;
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('ChatRoom', { groupId: item.id, groupName: item.name })}
+      >
+        <GlassCard elevation={2}>
+          <View style={styles.row}>
+            <View style={[styles.avatar, { backgroundColor: `${avColor}22` }]}>
+              {av ? <av.Icon size={20} color={avColor} /> : <MessageSquare size={20} color={c.accent.purple} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.sm }}>
+                <Text style={[typography.bodyBold, { color: c.text.primary, flex: 1, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                {item.unread_count > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>{item.unread_count > 99 ? '99+' : item.unread_count}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[typography.caption, { color: c.text.secondary }]} numberOfLines={1}>
+                {item.last_message
+                  ? `${item.last_message.sender_name ?? ''}: ${item.last_message.content ?? ''}`
+                  : 'Belum ada pesan'}
               </Text>
-              {item.unread_count > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{item.unread_count > 99 ? '99+' : item.unread_count}</Text>
-                </View>
-              )}
-            </View>
-            <Text style={[typography.caption, { color: c.text.secondary }]} numberOfLines={1}>
-              {item.last_message
-                ? `${item.last_message.sender_name ?? ''}: ${item.last_message.content ?? ''}`
-                : 'Belum ada pesan'}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-              <Users size={11} color={c.text.muted} />
-              <Text style={[typography.caption, { color: c.text.muted }]}>{item.member_count} anggota</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                <Users size={11} color={c.text.muted} />
+                <Text style={[typography.caption, { color: c.text.muted }]}>{item.member_count} anggota</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </GlassCard>
-    </TouchableOpacity>
-  );
+        </GlassCard>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -221,8 +227,24 @@ export default function ChatGroupsScreen({ navigation }: Props) {
               Buat Grup Chat
             </Text>
             <AppInput label="Nama Grup" value={newName} onChangeText={setNewName} placeholder="Contoh: Diskusi Forex" containerStyle={{ marginBottom: space.sm }} />
-            <AppInput label="Deskripsi (opsional)" value={newDesc} onChangeText={setNewDesc} placeholder="Deskripsi singkat" containerStyle={{ marginBottom: space.md }} />
-            <AppButton title={creating ? 'Membuat...' : 'Buat Grup'} onPress={handleCreate} loading={creating} style={{ marginBottom: space.sm }} />
+            <AppInput label="Deskripsi (opsional)" value={newDesc} onChangeText={setNewDesc} placeholder="Deskripsi singkat" containerStyle={{ marginBottom: space.sm }} />
+            <Text style={[typography.label, { color: c.text.secondary, marginBottom: space.sm }]}>Logo (opsional)</Text>
+            <View style={styles.avatarGrid}>
+              {CHAT_AVATARS.map(a => {
+                const selected = newAvatar === a.key;
+                return (
+                  <TouchableOpacity
+                    key={a.key}
+                    onPress={() => setNewAvatar(selected ? null : a.key)}
+                    activeOpacity={0.8}
+                    style={[styles.avatarOption, { backgroundColor: `${a.color}22`, borderColor: selected ? a.color : c.glass.border }]}
+                  >
+                    <a.Icon size={22} color={a.color} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <AppButton title={creating ? 'Membuat...' : 'Buat Grup'} onPress={handleCreate} loading={creating} style={{ marginBottom: space.sm, marginTop: space.md }} />
             <AppButton title="Batal" variant="ghost" onPress={() => setShowCreate(false)} />
           </GlassCard>
         </View>
@@ -251,6 +273,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   avatar: {
     width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  avatarOption: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
   },
   unreadBadge: {
