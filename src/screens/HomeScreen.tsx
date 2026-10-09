@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, MessageSquare, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, MessageSquare, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -185,7 +185,6 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const actions = [
     { label: 'Signals', screen: 'signals', Icon: Zap },
     { label: 'Traders', screen: 'traders', Icon: Users },
-    { label: 'Wallet', screen: 'wallet', Icon: Wallet },
     { label: 'Forum', screen: 'forum', Icon: MessageCircle },
     { label: 'Chat', screen: 'chat', Icon: MessageSquare },
   ];
@@ -572,7 +571,7 @@ export default function HomeScreen() {
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {
-      signals: 'Signals', traders: 'Traders', wallet: 'Wallet',
+      signals: 'Signals', traders: 'Traders',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
       chat: 'ChatGroups',
     };

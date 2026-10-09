@@ -23,6 +23,21 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ChatRoom'>;
 
 const POLL_MS = 5000;
 
+// Avatar anggota — foto profil bila tersedia, fallback inisial nama.
+function MemberAvatar({ uri, name, size = 36 }: { uri?: string | null; name?: string | null; size?: number }) {
+  const dimension = { width: size, height: size, borderRadius: size / 2 };
+  if (uri) {
+    return <ExpoImage source={{ uri }} style={dimension} contentFit="cover" />;
+  }
+  return (
+    <View style={[dimension, { backgroundColor: 'rgba(139,92,246,0.15)', alignItems: 'center', justifyContent: 'center' }]}>
+      <Text style={{ color: '#8B5CF6', fontWeight: '700', fontFamily: 'DMSans-Bold', fontSize: Math.round(size * 0.4) }}>
+        {(name ?? 'U').charAt(0).toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
 export default function ChatRoomScreen({ navigation, route }: Props) {
   const c = useColors();
   const alert = useCustomAlert();
@@ -218,7 +233,10 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
     const mine = item.sender_id === user?.id_user;
     return (
       <View style={[styles.msgRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
-        <View style={{ maxWidth: '78%' }}>
+        {!mine && (
+          <MemberAvatar uri={item.sender_profile_image} name={item.sender_name} size={30} />
+        )}
+        <View style={{ maxWidth: '74%', marginLeft: mine ? 0 : space.sm }}>
           {!mine && (
             <Text style={[typography.caption, { color: c.text.muted, marginBottom: 2, marginLeft: 4 }]}>
               {item.sender_name ?? 'User'}
@@ -348,11 +366,7 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
               <View style={{ gap: space.sm }}>
                 {members.map((m) => (
                   <View key={m.user_id} style={styles.memberRow}>
-                    <View style={[styles.memberAvatar, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-                      <Text style={{ color: c.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }}>
-                        {(m.name ?? 'U').charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
+                    <MemberAvatar uri={m.profile_image_src} name={m.name} />
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         {m.role === 1 && <Crown size={12} color={c.accent.gold} />}
@@ -412,11 +426,7 @@ export default function ChatRoomScreen({ navigation, route }: Props) {
                 ) : (
                   searchResults.map((u) => (
                     <TouchableOpacity key={u.id_user} onPress={() => handleInvite(u)} style={styles.memberRow}>
-                      <View style={[styles.memberAvatar, { backgroundColor: 'rgba(139,92,246,0.15)' }]}>
-                        <Text style={{ color: c.accent.purple, fontWeight: '700', fontFamily: 'DMSans-Bold' }}>
-                          {u.name.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
+                      <MemberAvatar uri={u.profile_image_src} name={u.name} />
                       <Text style={[typography.bodyBold, { color: c.text.primary, flex: 1, fontFamily: 'DMSans-SemiBold' }]} numberOfLines={1}>
                         {u.name}
                       </Text>
@@ -447,7 +457,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   headerAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  msgRow: { flexDirection: 'row' },
+  msgRow: { flexDirection: 'row', alignItems: 'flex-end' },
   bubble: { paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.lg },
   msgImage: { width: 200, height: 200, borderRadius: radius.md },
   inputBar: {
