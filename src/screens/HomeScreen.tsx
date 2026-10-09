@@ -15,6 +15,7 @@ import { walletApi } from '@/api/wallet';
 import { copytradeApi } from '@/api/copytrade';
 import { notificationApi } from '@/api/notifications';
 import { forumApi, LatestAnnouncement } from '@/api/forum';
+import { chatApi } from '@/api/chat';
 import { BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard, MaintenanceModal } from '@/components';
@@ -170,7 +171,7 @@ function MarqueeMarkets() {
 }
 
 // KOMPONEN: QuickActions — Grid tombol aksi cepat dengan animasi glow
-function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
+function QuickActions({ onNavigate, chatUnread = 0 }: { onNavigate: (s: string) => void; chatUnread?: number }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
   const c = useColors();
 
@@ -200,7 +201,12 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
             activeOpacity={0.8}
             style={[styles.actionBtn, { backgroundColor: c.glass.g1, borderColor: c.glass.border }, isGlowing && styles.actionBtnGlow]}
           >
-            <a.Icon size={20} color={isGlowing ? colors.accent.gold : colors.accent.purple} strokeWidth={1.8} />
+            <View style={styles.actionIconWrap}>
+              <a.Icon size={20} color={isGlowing ? colors.accent.gold : colors.accent.purple} strokeWidth={1.8} />
+              {a.screen === 'chat' && chatUnread > 0 && (
+                <View style={[styles.actionDot, { borderColor: c.bg.primary }]} />
+              )}
+            </View>
             <Text style={[typography.label, {
               color: isGlowing ? colors.accent.gold : c.text.secondary,
               marginTop: space.xs,
@@ -515,6 +521,7 @@ export default function HomeScreen() {
   const [mt5Data, setMt5Data] = useState<any>(null);
   const [mt5ServiceError, setMt5ServiceError] = useState<string | null>(null);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [chatUnread, setChatUnread] = useState(0);
   const [announcement, setAnnouncement] = useState<LatestAnnouncement | null>(null);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const navigation = useNavigation<any>();
@@ -533,6 +540,9 @@ export default function HomeScreen() {
         if (walletRes.status === 'fulfilled') setMpBalance(walletRes.value.data?.balance ?? 0);
       });
       notificationApi.getUnreadCount().then(res => setUnreadNotifCount(res.data.count)).catch(() => {});
+      if (userType !== 'trader') {
+        chatApi.unreadCount().then(res => setChatUnread(res.data?.count ?? 0)).catch(() => {});
+      }
       forumApi.getLatestAnnouncement()
         .then(res => {
           if (res.data) {
@@ -681,8 +691,8 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* ── QUICK ACTIONS: 4 Tombol Navigasi Cepat (Signals / Traders / Wallet / Forum) ── */}
-        <QuickActions onNavigate={onNavigate} />
+        {/* ── QUICK ACTIONS: Tombol Navigasi Cepat (Signals / Traders / Forum / Chat) ── */}
+        <QuickActions onNavigate={onNavigate} chatUnread={chatUnread} />
 
         {/* ── ACADEMY CARD: Kartu Promo Metavest Academy ── */}
         <AcademyCard onPress={() => navigation.navigate('Academy')} />
@@ -873,6 +883,13 @@ const styles = StyleSheet.create({
   actionBtnGlow: {
     backgroundColor: 'rgba(212,175,55,0.12)',
     borderColor: 'rgba(212,175,55,0.35)',
+  },
+  actionIconWrap: { position: 'relative' },
+  actionDot: {
+    position: 'absolute', top: -2, right: -2,
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: colors.semantic.negative,
+    borderWidth: 1.5,
   },
 
   sectionHeader: {
