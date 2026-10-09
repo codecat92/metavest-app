@@ -45,6 +45,8 @@ export type RootStackParamList = {
   PAMMKyc: { brokerId: number };
   KYCFinancial: { brokerId: number };
   ConsentDetail: { consentCode: string };
+  ChatGroups: undefined;
+  ChatRoom: { groupId: string; groupName?: string };
   DepositQuestions: {
     brokerId: number;
     employment_status: string;

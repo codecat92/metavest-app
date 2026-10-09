@@ -54,6 +54,8 @@ import ReferralListScreen from '@/screens/ReferralListScreen';
 import TraderDetailScreen from '@/screens/TraderDetailScreen';
 import MyRankScreen from '@/screens/MyRankScreen';
 import ConsentDetailScreen from '@/screens/ConsentDetailScreen';
+import ChatGroupsScreen from '@/screens/ChatGroupsScreen';
+import ChatRoomScreen from '@/screens/ChatRoomScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -161,6 +163,8 @@ function RootNavigator() {
         <Stack.Screen name="TraderDetail" component={TraderDetailScreen} />
         <Stack.Screen name="MyRank" component={MyRankScreen} />
         <Stack.Screen name="ConsentDetail" component={ConsentDetailScreen} />
+        <Stack.Screen name="ChatGroups" component={ChatGroupsScreen} />
+        <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
       </Stack.Navigator>
     </>
   );

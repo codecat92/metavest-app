@@ -119,6 +119,8 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
                   navigation.navigate('Forum', { scrollToPostId: Number(n.target_params) || undefined });
                 } else if (n.target_screen === 'PAMM') {
                   navigation.navigate('PAMM');
+                } else if (n.target_screen === 'ChatRoom' && n.target_params) {
+                  navigation.navigate('ChatRoom', { groupId: String(n.target_params) });
                 } else if (target) {
                   navigation.navigate('Tabs', { screen: target });
                 }

@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Megaphone, User, X } from 'lucide-react-native';
+import { Zap, Users, Wallet, Bell, TrendingUp, TrendingDown, ChevronRight, MessageCircle, MessageSquare, Monitor, Landmark, GraduationCap, Calendar, Sun, Sunset, Moon, Shield, Award, Star, Trophy, Gem, Megaphone, User, X } from 'lucide-react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
 import { forexApi, ForexCurrency, ForexQuote } from '@/api/forex';
@@ -169,7 +169,7 @@ function MarqueeMarkets() {
   );
 }
 
-// KOMPONEN: QuickActions — Grid 4 tombol aksi cepat dengan animasi glow
+// KOMPONEN: QuickActions — Grid tombol aksi cepat dengan animasi glow
 function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
   const [glowIndex, setGlowIndex] = useState<number | null>(null);
   const c = useColors();
@@ -187,6 +187,7 @@ function QuickActions({ onNavigate }: { onNavigate: (s: string) => void }) {
     { label: 'Traders', screen: 'traders', Icon: Users },
     { label: 'Wallet', screen: 'wallet', Icon: Wallet },
     { label: 'Forum', screen: 'forum', Icon: MessageCircle },
+    { label: 'Chat', screen: 'chat', Icon: MessageSquare },
   ];
 
   return (
@@ -573,6 +574,7 @@ export default function HomeScreen() {
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders', wallet: 'Wallet',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
+      chat: 'ChatGroups',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };
