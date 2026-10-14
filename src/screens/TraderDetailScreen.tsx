@@ -18,6 +18,7 @@ import { academyNewApi } from '@/api/academyNew';
 import type { CourseListItem } from '@/types/academy';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, Skeleton } from '@/components';
+import { formatMP } from '@/utils/format';
 import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
@@ -234,7 +235,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
                   <Text style={[styles.subscribeBtnText, subscribed && styles.subscribeBtnTextActive]}>
                     {subscribed
                       ? 'Subscribed'
-                      : `Subscribe Signal${subPrice > 0 ? ` · ${subPrice} MP` : ''}`}
+                      : `Subscribe Signal${subPrice > 0 ? ` · ${formatMP(subPrice)} MP` : ''}`}
                   </Text>
                 </TouchableOpacity>
               )}

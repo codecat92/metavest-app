@@ -16,6 +16,7 @@ import { walletApi } from '@/api/wallet';
 import { getToken, BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
 import { GlassCard, Badge, EmptyState, Skeleton } from '@/components';
+import { formatMP } from '@/utils/format';
 import SubscribeTraderModal from '@/components/SubscribeTraderModal';
 import { useAuth } from '@/context/AuthContext';
 import type { RootStackParamList, TabParamList } from '@/types/navigation';
@@ -359,7 +360,7 @@ export default function SignalScreen() {
                                 Subscribe to unlock
                               </Text>
                               <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center' }]}>
-                                {subPrice} MP / month · unlock all paid signals from this trader
+                                {formatMP(subPrice)} MP / month · unlock all paid signals from this trader
                               </Text>
                               <View style={styles.subscribeBtn}>
                                 <Text style={styles.subscribeBtnText}>Subscribe</Text>

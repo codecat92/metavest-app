@@ -5,6 +5,7 @@ import { AlertTriangle, Gem } from 'lucide-react-native';
 import { signalsApi, TraderSubscriptionSuccess, TraderSubscriptionError, SubscriptionPlans, SubscriptionPlanKey, PLAN_DEFS } from '@/api/signals';
 import { BASE_URL } from '@/api/client';
 import { useColors, space, radius, typography } from '@/theme';
+import { formatMP } from '@/utils/format';
 import { GlassCard, AppButton } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
@@ -105,7 +106,7 @@ export default function SubscribeTraderModal({
                 Saldo MP Tidak Cukupi
               </Text>
               <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center' }]}>
-                Saldo Anda {walletBalance} MP, dibutuhkan {selectedPrice} MP. Silakan top up untuk melanjutkan.
+                Saldo Anda {formatMP(walletBalance)} MP, dibutuhkan {formatMP(selectedPrice)} MP. Silakan top up untuk melanjutkan.
               </Text>
               <AppButton
                 title="Top Up"
@@ -150,8 +151,12 @@ export default function SubscribeTraderModal({
                         <Text style={[typography.captionBold, { color: active ? c.accent.gold : c.text.secondary }]}>
                           {p.short}
                         </Text>
-                        <Text style={[typography.bodyBold, { color: active ? c.accent.gold : c.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' }]}>
-                          {plans[p.key]} MP
+                        <Text
+                          numberOfLines={1}
+                          allowFontScaling={false}
+                          style={[typography.bodyBold, { color: active ? c.accent.gold : c.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' }]}
+                        >
+                          {formatMP(plans[p.key])}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -162,7 +167,7 @@ export default function SubscribeTraderModal({
               <View style={styles.priceRow}>
                 <Gem size={14} color={c.accent.gold} />
                 <Text style={[typography.bodyBold, { color: c.accent.gold, fontFamily: 'Manrope-Bold' }]}>
-                  {selectedPrice} MP / {selectedDef.duration}
+                  {formatMP(selectedPrice)} MP / {selectedDef.duration}
                 </Text>
               </View>
               <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center' }]}>
@@ -171,7 +176,7 @@ export default function SubscribeTraderModal({
               <View style={[styles.balanceCard, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <Text style={[typography.caption, { color: c.text.secondary }]}>Saldo Anda</Text>
                 <Text style={[typography.bodyBold, { color: c.accent.gold, marginTop: 2, fontFamily: 'Manrope-Bold' }]}>
-                  {walletBalance} MP
+                  {formatMP(walletBalance)} MP
                 </Text>
               </View>
               <AppButton
@@ -229,7 +234,10 @@ const styles = StyleSheet.create({
   planCard: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: space.md,
+    paddingHorizontal: space.xs,
+    minHeight: 58,
     borderRadius: radius.md,
     borderWidth: 1,
   },
