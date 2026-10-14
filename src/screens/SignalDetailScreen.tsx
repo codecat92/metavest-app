@@ -11,7 +11,7 @@ import {
   ArrowLeft, TrendingUp, TrendingDown, Heart,
   Share2, Zap, Clock, Target, Eye, AlertTriangle, Tag, Gem, User, Lock,
 } from 'lucide-react-native';
-import { signalsApi, Signal, formatPrice } from '@/api/signals';
+import { signalsApi, Signal, formatPrice, plansFromSignal, SubscriptionPlans } from '@/api/signals';
 import { settingsApi } from '@/api/settings';
 import { walletApi } from '@/api/wallet';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -48,7 +48,7 @@ export default function SignalDetailScreen() {
   const [tradeUrl, setTradeUrl] = useState('https://www.metatrader5.com/en');
   const [subscribed, setSubscribed] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; plans: SubscriptionPlans } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -250,7 +250,7 @@ export default function SignalDetailScreen() {
                   name: signal.trader_name ?? 'Trader',
                   avatar_url: signal.trader_avatar_url ?? null,
                 },
-                price: subPrice,
+                plans: plansFromSignal(signal),
               })}
             >
               <View style={styles.lockCircle}>
@@ -322,7 +322,7 @@ export default function SignalDetailScreen() {
       <SubscribeTraderModal
         visible={subscribeModal !== null}
         trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
-        price={subscribeModal?.price ?? 0}
+        plans={subscribeModal?.plans ?? { monthly: 0, six_month: 0, yearly: 0 }}
         walletBalance={walletBalance}
         onClose={() => setSubscribeModal(null)}
         onSubscribed={handleSubscribed}

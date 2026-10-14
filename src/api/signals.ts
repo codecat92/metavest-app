@@ -33,6 +33,29 @@ export interface Signal {
   subscription_price?: number;   // metapoints/month, only present when price_value > 0
 }
 
+export type SubscriptionPlanKey = 'monthly' | 'six_month' | 'yearly';
+
+export interface SubscriptionPlans {
+  monthly: number;
+  six_month: number;
+  yearly: number;
+}
+
+export const PLAN_DEFS: { key: SubscriptionPlanKey; label: string; short: string; duration: string }[] = [
+  { key: 'monthly', label: '1 Bulan', short: '1 Bln', duration: '30 hari' },
+  { key: 'six_month', label: '6 Bulan', short: '6 Bln', duration: '6 bulan' },
+  { key: 'yearly', label: '12 Bulan', short: '12 Bln', duration: '12 bulan' },
+];
+
+export function plansFromSignal(signal: Signal): SubscriptionPlans {
+  const info = signal.info ?? {};
+  const monthly = Number(signal.subscription_price ?? info.price ?? signal.price_value ?? 0) || 0;
+  const sixMonth = Number(info.price_6month ?? 0) || 0;
+  const yearly = Number(info.price_yearly ?? 0) || 0;
+  return { monthly, six_month: sixMonth, yearly };
+}
+
+
 export interface SignalListResponse {
   data: Signal[];
   data_count: number;
@@ -43,6 +66,8 @@ export interface CreateSignalRequest {
   signal_type: number;
   price: number;
   price_value?: number | null;
+  price_6month?: number | null;
+  price_yearly?: number | null;
   open_price: string;
   take_profit: string;
   stop_loss: string;
@@ -57,6 +82,8 @@ export interface UpdateSignalRequest {
   signal_type?: number;
   price?: number;
   price_value?: number | null;
+  price_6month?: number | null;
+  price_yearly?: number | null;
   open_price?: string;
   take_profit?: string;
   stop_loss?: string;
@@ -119,10 +146,10 @@ export const signalsApi = {
     api.post<ApiResponse<any>>('/signals/execute', { id }),
 
   /**
-   * Subscribe ke trader (bulanan, Metapoint). Pakai raw fetch agar body 402/409
+   * Subscribe ke trader (Metapoint). Pakai raw fetch agar body 400/402/409
    * yang terstruktur bisa dibaca (api.post helper membuang body pada non-2xx).
    */
-  subscribeTrader: async (traderId: string): Promise<{ status: number; data: TraderSubscriptionSuccess | TraderSubscriptionError }> => {
+  subscribeTrader: async (traderId: string, plan: SubscriptionPlanKey = 'monthly'): Promise<{ status: number; data: TraderSubscriptionSuccess | TraderSubscriptionError }> => {
     const token = getToken();
     const res = await fetch(`${BASE_URL}/trader-subscriptions`, {
       method: 'POST',
@@ -131,7 +158,7 @@ export const signalsApi = {
         Accept: 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ trader_id: traderId }),
+      body: JSON.stringify({ trader_id: traderId, plan }),
     });
     let json: any = {};
     try {

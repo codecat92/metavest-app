@@ -47,6 +47,8 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
   const [signalType, setSignalType] = useState<number | null>(null);
   const [price, setPrice] = useState(1);
   const [priceValue, setPriceValue] = useState('');
+  const [price6Month, setPrice6Month] = useState('');
+  const [priceYearly, setPriceYearly] = useState('');
   const [openPrice, setOpenPrice] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [stopLoss, setStopLoss] = useState('');
@@ -107,6 +109,8 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
         signal_type: signalType!,
         price,
         price_value: price === 2 ? parseInt(priceValue || '0') : 0,
+        price_6month: price === 2 && price6Month ? parseInt(price6Month) : null,
+        price_yearly: price === 2 && priceYearly ? parseInt(priceYearly) : null,
         open_price: openPrice,
         take_profit: takeProfit,
         stop_loss: stopLoss,
@@ -128,7 +132,7 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [validate, errors, currency, signalType, price, priceValue, openPrice, takeProfit, stopLoss, riskPerTrade, potentialProfit, notes, editId, showAlert, navigation]);
+  }, [validate, errors, currency, signalType, price, priceValue, price6Month, priceYearly, openPrice, takeProfit, stopLoss, riskPerTrade, potentialProfit, notes, editId, showAlert, navigation]);
 
   const fieldStyle = useMemo(() => ({
     color: c.text.primary,
@@ -217,6 +221,25 @@ export default function CreateSignalScreen({ route, navigation }: Props) {
                   onChangeText={setPriceValue}
                 />
                 {errors.priceValue && <Text style={[typography.label, { color: c.semantic.negative, marginTop: 4 }]}>{errors.priceValue}</Text>}
+                <TextInput
+                  style={[fieldStyle, { marginTop: space.sm, borderColor: c.glass.border }]}
+                  placeholder="Harga 6 bulan (MP) — opsional"
+                  placeholderTextColor={c.text.muted}
+                  keyboardType="numeric"
+                  value={price6Month}
+                  onChangeText={setPrice6Month}
+                />
+                <TextInput
+                  style={[fieldStyle, { marginTop: space.sm, borderColor: c.glass.border }]}
+                  placeholder="Harga tahunan (MP) — opsional"
+                  placeholderTextColor={c.text.muted}
+                  keyboardType="numeric"
+                  value={priceYearly}
+                  onChangeText={setPriceYearly}
+                />
+                <Text style={[typography.label, { color: c.text.muted, marginTop: space.sm }]}>
+                  Harga 6 bulan & tahunan berlaku per trader (dipakai di semua signal berbayar milik Anda).
+                </Text>
               </View>
             )}
           </View>

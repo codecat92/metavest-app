@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { getToken, BASE_URL, api, ApiResponse } from '@/api/client';
 import { UserTrader } from '@/api/follow';
-import { signalsApi, Signal } from '@/api/signals';
+import { signalsApi, Signal, plansFromSignal, SubscriptionPlans } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
 import { forumApi, ForumPost } from '@/api/forum';
 import { academyNewApi } from '@/api/academyNew';
@@ -39,9 +39,10 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [subPrice, setSubPrice] = useState(0);
+  const [plans, setPlans] = useState<SubscriptionPlans>({ monthly: 0, six_month: 0, yearly: 0 });
   const [subscribed, setSubscribed] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; plans: SubscriptionPlans } | null>(null);
 
   const [signals, setSignals] = useState<Signal[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
@@ -65,6 +66,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
       setSubPrice(paid
         ? ((paid.subscription_price ?? 0) > 0 ? (paid.subscription_price ?? 0) : (paid.price_value ?? 0))
         : 0);
+      setPlans(paid ? plansFromSignal(paid) : { monthly: 0, six_month: 0, yearly: 0 });
       setSubscribed(full.some(s => s.is_trader_subscribed));
     }
     if (forumRes.status === 'fulfilled') setForumPosts((forumRes.value?.data ?? []).slice(0, 3));
@@ -223,7 +225,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
                       name: trader.name ?? 'Trader',
                       avatar_url: trader.profile_image_src ?? null,
                     },
-                    price: subPrice,
+                    plans,
                   })}
                   activeOpacity={0.85}
                   style={[styles.subscribeBtn, subscribed && styles.subscribeBtnActive]}
@@ -397,7 +399,7 @@ export default function TraderDetailScreen({ route, navigation }: Props) {
       <SubscribeTraderModal
         visible={subscribeModal !== null}
         trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
-        price={subscribeModal?.price ?? 0}
+        plans={subscribeModal?.plans ?? { monthly: 0, six_month: 0, yearly: 0 }}
         walletBalance={walletBalance}
         onClose={() => setSubscribeModal(null)}
         onSubscribed={handleSubscribed}

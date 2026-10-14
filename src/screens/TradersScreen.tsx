@@ -7,6 +7,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Shield, Star } from 'lucide-react-native';
 import { followApi, UserTrader } from '@/api/follow';
+import type { SubscriptionPlans } from '@/api/signals';
 import { walletApi } from '@/api/wallet';
 import { getToken, BASE_URL } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
@@ -26,7 +27,7 @@ export default function TradersScreen() {
   const [subscribedSet, setSubscribedSet] = useState<Set<string>>(new Set());
   const [brokenAvatars, setBrokenAvatars] = useState<Set<string>>(new Set());
   const [walletBalance, setWalletBalance] = useState(0);
-  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; price: number } | null>(null);
+  const [subscribeModal, setSubscribeModal] = useState<{ trader: { id: string; name: string; avatar_url: string | null }; plans: SubscriptionPlans } | null>(null);
   const { user, userType } = useAuth();
 
   const loadTraders = useCallback(async () => {
@@ -163,7 +164,11 @@ export default function TradersScreen() {
                             name: trader.name ?? 'Trader',
                             avatar_url: trader.profile_image_src ?? null,
                           },
-                          price: trader.subscription_price ?? 0,
+                          plans: trader.subscription_plans ?? {
+                            monthly: trader.subscription_price ?? 0,
+                            six_month: 0,
+                            yearly: 0,
+                          },
                         })}
                         style={[styles.followBtn, isSubscribed && styles.followBtnActive]}
                       >
@@ -202,7 +207,7 @@ export default function TradersScreen() {
       <SubscribeTraderModal
         visible={subscribeModal !== null}
         trader={subscribeModal?.trader ?? { id: '', name: '', avatar_url: null }}
-        price={subscribeModal?.price ?? 0}
+        plans={subscribeModal?.plans ?? { monthly: 0, six_month: 0, yearly: 0 }}
         walletBalance={walletBalance}
         onClose={() => setSubscribeModal(null)}
         onSubscribed={handleSubscribed}

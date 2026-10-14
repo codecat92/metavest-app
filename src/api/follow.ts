@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './client';
+import type { SubscriptionPlans } from './signals';
 
 export interface UserTrader {
   id: string;
@@ -11,6 +12,7 @@ export interface UserTrader {
   follow_status?: string;
   is_trader_subscribed?: boolean;
   subscription_price?: number;
+  subscription_plans?: SubscriptionPlans;
   created_at?: string;
 }
 

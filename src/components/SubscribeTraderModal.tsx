@@ -1,8 +1,8 @@
-import { View, Text, Modal, Image, StyleSheet } from 'react-native';
-import { useCallback, useState } from 'react';
+import { View, Text, Modal, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { AlertTriangle, Gem } from 'lucide-react-native';
-import { signalsApi, TraderSubscriptionSuccess, TraderSubscriptionError } from '@/api/signals';
+import { signalsApi, TraderSubscriptionSuccess, TraderSubscriptionError, SubscriptionPlans, SubscriptionPlanKey, PLAN_DEFS } from '@/api/signals';
 import { BASE_URL } from '@/api/client';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
@@ -22,7 +22,7 @@ type ModalNavProp = CompositeNavigationProp<
 type Props = {
   visible: boolean;
   trader: { id: string; name: string; avatar_url: string | null };
-  price: number;
+  plans: SubscriptionPlans;
   walletBalance: number;
   onClose: () => void;
   onSubscribed: (trader_id: string, newBalance: number) => void;
@@ -31,7 +31,7 @@ type Props = {
 export default function SubscribeTraderModal({
   visible,
   trader,
-  price,
+  plans,
   walletBalance,
   onClose,
   onSubscribed,
@@ -41,6 +41,20 @@ export default function SubscribeTraderModal({
   const { showAlert } = useCustomAlert();
   const [subscribing, setSubscribing] = useState(false);
   const [insufficient, setInsufficient] = useState(false);
+  const [selected, setSelected] = useState<SubscriptionPlanKey>('monthly');
+
+  const availablePlans = PLAN_DEFS.filter((p) => (plans[p.key] ?? 0) > 0);
+  const availableKeys = availablePlans.map((p) => p.key).join(',');
+  const selectedDef = PLAN_DEFS.find((p) => p.key === selected) ?? PLAN_DEFS[0];
+  const selectedPrice = plans[selected] ?? 0;
+
+  useEffect(() => {
+    if (visible) {
+      setInsufficient(false);
+      setSelected(availablePlans[0]?.key ?? 'monthly');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, availableKeys]);
 
   const avatarSrc = trader.avatar_url
     ? (trader.avatar_url.startsWith('http')
@@ -52,7 +66,7 @@ export default function SubscribeTraderModal({
     if (subscribing) return;
     setSubscribing(true);
     try {
-      const res = await signalsApi.subscribeTrader(trader.id);
+      const res = await signalsApi.subscribeTrader(trader.id, selected);
       if (res.status === 200) {
         const data = res.data as TraderSubscriptionSuccess;
         onSubscribed(trader.id, data.wallet_balance ?? walletBalance);
@@ -78,7 +92,7 @@ export default function SubscribeTraderModal({
     } finally {
       setSubscribing(false);
     }
-  }, [subscribing, trader.id, walletBalance, onClose, onSubscribed, showAlert]);
+  }, [subscribing, selected, trader.id, walletBalance, onClose, onSubscribed, showAlert]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -91,7 +105,7 @@ export default function SubscribeTraderModal({
                 Saldo MP Tidak Cukupi
               </Text>
               <Text style={[typography.body, { color: c.text.secondary, textAlign: 'center' }]}>
-                Saldo Anda {walletBalance} MP, dibutuhkan {price} MP. Silakan top up untuk melanjutkan.
+                Saldo Anda {walletBalance} MP, dibutuhkan {selectedPrice} MP. Silakan top up untuk melanjutkan.
               </Text>
               <AppButton
                 title="Top Up"
@@ -115,14 +129,44 @@ export default function SubscribeTraderModal({
               <Text style={[typography.h4, { color: c.text.primary, textAlign: 'center', fontFamily: 'Manrope-Bold' }]}>
                 Berlangganan {trader.name}
               </Text>
+
+              {availablePlans.length > 1 && (
+                <View style={styles.planRow}>
+                  {availablePlans.map((p) => {
+                    const active = p.key === selected;
+                    return (
+                      <TouchableOpacity
+                        key={p.key}
+                        onPress={() => setSelected(p.key)}
+                        activeOpacity={0.85}
+                        style={[
+                          styles.planCard,
+                          {
+                            borderColor: active ? c.accent.gold : c.glass.border,
+                            backgroundColor: active ? `${c.accent.gold}14` : c.glass.g1,
+                          },
+                        ]}
+                      >
+                        <Text style={[typography.captionBold, { color: active ? c.accent.gold : c.text.secondary }]}>
+                          {p.short}
+                        </Text>
+                        <Text style={[typography.bodyBold, { color: active ? c.accent.gold : c.text.primary, marginTop: 2, fontFamily: 'Manrope-Bold' }]}>
+                          {plans[p.key]} MP
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
               <View style={styles.priceRow}>
                 <Gem size={14} color={c.accent.gold} />
                 <Text style={[typography.bodyBold, { color: c.accent.gold, fontFamily: 'Manrope-Bold' }]}>
-                  {price} MP / bulan
+                  {selectedPrice} MP / {selectedDef.duration}
                 </Text>
               </View>
               <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center' }]}>
-                Akses semua signal berbayar dari trader ini selama 30 hari.
+                Akses semua signal berbayar dari trader ini selama {selectedDef.duration}.
               </Text>
               <View style={[styles.balanceCard, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
                 <Text style={[typography.caption, { color: c.text.secondary }]}>Saldo Anda</Text>
@@ -176,6 +220,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs,
+  },
+  planRow: {
+    flexDirection: 'row',
+    gap: space.sm,
+    alignSelf: 'stretch',
+  },
+  planCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
   },
   balanceCard: {
     alignSelf: 'stretch',
