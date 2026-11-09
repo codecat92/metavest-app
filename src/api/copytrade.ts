@@ -1,46 +1,69 @@
 import { api, ApiResponse } from './client';
 
-export interface Mt5Account {
-  id: number;
-  user_id: string;
-  account: string;
-  password: string;
-  mt5_server: string;
-  created_at: string;
+export interface CopyTradeSlot {
+  slot_id: string;
+  status: string; // queued | waiting_credentials | active | ready | releasing | error
+  copy_enabled: boolean;
+  volume_ratio: number;
+  slot?: any;
+}
+
+export interface Mt5AccountData {
+  slot_id?: string;
+  age_sec?: number;
+  balance?: number;
+  equity?: number;
+  margin?: number;
+  margin_free?: number;
+  profit?: number;
+  currency?: string;
+  leverage?: number;
 }
 
 export interface Mt5Position {
   ticket?: number;
   symbol?: string;
-  type?: number;
+  side?: string; // BUY | SELL
   volume?: number;
-  open_price?: number;
-  current_price?: number;
+  price_open?: number;
+  price_current?: number;
+  sl?: number;
+  tp?: number;
   profit?: number;
   swap?: number;
-  comment?: string;
+  time?: number;
+  master_ticket?: number | null;
 }
 
 export const copytradeApi = {
-  getSubscriberInfo: () =>
-    api.get<ApiResponse<Mt5Account>>('/copytrades/subscriber/info'),
-
-  getMt5Account: () =>
-    api.get<ApiResponse<any>>('/copytrades/subscriber/mt5/account'),
-
-  getMt5Positions: () =>
-    api.get<ApiResponse<any>>('/copytrades/subscriber/mt5/positions-orders'),
-
-  subscribe: (account: string, password: string, mt5Server: string) =>
-    api.post<ApiResponse<any>>('/copytrades/subscribe', {
+  subscribe: (account: string, password: string, mt5Server: string, volumeRatio = 1.0) =>
+    api.post<ApiResponse<{ slot_id: string; status: string }>>('/copytrades/subscribe', {
       account,
       password,
       mt5_server: mt5Server,
+      volume_ratio: volumeRatio,
     }),
+
+  activate: () =>
+    api.post<ApiResponse<{ slot_id: string; status: string }>>('/copytrades/activate', {}),
+
+  getStatus: () =>
+    api.get<ApiResponse<CopyTradeSlot | null>>('/copytrades/status'),
+
+  toggleCopy: (enabled: boolean, volumeRatio?: number) =>
+    api.post<ApiResponse<any>>('/copytrades/copy', {
+      enabled,
+      ...(volumeRatio !== undefined ? { volume_ratio: volumeRatio } : {}),
+    }),
+
+  getAccount: () =>
+    api.get<ApiResponse<Mt5AccountData>>('/copytrades/account'),
+
+  getPositions: () =>
+    api.get<ApiResponse<{ slot_id?: string; age_sec?: number; positions: Mt5Position[] }>>(
+      '/copytrades/positions'
+    ),
 
   unsubscribe: () =>
     api.post<ApiResponse<any>>('/copytrades/unsubscribe'),
-
-  getArchive: () =>
-    api.get<ApiResponse<any>>('/copytrades/archive/own/all'),
 };

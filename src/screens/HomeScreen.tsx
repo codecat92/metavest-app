@@ -18,7 +18,7 @@ import { forumApi, LatestAnnouncement } from '@/api/forum';
 import { chatApi } from '@/api/chat';
 import { BASE_URL } from '@/api/client';
 import { colors, useColors, useTheme, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard, MaintenanceModal } from '@/components';
+import { GlassCard, AppButton, Skeleton, BackgroundGlow, MT5AccountCard, RankPreviewCard } from '@/components';
 import type { TabParamList, RootStackParamList } from '@/types/navigation';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -513,7 +513,6 @@ export default function HomeScreen() {
   const colors = useColors();
   const { isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [showMt5Maintenance, setShowMt5Maintenance] = useState(false);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
   const [signalsCount, setSignalsCount] = useState<number | null>(null);
   const [mpBalance, setMpBalance] = useState<number | null>(null);
@@ -558,21 +557,36 @@ export default function HomeScreen() {
     useCallback(() => {
       const checkMt5 = async () => {
         try {
-          await copytradeApi.getSubscriberInfo();
-          setMt5Connected(true);
+          const statusRes = await copytradeApi.getStatus();
+          const slot = statusRes.data;
+          const connected = !!slot?.slot_id && ['active', 'ready'].includes(slot.status);
+          setMt5Connected(connected);
+          if (!connected) {
+            setMt5Data(null);
+            setMt5ServiceError(null);
+            return;
+          }
           setMt5ServiceError(null);
           try {
-            const accountRes = await copytradeApi.getMt5Account();
-            const data = accountRes.data;
-            setMt5Data({ ...data.mt5, active_positions: data.active_positions });
+            const [accRes, posRes] = await Promise.all([
+              copytradeApi.getAccount(),
+              copytradeApi.getPositions(),
+            ]);
+            const acc = accRes.data ?? {};
+            const positions = posRes.data?.positions ?? [];
+            setMt5Data({
+              ...acc,
+              server: slot?.slot?.server,
+              company: acc?.currency ? `Akun MT5 (${acc.currency})` : undefined,
+              active_positions: positions.length,
+            });
           } catch (err: any) {
-            // Log teknis untuk debugging (tidak ditampilkan ke user)
             console.log('MT5 account fetch failed:', err?.message || err);
-            // Pesan user-friendly, non-teknis
             setMt5ServiceError('Koneksi ke server trading sedang terganggu. Silakan coba lagi beberapa saat.');
           }
         } catch {
           setMt5Connected(false);
+          setMt5Data(null);
         }
       };
       checkMt5();
@@ -686,8 +700,8 @@ export default function HomeScreen() {
             mt5Data={mt5Data}
             serviceError={mt5ServiceError}
             followingCount={followingCount}
-            onConnectPress={() => setShowMt5Maintenance(true)}
-            onCardPress={() => setShowMt5Maintenance(true)}
+            onConnectPress={() => navigation.navigate('CopyTrade')}
+            onCardPress={() => navigation.navigate('CopyTrade')}
           />
         )}
 
@@ -827,11 +841,6 @@ export default function HomeScreen() {
           </View>
         </Modal>
       )}
-
-      <MaintenanceModal
-        visible={showMt5Maintenance}
-        onClose={() => setShowMt5Maintenance(false)}
-      />
     </View>
   );
 }

@@ -1,19 +1,20 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator
+  TouchableOpacity, TextInput, ActivityIndicator,
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Server, Key, User, Zap, Activity,
-  TrendingUp, Shield, Trash2, Building2, DollarSign, BarChart2, Unlock
+  TrendingUp, Shield, Trash2, Building2, DollarSign, BarChart2,
+  Play, Pause,
 } from 'lucide-react-native';
-import { copytradeApi, Mt5Account } from '@/api/copytrade';
+import { copytradeApi, Mt5AccountData, Mt5Position } from '@/api/copytrade';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, AppInput, Badge, EmptyState, MaintenanceModal } from '@/components';
+import { GlassCard, AppButton } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -23,85 +24,182 @@ function formatCurrency(val: number): string {
   return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+type SlotStatus = 'active' | 'ready' | 'queued' | 'waiting_credentials' | 'releasing' | 'error';
+
 export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const alert = useCustomAlert();
   const c = useColors();
-  const [subscriber, setSubscriber] = useState<Mt5Account | null>(null);
-  const [mt5Account, setMt5Account] = useState<any>(null);
-  const [positions, setPositions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [slot, setSlot] = useState<any>(null);
+  const [account, setAccount] = useState<Mt5AccountData | null>(null);
+  const [positions, setPositions] = useState<Mt5Position[]>([]);
+
+  // form connect
   const [showForm, setShowForm] = useState(false);
-  const [account, setAccount] = useState('');
+  const [accountInput, setAccountInput] = useState('');
   const [password, setPassword] = useState('');
   const [server, setServer] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showMaintenance, setShowMaintenance] = useState(false);
 
-  const loadData = useCallback(async () => {
-    if (!getToken()) { setLoading(false); return; }
+  // copy toggle
+  const [toggling, setToggling] = useState(false);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isCopying = !!slot && ['active', 'ready'].includes(slot.status);
+  const copyEnabled = !!slot?.copy_enabled;
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const loadSlot = useCallback(async () => {
     try {
-      const [info, mt5, pos] = await Promise.all([
-        copytradeApi.getSubscriberInfo().catch(() => null),
-        copytradeApi.getMt5Account().catch(() => null),
-        copytradeApi.getMt5Positions().catch(() => null),
-      ]);
-      if (info?.data) setSubscriber(info.data as any);
-      if (mt5?.data) setMt5Account({ ...mt5.data.mt5, active_positions: mt5.data.active_positions });
-      if (pos?.data) setPositions(pos.data?.mt5 ?? null);
+      const res = await copytradeApi.getStatus();
+      const data = res.data;
+      if (!data || !data.slot_id) {
+        setSlot(null);
+        setAccount(null);
+        setPositions([]);
+        return;
+      }
+      setSlot(data);
+      // Jika masih antre/menunggu, jangan ambil account dulu.
+      if (data.status === 'active' || data.status === 'ready') {
+        try {
+          const [accRes, posRes] = await Promise.all([
+            copytradeApi.getAccount(),
+            copytradeApi.getPositions(),
+          ]);
+          setAccount(accRes.data ?? null);
+          setPositions(posRes.data?.positions ?? []);
+        } catch (e) {
+          // account/positions belum tersedia — biarkan kosong
+        }
+      } else {
+        setAccount(null);
+        setPositions([]);
+      }
     } catch (e) {
+      setSlot(null);
+      setAccount(null);
+      setPositions([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useFocusEffect(
-    useCallback(() => { setLoading(true); loadData(); }, [loadData])
+    useCallback(() => {
+      setLoading(true);
+      loadSlot();
+      return () => stopPolling();
+    }, [loadSlot, stopPolling])
   );
 
+  // Polling saat queued → tunggu giliran → activate
+  useEffect(() => {
+    if (slot?.status === 'queued' || slot?.status === 'waiting_credentials') {
+      pollRef.current = setInterval(async () => {
+        try {
+          const res = await copytradeApi.getStatus();
+          const data = res.data;
+          if (!data) { stopPolling(); return; }
+          setSlot(data);
+          if (data.status === 'waiting_credentials') {
+            // terminal sudah dialokasikan, kirim ulang kredensial
+            stopPolling();
+            try {
+              const act = await copytradeApi.activate();
+              setSlot({ ...data, status: act.data?.status ?? 'active' });
+              loadSlot();
+            } catch (e: any) {
+              alert.showAlert({ title: 'Error', message: e.message || 'Gagal mengaktifkan copy trading', type: 'error' });
+            }
+          } else if (data.status === 'active' || data.status === 'ready') {
+            stopPolling();
+            loadSlot();
+          }
+        } catch (e) {
+          // abaikan transient error saat polling
+        }
+      }, 5000);
+      return () => stopPolling();
+    }
+  }, [slot?.status, stopPolling, loadSlot, alert]);
+
   const handleSubscribe = async () => {
-    if (!account.trim() || !password.trim() || !server.trim()) {
-      alert.showAlert({ title: 'Error', message: 'All fields are required', type: 'error' });
+    if (!accountInput.trim() || !password.trim() || !server.trim()) {
+      alert.showAlert({ title: 'Error', message: 'Semua field wajib diisi', type: 'error' });
       return;
     }
     setSubmitting(true);
     try {
-      const res = await copytradeApi.subscribe(account.trim(), password.trim(), server.trim());
-      alert.showAlert({ title: 'Success', message: 'Successfully subscribed to copy trading', type: 'success' });
+      const res = await copytradeApi.subscribe(accountInput.trim(), password.trim(), server.trim(), 1.0);
+      const status = res.data?.status ?? 'queued';
       setShowForm(false);
-      setSubscriber(res.data?.user ?? null);
-      loadData();
+      alert.showAlert({
+        title: 'Berhasil',
+        message: status === 'active' ? 'Copy trading aktif' : 'Menunggu giliran terminal...',
+        type: 'success',
+      });
+      await loadSlot();
     } catch (e: any) {
-      if (e.message?.includes('Subscribe success') || e.message?.includes('Subscription')) {
-        alert.showAlert({ title: 'Subscribed', message: 'Account saved. MT5 connection pending.', type: 'success' });
-        setShowForm(false);
-        loadData();
-      } else {
-        alert.showAlert({ title: 'Error', message: e.message || 'Subscribe failed', type: 'error' });
-      }
+      alert.showAlert({ title: 'Error', message: e.message || 'Gagal menghubungkan akun MT5', type: 'error' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleCopy = async () => {
+    if (!slot?.slot_id) return;
+    setToggling(true);
+    try {
+      const next = !copyEnabled;
+      await copytradeApi.toggleCopy(next);
+      setSlot({ ...slot, copy_enabled: next });
+      alert.showAlert({
+        title: 'Berhasil',
+        message: next ? 'Copy trading diaktifkan' : 'Copy trading dinonaktifkan',
+        type: 'success',
+      });
+    } catch (e: any) {
+      alert.showAlert({ title: 'Error', message: e.message || 'Gagal mengubah status copy', type: 'error' });
+    } finally {
+      setToggling(false);
     }
   };
 
   const handleUnsubscribe = async () => {
     try {
       await copytradeApi.unsubscribe();
-      setSubscriber(null);
-      setMt5Account(null);
-      setPositions(null);
-      alert.showAlert({ title: 'Done', message: 'Unsubscribed from copy trading', type: 'success' });
+      stopPolling();
+      setSlot(null);
+      setAccount(null);
+      setPositions([]);
+      alert.showAlert({ title: 'Selesai', message: 'Copy trading dihentikan', type: 'success' });
     } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Failed', type: 'error' });
+      alert.showAlert({ title: 'Error', message: e.message || 'Gagal menghentikan copy trading', type: 'error' });
     }
   };
 
   if (!getToken()) {
     return (
-    <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
-        <View style={styles.center}><Text style={{ color: c.text.secondary }}>Login to use Copy Trading</Text></View>
+      <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
+        <View style={styles.center}><Text style={{ color: c.text.secondary }}>Login untuk menggunakan Copy Trading</Text></View>
       </SafeAreaView>
     );
   }
+
+  const statusLabel = slot?.status === 'queued' ? 'Menunggu giliran'
+    : slot?.status === 'waiting_credentials' ? 'Menyiapkan terminal...'
+    : slot?.status === 'releasing' ? 'Melepas...'
+    : slot?.status === 'error' ? 'Error'
+    : isCopying ? 'Aktif'
+    : 'Tidak terhubung';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.bg.primary }]} edges={['top']}>
@@ -115,162 +213,155 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
 
         {loading ? (
           <ActivityIndicator size="large" color={c.accent.purple} style={{ marginTop: 60 }} />
-        ) : subscriber ? (
+        ) : slot ? (
           <>
-            {/* ── CARD 1: Account Info ── */}
+            {/* ── Status Card ── */}
             <GlassCard elevation={2} style={styles.accInfoCard}>
               <View style={styles.accInfoHeader}>
                 <User size={20} color={c.accent.gold} />
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.accName, { color: c.text.primary }]}>
-                    {mt5Account?.name ?? `#${subscriber.account}`}
+                    {slot.slot?.login ? `#${slot.slot.login}` : `Slot ${slot.slot_id}`}
                   </Text>
                   <Text style={[styles.accLogin, { color: c.text.secondary }]}>
-                    #{subscriber.account}
+                    {slot.slot?.server ?? '-'}
+                  </Text>
+                </View>
+                <View style={[
+                  styles.statusPill,
+                  { backgroundColor: isCopying ? c.semantic.positive + '20' : c.glass.g1, borderColor: isCopying ? c.semantic.positive + '4D' : c.glass.borderStrong },
+                ]}>
+                  <Text style={[styles.statusPillText, { color: isCopying ? c.semantic.positive : c.text.secondary }]}>
+                    {statusLabel}
                   </Text>
                 </View>
               </View>
-              <View style={[styles.accDivider, { borderColor: c.glass.border }]} />
-              <View style={styles.accMetaRow}>
-                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
-                  <Server size={11} color={c.text.secondary} />
-                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
-                    {subscriber.mt5_server}
-                  </Text>
-                </View>
-                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
-                  <DollarSign size={11} color={c.accent.gold} />
-                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
-                    {mt5Account?.currency ?? 'USD'}
-                  </Text>
-                </View>
-                <View style={[styles.accMetaBadge, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
-                  <BarChart2 size={11} color={c.accent.gold} />
-                  <Text style={[styles.accMetaText, { color: c.text.secondary }]}>
-                    1:{mt5Account?.leverage ?? '--'}
-                  </Text>
-                </View>
-              </View>
-              {mt5Account?.company ? (
-                <View style={styles.accCompanyRow}>
-                  <Building2 size={11} color={c.text.muted} />
-                  <Text style={[styles.accCompany, { color: c.text.muted }]}>{mt5Account.company}</Text>
-                </View>
-              ) : null}
             </GlassCard>
 
-            {/* ── CARD 2: Balance Sheet ── */}
-            {mt5Account && (
+            {/* ── Balance Sheet ── */}
+            {isCopying && account && (
               <GlassCard elevation={2} style={styles.balanceCard}>
                 <Text style={[styles.bsTitle, { color: c.accent.gold }]}>BALANCE SHEET</Text>
                 <View style={styles.bsGrid}>
                   <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border, borderBottomWidth: 1 }]}>
                     <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Balance</Text>
-                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
-                      {formatCurrency(Number(mt5Account.balance ?? 0))}
-                    </Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>{formatCurrency(Number(account.balance ?? 0))}</Text>
                   </View>
                   <View style={[styles.bsItem, { borderBottomWidth: 1, borderColor: c.glass.border }]}>
                     <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Equity</Text>
-                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
-                      {formatCurrency(Number(mt5Account.equity ?? 0))}
-                    </Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>{formatCurrency(Number(account.equity ?? 0))}</Text>
                   </View>
                   <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border, borderBottomWidth: 1 }]}>
                     <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Profit</Text>
-                    <Text style={[styles.bsValue, { color: Number(mt5Account.profit ?? 0) >= 0 ? c.semantic.positive : c.semantic.negative }]}>
-                      {formatCurrency(Number(mt5Account.profit ?? 0))}
+                    <Text style={[styles.bsValue, { color: Number(account.profit ?? 0) >= 0 ? c.semantic.positive : c.semantic.negative }]}>
+                      {formatCurrency(Number(account.profit ?? 0))}
                     </Text>
                   </View>
                   <View style={[styles.bsItem, { borderBottomWidth: 1, borderColor: c.glass.border }]}>
                     <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Margin</Text>
-                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
-                      {formatCurrency(Number(mt5Account.margin ?? 0))}
-                    </Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>{formatCurrency(Number(account.margin ?? 0))}</Text>
                   </View>
                   <View style={[styles.bsItem, { borderRightWidth: 1, borderColor: c.glass.border }]}>
                     <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Free Margin</Text>
-                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
-                      {formatCurrency(Number(mt5Account.margin_free ?? 0))}
-                    </Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>{formatCurrency(Number(account.margin_free ?? 0))}</Text>
                   </View>
-                  <View style={styles.bsItem}>
-                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Margin Level</Text>
-                    <Text style={[styles.bsValue, { color: c.text.primary }]}>
-                      {mt5Account.margin_level != null ? `${Number(mt5Account.margin_level).toFixed(2)}%` : '--'}
-                    </Text>
+                  <View style={[styles.bsItem]}>
+                    <Text style={[styles.bsLabel, { color: c.text.secondary }]}>Leverage</Text>
+                    <Text style={[styles.bsValue, { color: c.text.primary }]}>{account.leverage != null ? `1:${account.leverage}` : '--'}</Text>
                   </View>
                 </View>
               </GlassCard>
             )}
 
-            {/* ── CARD 3: Open Positions ── */}
-            <GlassCard elevation={2} style={styles.positionsCard}>
-              <Text style={[styles.bsTitle, { color: c.accent.gold }]}>OPEN POSITIONS</Text>
-              {positions && positions.length > 0 ? (
-                positions.slice(0, 10).map((pos: any, i: number) => {
-                  const isPositive = Number(pos.profit ?? 0) >= 0;
-                  const isBuy = (pos.type ?? 'buy') === 'buy';
-                  return (
-                    <View key={i} style={[styles.positionCard, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
-                      <View style={styles.posHeader}>
-                        <View style={styles.posSymbol}>
-                          <Activity size={14} color={c.accent.purple} />
-                          <Text style={[styles.posSymbolText, { color: c.text.primary }]}>{pos.symbol ?? 'N/A'}</Text>
+            {/* ── Copy Toggle ── */}
+            {isCopying && (
+              <GlassCard elevation={2} style={styles.balanceCard}>
+                <View style={styles.toggleRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.toggleTitle, { color: c.text.primary }]}>Copy Trading</Text>
+                    <Text style={[styles.toggleSub, { color: c.text.secondary }]}>
+                      {copyEnabled ? 'Sedang menyalin posisi master' : 'Copy dinonaktifkan'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleToggleCopy}
+                    disabled={toggling}
+                    style={[
+                      styles.toggleBtn,
+                      { backgroundColor: copyEnabled ? c.semantic.positive : c.glass.g1, borderColor: copyEnabled ? c.semantic.positive : c.glass.borderStrong },
+                      toggling && { opacity: 0.6 },
+                    ]}
+                  >
+                    {copyEnabled ? <Pause size={16} color="#fff" /> : <Play size={16} color={c.text.primary} />}
+                  </TouchableOpacity>
+                </View>
+              </GlassCard>
+            )}
+
+            {/* ── Open Positions ── */}
+            {isCopying && (
+              <GlassCard elevation={2} style={styles.positionsCard}>
+                <Text style={[styles.bsTitle, { color: c.accent.gold }]}>OPEN POSITIONS</Text>
+                {positions.length > 0 ? (
+                  positions.slice(0, 20).map((pos, i) => {
+                    const isPositive = Number(pos.profit ?? 0) >= 0;
+                    const isBuy = (pos.side ?? 'BUY') === 'BUY';
+                    return (
+                      <View key={pos.ticket ?? i} style={[styles.positionCard, { backgroundColor: c.glass.g1, borderColor: c.glass.borderStrong }]}>
+                        <View style={styles.posHeader}>
+                          <View style={styles.posSymbol}>
+                            <Activity size={14} color={c.accent.purple} />
+                            <Text style={[styles.posSymbolText, { color: c.text.primary }]}>{pos.symbol ?? 'N/A'}</Text>
+                            <View style={[
+                              styles.posType,
+                              isBuy
+                                ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+                                : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
+                            ]}>
+                              <Text style={[styles.posTypeText, { color: isBuy ? c.semantic.positive : c.semantic.negative }]}>{pos.side}</Text>
+                            </View>
+                          </View>
                           <View style={[
-                            styles.posType,
-                            isBuy
+                            styles.posBadge,
+                            isPositive
                               ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
                               : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
                           ]}>
-                            <Text style={[styles.posTypeText, { color: isBuy ? c.semantic.positive : c.semantic.negative }]}>
-                              {isBuy ? 'BUY' : 'SELL'}
+                            <TrendingUp size={11} color={isPositive ? c.semantic.positive : c.semantic.negative} />
+                            <Text style={[styles.posPnl, { color: isPositive ? c.semantic.positive : c.semantic.negative }]}>
+                              ${Number(pos.profit ?? 0).toFixed(2)}
                             </Text>
                           </View>
                         </View>
-                        <View style={[
-                          styles.posBadge,
-                          isPositive
-                            ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
-                            : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
-                        ]}>
-                          <TrendingUp size={11} color={isPositive ? c.semantic.positive : c.semantic.negative} />
-                          <Text style={[styles.posPnl, { color: isPositive ? c.semantic.positive : c.semantic.negative }]}>
-                            ${Number(pos.profit ?? 0).toFixed(2)}
-                          </Text>
-                        </View>
-                      </View>
-                      {(pos.sl != null || pos.tp != null) ? (
                         <View style={styles.posRow}>
                           <Text style={[styles.posDetail, { color: c.text.secondary }]}>
-                            SL: {pos.sl != null ? Number(pos.sl).toFixed(5) : '--'}
+                            Vol: {pos.volume ?? '-'}
                           </Text>
                           <Text style={[styles.posDetail, { color: c.text.secondary }]}>
-                            TP: {pos.tp != null ? Number(pos.tp).toFixed(5) : '--'}
+                            Open: {pos.price_open != null ? Number(pos.price_open).toFixed(5) : '--'}
                           </Text>
                         </View>
-                      ) : null}
-                      <View style={styles.posRow}>
-                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>
-                          Vol: {pos.volume ?? '-'}
-                        </Text>
-                        <Text style={[styles.posDetail, { color: c.text.secondary }]}>
-                          Open: {pos.open_price != null ? Number(pos.open_price).toFixed(5) : '--'}
-                        </Text>
+                        {(pos.sl != null || pos.tp != null) ? (
+                          <View style={styles.posRow}>
+                            <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                              SL: {pos.sl != null ? Number(pos.sl).toFixed(5) : '--'}
+                            </Text>
+                            <Text style={[styles.posDetail, { color: c.text.secondary }]}>
+                              TP: {pos.tp != null ? Number(pos.tp).toFixed(5) : '--'}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
-                      <Text style={[styles.posDetail, { color: c.text.secondary, flexShrink: 1, marginTop: 6 }]} numberOfLines={1}>
-                        Current: {pos.current_price != null ? Number(pos.current_price).toFixed(5) : '--'}
-                      </Text>
-                    </View>
-                  );
-                })
-              ) : (
-                <View style={styles.emptyPositions}>
-                  <Shield size={32} color={c.text.muted} />
-                  <Text style={[styles.emptyPosText, { color: c.text.muted }]}>No open positions</Text>
-                </View>
-              )}
-            </GlassCard>
+                    );
+                  })
+                ) : (
+                  <View style={styles.emptyPositions}>
+                    <Shield size={32} color={c.text.muted} />
+                    <Text style={[styles.emptyPosText, { color: c.text.muted }]}>No open positions</Text>
+                  </View>
+                )}
+              </GlassCard>
+            )}
 
             {/* ── Disconnect ── */}
             <TouchableOpacity
@@ -278,57 +369,50 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
               style={[styles.unsubscribeBtn, { backgroundColor: c.semantic.negative + '14', borderColor: c.semantic.negative + '33' }]}
             >
               <Trash2 size={16} color={c.semantic.negative} />
-              <Text style={[styles.unsubscribeText, { color: c.semantic.negative }]}>Disconnect MT5 Account</Text>
+              <Text style={[styles.unsubscribeText, { color: c.semantic.negative }]}>Hentikan Copy Trading</Text>
             </TouchableOpacity>
           </>
         ) : showForm ? (
           <GlassCard elevation={2} style={styles.formCard}>
             <Text style={[styles.formTitle, { color: c.text.primary }]}>Connect MT5 Account</Text>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.formLabel, { color: c.text.secondary }]}>MT5 ACCOUNT</Text>
-              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
-                <TextInput
-                  style={[styles.input, { color: c.text.primary }]}
-                  value={account}
-                  onChangeText={setAccount}
-                  placeholder="12345678"
-                  placeholderTextColor={c.text.muted}
-                />
-              </View>
+            <Text style={[styles.formLabel, { color: c.text.secondary }]}>MT5 ACCOUNT</Text>
+            <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
+              <TextInput
+                style={[styles.input, { color: c.text.primary }]}
+                value={accountInput}
+                onChangeText={setAccountInput}
+                placeholder="12345678"
+                placeholderTextColor={c.text.muted}
+              />
             </View>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.formLabel, { color: c.text.secondary }]}>PASSWORD</Text>
-              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
-                <TextInput
-                  style={[styles.input, { color: c.text.primary }]}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="MT5 password"
-                  placeholderTextColor={c.text.muted}
-                  secureTextEntry
-                />
-              </View>
+            <Text style={[styles.formLabel, { color: c.text.secondary }]}>PASSWORD</Text>
+            <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
+              <TextInput
+                style={[styles.input, { color: c.text.primary }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="MT5 password"
+                placeholderTextColor={c.text.muted}
+                secureTextEntry
+              />
             </View>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.formLabel, { color: c.text.secondary }]}>SERVER</Text>
-              <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
-                <TextInput
-                  style={[styles.input, { color: c.text.primary }]}
-                  value={server}
-                  onChangeText={setServer}
-                  placeholder="ICMarkets-Demo"
-                  placeholderTextColor={c.text.muted}
-                  autoCapitalize="none"
-                />
-              </View>
+            <Text style={[styles.formLabel, { color: c.text.secondary }]}>SERVER</Text>
+            <View style={[styles.inputBox, { backgroundColor: c.glass.g1, borderColor: c.glass.border }]}>
+              <TextInput
+                style={[styles.input, { color: c.text.primary }]}
+                value={server}
+                onChangeText={setServer}
+                placeholder="MetaQuotes-Demo"
+                placeholderTextColor={c.text.muted}
+                autoCapitalize="none"
+              />
             </View>
-            <TouchableOpacity
+            <AppButton
+              title="Connect"
+              loading={submitting}
               onPress={handleSubscribe}
-              style={[styles.submitBtn, { backgroundColor: c.accent.purple }, submitting && { opacity: 0.6 }]}
-              disabled={submitting}
-            >
-              {submitting ? <ActivityIndicator size="small" color={c.text.primary} /> : <Text style={[styles.submitText, { color: c.text.primary }]}>Connect</Text>}
-            </TouchableOpacity>
+              style={{ marginTop: 8, alignSelf: 'stretch' }}
+            />
             <TouchableOpacity onPress={() => setShowForm(false)} style={styles.cancelBtn}>
               <Text style={[styles.cancelText, { color: c.text.secondary }]}>Cancel</Text>
             </TouchableOpacity>
@@ -338,19 +422,12 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
             <Zap size={48} color={c.accent.purple} />
             <Text style={[styles.emptyTitle, { color: c.text.primary }]}>Copy Trading</Text>
             <Text style={[styles.emptySub, { color: c.text.secondary }]}>
-              Automatically copy trades from your followed traders to your MT5 account.
+              Hubungkan akun MT5 Anda untuk otomatis menyalin posisi dari trader.
             </Text>
-            <TouchableOpacity onPress={() => setShowMaintenance(true)} style={[styles.connectBtn, { backgroundColor: c.accent.purple }]}>
-              <Text style={[styles.connectBtnText, { color: c.text.primary }]}>Connect MT5 Account</Text>
-            </TouchableOpacity>
+            <AppButton title="Connect MT5 Account" onPress={() => setShowForm(true)} style={{ alignSelf: 'stretch' }} />
           </GlassCard>
         )}
       </ScrollView>
-
-      <MaintenanceModal
-        visible={showMaintenance}
-        onClose={() => setShowMaintenance(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -364,74 +441,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 16,
     paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
   },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 24, fontWeight: '800', fontFamily: 'Manrope-Bold' },
 
-  // ── CARD 1: Account Info ──
-  accInfoCard: {
-    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
-  },
-  accInfoHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-  },
-  accName: {
-    fontSize: 18, fontWeight: '700', fontFamily: 'Manrope-Bold',
-  },
-  accLogin: {
-    fontSize: 13, fontFamily: 'DMSans', marginTop: 2,
-  },
-  accDivider: {
-    borderTopWidth: 1, marginVertical: 14,
-  },
-  accMetaRow: {
-    flexDirection: 'row', gap: 8, flexWrap: 'wrap',
-  },
-  accMetaBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1,
-  },
-  accMetaText: {
-    fontSize: 11, fontFamily: 'DMSans-Medium',
-  },
-  accCompanyRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 12,
-  },
-  accCompany: {
-    fontSize: 11, fontFamily: 'DMSans',
-  },
+  accInfoCard: { marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20 },
+  accInfoHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  accName: { fontSize: 18, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  accLogin: { fontSize: 13, fontFamily: 'DMSans', marginTop: 2 },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
+  statusPillText: { fontSize: 11, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 
-  // ── CARD 2: Balance Sheet ──
-  balanceCard: {
-    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
-  },
-  bsTitle: {
-    fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 14,
-    fontFamily: 'DMSans-Bold', textTransform: 'uppercase',
-  },
-  bsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-  },
-  bsItem: {
-    width: '50%', padding: 12,
-  },
-  bsLabel: {
-    fontSize: 10, fontWeight: '600', fontFamily: 'DMSans-Bold', marginBottom: 4,
-  },
-  bsValue: {
-    fontSize: 17, fontWeight: '600', fontFamily: 'Manrope-SemiBold',
-  },
+  balanceCard: { marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20 },
+  bsTitle: { fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 14, fontFamily: 'DMSans-Bold', textTransform: 'uppercase' },
+  bsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  bsItem: { width: '50%', padding: 12 },
+  bsLabel: { fontSize: 10, fontWeight: '600', fontFamily: 'DMSans-Bold', marginBottom: 4 },
+  bsValue: { fontSize: 17, fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
 
-  // ── CARD 3: Positions ──
-  positionsCard: {
-    marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20,
-  },
-  positionCard: {
-    padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1,
-  },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  toggleTitle: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  toggleSub: { fontSize: 12, fontFamily: 'DMSans', marginTop: 4 },
+  toggleBtn: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+
+  positionsCard: { marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20 },
+  positionCard: { padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1 },
   posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   posSymbol: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   posSymbolText: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
@@ -441,49 +474,21 @@ const styles = StyleSheet.create({
   posTypeText: { fontSize: 10, fontWeight: '700', fontFamily: 'DMSans-Bold', textTransform: 'uppercase' },
   posRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
   posDetail: { fontSize: 12, fontFamily: 'DMSans' },
-  emptyPositions: {
-    alignItems: 'center', paddingVertical: 24,
-  },
-  emptyPosText: {
-    fontSize: 13, fontFamily: 'DMSans', marginTop: 8,
-  },
+  emptyPositions: { alignItems: 'center', paddingVertical: 24 },
+  emptyPosText: { fontSize: 13, fontFamily: 'DMSans', marginTop: 8 },
 
-  // ── Disconnect ──
-  unsubscribeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, marginHorizontal: 24, paddingVertical: 14, borderRadius: 16,
-    borderWidth: 1,
-  },
+  unsubscribeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: 24, paddingVertical: 14, borderRadius: 16, borderWidth: 1 },
   unsubscribeText: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 
-  // ── Empty / Not-connected ──
-  emptyCard: {
-    marginHorizontal: 24, padding: 40, borderRadius: 24, alignItems: 'center',
-  },
+  emptyCard: { marginHorizontal: 24, padding: 40, borderRadius: 24, alignItems: 'center' },
   emptyTitle: { fontSize: 22, fontWeight: '800', fontFamily: 'Manrope-Bold', marginTop: 16 },
   emptySub: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginTop: 8, marginBottom: 24, fontFamily: 'DMSans' },
-  connectBtn: {
-    paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14,
-  },
-  connectBtnText: { fontSize: 15, fontWeight: '700', fontFamily: 'DMSans-Bold' },
 
-  // ── Form ──
-  formCard: {
-    marginHorizontal: 24, padding: 24, borderRadius: 22,
-  },
+  formCard: { marginHorizontal: 24, padding: 24, borderRadius: 22 },
   formTitle: { fontSize: 18, fontWeight: '800', fontFamily: 'Manrope-Bold', marginBottom: 20 },
-  inputGroup: { marginBottom: 14 },
   formLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6, fontFamily: 'DMSans-Bold' },
-  inputBox: {
-    height: 48, borderRadius: 14, paddingHorizontal: 16,
-    borderWidth: 1,
-  },
+  inputBox: { height: 48, borderRadius: 14, paddingHorizontal: 16, borderWidth: 1, marginBottom: 14, justifyContent: 'center' },
   input: { flex: 1, fontSize: 15, fontFamily: 'DMSans' },
-  submitBtn: {
-    height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-    marginTop: 8,
-  },
-  submitText: { fontSize: 15, fontWeight: '700', fontFamily: 'DMSans-Bold' },
   cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 8 },
   cancelText: { fontSize: 13, fontWeight: '600', fontFamily: 'DMSans-Bold' },
 });
