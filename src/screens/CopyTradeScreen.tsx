@@ -100,35 +100,57 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     }, [loadSlot, stopPolling])
   );
 
-  // Polling saat queued → tunggu giliran → activate
+  // Polling status:
+  // - queued/waiting_credentials → tunggu giliran → activate (5s)
+  // - active/ready → pantau apakah berubah jadi error (10s)
   useEffect(() => {
-    if (slot?.status === 'queued' || slot?.status === 'waiting_credentials') {
-      pollRef.current = setInterval(async () => {
-        try {
-          const res = await copytradeApi.getStatus();
-          const data = res.data;
-          if (!data) { stopPolling(); return; }
-          setSlot(data);
-          if (data.status === 'waiting_credentials') {
-            // terminal sudah dialokasikan, kirim ulang kredensial
-            stopPolling();
-            try {
-              const act = await copytradeApi.activate();
-              setSlot({ ...data, status: act.data?.status ?? 'active' });
-              loadSlot();
-            } catch (e: any) {
-              alert.showAlert({ title: 'Error', message: e.message || 'Gagal mengaktifkan copy trading', type: 'error' });
-            }
-          } else if (data.status === 'active' || data.status === 'ready') {
-            stopPolling();
-            loadSlot();
-          }
-        } catch (e) {
-          // abaikan transient error saat polling
-        }
-      }, 5000);
-      return () => stopPolling();
+    const status = slot?.status;
+    if (!status || status === 'error' || status === 'releasing') {
+      stopPolling();
+      return;
     }
+
+    const isPending = status === 'queued' || status === 'waiting_credentials';
+    const intervalMs = isPending ? 5000 : 10000;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await copytradeApi.getStatus();
+        const data = res.data;
+        if (!data || !data.slot_id) {
+          stopPolling();
+          setSlot(null);
+          setAccount(null);
+          setPositions([]);
+          return;
+        }
+        setSlot(data);
+
+        if (data.status === 'waiting_credentials') {
+          // terminal sudah dialokasikan, kirim ulang kredensial
+          stopPolling();
+          try {
+            const act = await copytradeApi.activate();
+            setSlot({ ...data, status: act.data?.status ?? 'active' });
+            await loadSlot();
+          } catch (e: any) {
+            alert.showAlert({ title: 'Error', message: e.message || 'Gagal mengaktifkan copy trading', type: 'error' });
+          }
+        } else if (data.status === 'active' || data.status === 'ready') {
+          // aktif: hentikan polling cepat, refresh data + pantau error
+          if (isPending) {
+            stopPolling();
+            await loadSlot();
+          }
+        } else if (data.status === 'error') {
+          stopPolling();
+        }
+      } catch (e) {
+        // abaikan transient error saat polling
+      }
+    }, intervalMs);
+
+    return () => stopPolling();
   }, [slot?.status, stopPolling, loadSlot, alert]);
 
   const handleSubscribe = async () => {
@@ -173,16 +195,20 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     }
   };
 
-  const handleUnsubscribe = async () => {
+  const handleUnsubscribe = async (opts?: { quiet?: boolean }) => {
+    const quiet = opts?.quiet ?? false;
     try {
       await copytradeApi.unsubscribe();
+      if (!quiet) alert.showAlert({ title: 'Selesai', message: 'Copy trading dihentikan', type: 'success' });
+    } catch (e: any) {
+      // Bila release gagal (mis. slot sudah error/lepas), tetap bersihkan state lokal
+      // agar user bisa mencoba lagi — pesan hanya ditampilkan bila bukan mode quiet.
+      if (!quiet) alert.showAlert({ title: 'Error', message: e.message || 'Gagal menghentikan copy trading', type: 'error' });
+    } finally {
       stopPolling();
       setSlot(null);
       setAccount(null);
       setPositions([]);
-      alert.showAlert({ title: 'Selesai', message: 'Copy trading dihentikan', type: 'success' });
-    } catch (e: any) {
-      alert.showAlert({ title: 'Error', message: e.message || 'Gagal menghentikan copy trading', type: 'error' });
     }
   };
 
@@ -237,6 +263,25 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 </View>
               </View>
             </GlassCard>
+
+            {/* ── Error Banner ── */}
+            {slot.status === 'error' && (
+              <GlassCard elevation={2} style={[styles.errorCard, { borderColor: c.semantic.negative + '55' }]}>
+                <View style={styles.errorRow}>
+                  <Shield size={20} color={c.semantic.negative} />
+                  <Text style={[styles.errorTitle, { color: c.semantic.negative }]}>Koneksi Gagal</Text>
+                </View>
+                <Text style={[styles.errorMsg, { color: c.text.secondary }]}>
+                  {slot.error || 'Tidak dapat terhubung ke akun MT5. Periksa kembali akun, password, dan nama server Anda.'}
+                </Text>
+                <AppButton
+                  title="Coba Lagi"
+                  variant="primary"
+                  onPress={async () => { await handleUnsubscribe({ quiet: true }); setShowForm(true); }}
+                  style={{ marginTop: 12, alignSelf: 'stretch' }}
+                />
+              </GlassCard>
+            )}
 
             {/* ── Balance Sheet ── */}
             {isCopying && account && (
@@ -365,7 +410,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
 
             {/* ── Disconnect ── */}
             <TouchableOpacity
-              onPress={handleUnsubscribe}
+              onPress={() => handleUnsubscribe()}
               style={[styles.unsubscribeBtn, { backgroundColor: c.semantic.negative + '14', borderColor: c.semantic.negative + '33' }]}
             >
               <Trash2 size={16} color={c.semantic.negative} />
@@ -450,6 +495,11 @@ const styles = StyleSheet.create({
   accLogin: { fontSize: 13, fontFamily: 'DMSans', marginTop: 2 },
   statusPill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
   statusPillText: { fontSize: 11, fontWeight: '700', fontFamily: 'DMSans-Bold' },
+
+  errorCard: { marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20, borderWidth: 1 },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  errorTitle: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  errorMsg: { fontSize: 13, lineHeight: 20, fontFamily: 'DMSans' },
 
   balanceCard: { marginHorizontal: 24, marginBottom: 16, borderRadius: 20, padding: 20 },
   bsTitle: { fontSize: 11, fontWeight: '600', letterSpacing: 1.5, marginBottom: 14, fontFamily: 'DMSans-Bold', textTransform: 'uppercase' },

@@ -1,10 +1,11 @@
-import { api, ApiResponse } from './client';
+import { api, ApiResponse, BASE_URL, getToken } from './client';
 
 export interface CopyTradeSlot {
   slot_id: string;
   status: string; // queued | waiting_credentials | active | ready | releasing | error
   copy_enabled: boolean;
   volume_ratio: number;
+  error?: string | null;
   slot?: any;
 }
 
@@ -35,35 +36,82 @@ export interface Mt5Position {
   master_ticket?: number | null;
 }
 
+const TIMEOUT_MS = 45000;
+
+/**
+ * Request dengan timeout eksplisit (AbortController). Dipakai khusus copy-trade
+ * supaya kalau bridge/backend hang, UI tidak menggantung selamanya.
+ */
+async function requestWithTimeout<T>(
+  endpoint: string,
+  method: 'GET' | 'POST',
+  body?: object
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || 'Request failed');
+    }
+    return json as T;
+  } catch (e: any) {
+    if (e?.name === 'AbortError') {
+      throw new Error('Koneksi ke server trading timeout. Coba lagi.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const copytradeApi = {
   subscribe: (account: string, password: string, mt5Server: string, volumeRatio = 1.0) =>
-    api.post<ApiResponse<{ slot_id: string; status: string }>>('/copytrades/subscribe', {
-      account,
-      password,
-      mt5_server: mt5Server,
-      volume_ratio: volumeRatio,
-    }),
+    requestWithTimeout<ApiResponse<{ slot_id: string; status: string }>>(
+      '/copytrades/subscribe',
+      'POST',
+      { account, password, mt5_server: mt5Server, volume_ratio: volumeRatio }
+    ),
 
   activate: () =>
-    api.post<ApiResponse<{ slot_id: string; status: string }>>('/copytrades/activate', {}),
+    requestWithTimeout<ApiResponse<{ slot_id: string; status: string }>>(
+      '/copytrades/activate',
+      'POST',
+      {}
+    ),
 
   getStatus: () =>
-    api.get<ApiResponse<CopyTradeSlot | null>>('/copytrades/status'),
+    requestWithTimeout<ApiResponse<CopyTradeSlot | null>>('/copytrades/status', 'GET'),
 
   toggleCopy: (enabled: boolean, volumeRatio?: number) =>
-    api.post<ApiResponse<any>>('/copytrades/copy', {
+    requestWithTimeout<ApiResponse<any>>('/copytrades/copy', 'POST', {
       enabled,
       ...(volumeRatio !== undefined ? { volume_ratio: volumeRatio } : {}),
     }),
 
   getAccount: () =>
-    api.get<ApiResponse<Mt5AccountData>>('/copytrades/account'),
+    requestWithTimeout<ApiResponse<Mt5AccountData>>('/copytrades/account', 'GET'),
 
   getPositions: () =>
-    api.get<ApiResponse<{ slot_id?: string; age_sec?: number; positions: Mt5Position[] }>>(
-      '/copytrades/positions'
+    requestWithTimeout<ApiResponse<{ slot_id?: string; age_sec?: number; positions: Mt5Position[] }>>(
+      '/copytrades/positions',
+      'GET'
     ),
 
   unsubscribe: () =>
-    api.post<ApiResponse<any>>('/copytrades/unsubscribe'),
+    requestWithTimeout<ApiResponse<any>>('/copytrades/unsubscribe', 'POST'),
 };
