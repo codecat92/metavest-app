@@ -6,6 +6,10 @@ export interface CopyTradeSlot {
   copy_enabled: boolean;
   volume_ratio: number;
   error?: string | null;
+  can_trade?: boolean | null;
+  connected?: boolean | null;
+  algo_trading?: boolean | null;
+  has_open_positions?: boolean | null;
   slot?: any;
 }
 

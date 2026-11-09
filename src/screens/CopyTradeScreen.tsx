@@ -49,6 +49,12 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const isCopying = !!slot && ['active', 'ready'].includes(slot.status);
   const copyEnabled = !!slot?.copy_enabled;
 
+  // read-only (password investor) atau Algo Trading off → blokir copy
+  const isReadOnly = slot?.can_trade === false;
+  const algoOff = slot?.algo_trading === false;
+  const slotError = slot?.error;
+  const hasBlockingIssue = slot?.status === 'error' || isReadOnly || algoOff;
+
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -224,6 +230,8 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     : slot?.status === 'waiting_credentials' ? 'Menyiapkan terminal...'
     : slot?.status === 'releasing' ? 'Melepas...'
     : slot?.status === 'error' ? 'Error'
+    : isReadOnly ? 'Read-Only'
+    : algoOff ? 'Algo Off'
     : isCopying ? 'Aktif'
     : 'Tidak terhubung';
 
@@ -264,15 +272,21 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
               </View>
             </GlassCard>
 
-            {/* ── Error Banner ── */}
-            {slot.status === 'error' && (
+            {/* ── Error / Peringatan Banner ── */}
+            {hasBlockingIssue && (
               <GlassCard elevation={2} style={[styles.errorCard, { borderColor: c.semantic.negative + '55' }]}>
                 <View style={styles.errorRow}>
                   <Shield size={20} color={c.semantic.negative} />
-                  <Text style={[styles.errorTitle, { color: c.semantic.negative }]}>Koneksi Gagal</Text>
+                  <Text style={[styles.errorTitle, { color: c.semantic.negative }]}>
+                    {isReadOnly ? 'Akun Read-Only' : algoOff ? 'Algo Trading Nonaktif' : 'Koneksi Gagal'}
+                  </Text>
                 </View>
                 <Text style={[styles.errorMsg, { color: c.text.secondary }]}>
-                  {slot.error || 'Tidak dapat terhubung ke akun MT5. Periksa kembali akun, password, dan nama server Anda.'}
+                  {isReadOnly
+                    ? 'Akun Anda login dengan password investor (read-only). Gunakan password trading untuk mengaktifkan copy trading.'
+                    : algoOff
+                      ? 'Algo Trading belum aktif di terminal. Hubungi admin untuk mengaktifkannya.'
+                      : slotError || 'Tidak dapat terhubung ke akun MT5. Periksa kembali akun, password, dan nama server Anda.'}
                 </Text>
                 <AppButton
                   title="Coba Lagi"
