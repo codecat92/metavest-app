@@ -553,6 +553,27 @@ export default function HomeScreen() {
     }, [refreshUser])
   );
 
+  const loadMt5Data = useCallback(async (slot?: any) => {
+    try {
+      const [accRes, posRes] = await Promise.all([
+        copytradeApi.getAccount(),
+        copytradeApi.getPositions(),
+      ]);
+      const acc = accRes.data ?? {};
+      const positions = posRes.data?.positions ?? [];
+      setMt5Data({
+        ...acc,
+        server: slot?.slot?.server,
+        company: acc?.currency ? `Akun MT5 (${acc.currency})` : undefined,
+        active_positions: positions.length,
+      });
+      setMt5ServiceError(null);
+    } catch (err: any) {
+      console.log('MT5 account fetch failed:', err?.message || err);
+      setMt5ServiceError('Koneksi ke server trading sedang terganggu. Silakan coba lagi beberapa saat.');
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       const checkMt5 = async () => {
@@ -566,32 +587,23 @@ export default function HomeScreen() {
             setMt5ServiceError(null);
             return;
           }
-          setMt5ServiceError(null);
-          try {
-            const [accRes, posRes] = await Promise.all([
-              copytradeApi.getAccount(),
-              copytradeApi.getPositions(),
-            ]);
-            const acc = accRes.data ?? {};
-            const positions = posRes.data?.positions ?? [];
-            setMt5Data({
-              ...acc,
-              server: slot?.slot?.server,
-              company: acc?.currency ? `Akun MT5 (${acc.currency})` : undefined,
-              active_positions: positions.length,
-            });
-          } catch (err: any) {
-            console.log('MT5 account fetch failed:', err?.message || err);
-            setMt5ServiceError('Koneksi ke server trading sedang terganggu. Silakan coba lagi beberapa saat.');
-          }
+          await loadMt5Data(slot);
         } catch {
           setMt5Connected(false);
           setMt5Data(null);
         }
       };
       checkMt5();
-    }, [])
+    }, [loadMt5Data])
   );
+
+  // Polling data kartu MT5 (angka bergerak real-time) tiap 2 detik saat terhubung.
+  useEffect(() => {
+    if (!mt5Connected) return;
+    const fetchData = () => loadMt5Data();
+    const id = setInterval(fetchData, 2000);
+    return () => clearInterval(id);
+  }, [mt5Connected, loadMt5Data]);
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {

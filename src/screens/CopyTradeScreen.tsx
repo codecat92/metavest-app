@@ -45,6 +45,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const [toggling, setToggling] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dataPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isCopying = !!slot && ['active', 'ready'].includes(slot.status);
   const copyEnabled = !!slot?.copy_enabled;
@@ -59,6 +60,13 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
+    }
+  }, []);
+
+  const stopDataPolling = useCallback(() => {
+    if (dataPollRef.current) {
+      clearInterval(dataPollRef.current);
+      dataPollRef.current = null;
     }
   }, []);
 
@@ -104,8 +112,11 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     useCallback(() => {
       setLoading(true);
       loadSlot();
-      return () => stopPolling();
-    }, [loadSlot, stopPolling])
+      return () => {
+        stopPolling();
+        stopDataPolling();
+      };
+    }, [loadSlot, stopPolling, stopDataPolling])
   );
 
   // Polling status:
@@ -162,6 +173,29 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     return () => stopPolling();
   }, [slot?.status, stopPolling, loadSlot, alert]);
 
+  // Polling data akun + posisi (angka bergerak mendekati real-time) tiap 2 detik,
+  // hanya saat slot aktif. Dihentikan saat keluar layar / status berubah.
+  useEffect(() => {
+    if (!slot || !['active', 'ready'].includes(slot.status)) {
+      stopDataPolling();
+      return;
+    }
+    const fetchData = async () => {
+      try {
+        const [accRes, posRes] = await Promise.all([
+          copytradeApi.getAccount(),
+          copytradeApi.getPositions(),
+        ]);
+        setAccount(accRes.data ?? null);
+        setPositions(posRes.data?.positions ?? []);
+      } catch (e) {
+        // abaikan transient error saat polling data
+      }
+    };
+    dataPollRef.current = setInterval(fetchData, 2000);
+    return () => stopDataPolling();
+  }, [slot?.status, stopDataPolling]);
+
   const handleSubscribe = async () => {
     if (!accountInput.trim() || !password.trim() || !server.trim()) {
       alert.showAlert({ title: 'Error', message: 'Semua field wajib diisi', type: 'error' });
@@ -215,6 +249,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       if (!quiet) alert.showAlert({ title: 'Error', message: e.message || 'Gagal menghentikan copy trading', type: 'error' });
     } finally {
       stopPolling();
+      stopDataPolling();
       setSlot(null);
       setAccount(null);
       setPositions([]);
