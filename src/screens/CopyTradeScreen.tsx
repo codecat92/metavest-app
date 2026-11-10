@@ -337,9 +337,9 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
               <GlassCard elevation={2} style={styles.balanceCard}>
                 <View style={styles.toggleRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.toggleTitle, { color: c.text.primary }]}>Copy Trading</Text>
+                    <Text style={[styles.toggleTitle, { color: c.text.primary }]}>Salin Posisi</Text>
                     <Text style={[styles.toggleSub, { color: c.text.secondary }]}>
-                      {copyEnabled ? 'Sedang menyalin posisi master' : 'Copy dinonaktifkan'}
+                      {copyEnabled ? 'Copy ON — menyalin posisi master' : 'Copy OFF — tidak menyalin posisi baru'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -428,7 +428,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
               style={[styles.unsubscribeBtn, { backgroundColor: c.semantic.negative + '14', borderColor: c.semantic.negative + '33' }]}
             >
               <Trash2 size={16} color={c.semantic.negative} />
-              <Text style={[styles.unsubscribeText, { color: c.semantic.negative }]}>Hentikan Copy Trading</Text>
+              <Text style={[styles.unsubscribeText, { color: c.semantic.negative }]}>Putuskan Akun MT5</Text>
             </TouchableOpacity>
           </>
         ) : showForm ? (
