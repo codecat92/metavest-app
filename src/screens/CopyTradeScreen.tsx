@@ -70,6 +70,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
         setSlot(null);
         setAccount(null);
         setPositions([]);
+        setShowForm(false);
         return;
       }
       setSlot(data);
@@ -93,6 +94,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       setSlot(null);
       setAccount(null);
       setPositions([]);
+      setShowForm(false);
     } finally {
       setLoading(false);
     }
@@ -128,6 +130,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
           setSlot(null);
           setAccount(null);
           setPositions([]);
+          setShowForm(false);
           return;
         }
         setSlot(data);
@@ -215,6 +218,10 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       setSlot(null);
       setAccount(null);
       setPositions([]);
+      setShowForm(false);
+      setAccountInput('');
+      setPassword('');
+      setServer('');
     }
   };
 
