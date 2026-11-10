@@ -3,7 +3,7 @@ import {
   StyleSheet, KeyboardAvoidingView,
   Platform, ScrollView, ActivityIndicator, Image
 } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
@@ -15,15 +15,6 @@ import { AppButton, AppInput, GlassCard } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const BASE_URL = 'https://metavest-backend-production.up.railway.app/api';
-
-function warmServer() {
-  Promise.all([
-    fetch(`${BASE_URL}/forex/curr`),
-    fetch(`${BASE_URL}/article-event?page=1`),
-  ]).catch(() => {});
-}
-
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const colors = useColors();
@@ -33,8 +24,6 @@ export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { login, setUserType } = useAuth();
   const alert = useCustomAlert();
-
-  useEffect(() => { warmServer(); }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {

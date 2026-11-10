@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base API client — staging backend on metavest server
-export const BASE_URL = 'http://157.66.4.40:8081/api';
+// Base API client — staging backend on metavest server.
+// Dev override: set EXPO_PUBLIC_API_URL (e.g. .env.local) → Tailscale host.
+// Fallback = public staging URL (produksi). JANGAN commit URL Tailscale.
+export const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'http://157.66.4.40:8081/api';
 
 export const TOKEN_KEY = 'metavest_auth_token';
 

@@ -20,7 +20,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type Props = NativeStackScreenProps<RootStackParamList, 'PAMMDetail'>;
 
 export default function PAMMDetailScreen({ navigation, route }: Props) {
-  const STAGING_HOST = 'http://157.66.4.40:8081';
+  const STAGING_HOST = (process.env.EXPO_PUBLIC_API_URL || 'http://157.66.4.40:8081/api').replace(/\/api$/, '');
   const colors = useColors();
   const { user } = useAuth();
   const { brokerId } = route.params;
