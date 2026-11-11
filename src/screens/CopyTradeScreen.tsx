@@ -56,6 +56,39 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const slotError = slot?.error;
   const hasBlockingIssue = slot?.status === 'error' || isReadOnly || algoOff;
 
+  // Petakan kode error → judul + aksi ramah user (dari backend error_code).
+  const errorInfo = (() => {
+    const code = slot?.error_code as string | undefined;
+    switch (code) {
+      case 'algo_off':
+        return { title: 'Algo Trading Nonaktif', message: 'Aktifkan tombol Algo Trading di terminal MT5, lalu tekan Coba Lagi.' };
+      case 'read_only':
+        return { title: 'Akun Read-Only', message: 'Akun ini hanya bisa melihat. Gunakan password trading (bukan password investor), lalu Coba Lagi.' };
+      case 'disconnected':
+        return { title: 'Koneksi Broker Terputus', message: 'Koneksi ke broker terputus. Kami mencoba menyambung ulang — coba lagi beberapa saat.' };
+      case 'auth_failed':
+        return { title: 'Login MT5 Gagal', message: 'Periksa nomor akun, password, dan server MT5 Anda, lalu Coba Lagi.' };
+      case 'provision_failed':
+        return { title: 'Terminal Belum Siap', message: 'Terminal sedang disiapkan. Coba lagi beberapa saat atau hubungi admin.' };
+      case 'symbol_missing':
+        return { title: 'Simbol Tidak Tersedia', message: 'Broker Anda tidak menyediakan simbol yang dibutuhkan. Gunakan akun dari broker yang didukung.' };
+      case 'worker_crash':
+        return { title: 'Sesi Terhenti', message: 'Sesi copy trading terhenti. Tekan Coba Lagi untuk memulai ulang.' };
+      case 'open_positions':
+        return { title: 'Posisi Masih Terbuka', message: 'Masih ada posisi copy terbuka. Tutup posisi master dulu, lalu coba lagi.' };
+      case 'slots_full':
+        return { title: 'Slot Penuh', message: 'Semua slot copy trading sedang terpakai. Coba lagi nanti.' };
+      case 'service_busy':
+      case 'bridge_unreachable':
+        return { title: 'Layanan Sibuk', message: 'Layanan copy trading sedang sibuk. Coba lagi sebentar.' };
+      default:
+        // Fallback berdasarkan flag/status.
+        if (isReadOnly) return { title: 'Akun Read-Only', message: 'Akun ini hanya bisa melihat. Gunakan password trading (bukan investor).' };
+        if (algoOff) return { title: 'Algo Trading Nonaktif', message: 'Aktifkan Algo Trading di terminal MT5, lalu Coba Lagi.' };
+        return { title: 'Koneksi Gagal', message: slotError || 'Tidak dapat terhubung ke akun MT5. Periksa akun, password, dan server.' };
+    }
+  })();
+
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -320,15 +353,15 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 <View style={styles.errorRow}>
                   <Shield size={20} color={c.semantic.negative} />
                   <Text style={[styles.errorTitle, { color: c.semantic.negative }]}>
-                    {isReadOnly ? 'Akun Read-Only' : algoOff ? 'Algo Trading Nonaktif' : 'Koneksi Gagal'}
+                    {errorInfo.title}
                   </Text>
                 </View>
                 <Text style={[styles.errorMsg, { color: c.text.secondary }]}>
-                  {isReadOnly
-                    ? 'Akun Anda login dengan password investor (read-only). Gunakan password trading untuk mengaktifkan copy trading.'
-                    : algoOff
-                      ? 'Algo Trading belum aktif di terminal. Hubungi admin untuk mengaktifkannya.'
-                      : slotError || 'Tidak dapat terhubung ke akun MT5. Periksa kembali akun, password, dan nama server Anda.'}
+                  {errorInfo.message}
+                </Text>
+                {/* Baris debug: kode + slot + error mentah (memudahkan pelacakan) */}
+                <Text style={{ fontSize: 10, color: c.text.muted, marginTop: 8, fontFamily: 'DMSans' }} numberOfLines={3}>
+                  {`Kode: ${slot?.error_code || '-'} · Slot: ${slot?.slot_id || '-'}${slotError ? ` · ${slotError}` : ''}`}
                 </Text>
                 <AppButton
                   title="Coba Lagi"
