@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, Server, Key, User, Zap, Activity,
   TrendingUp, Shield, Trash2, Building2, DollarSign, BarChart2,
-  Play, Pause,
+  Play, Pause, CheckSquare, Square,
 } from 'lucide-react-native';
 import { copytradeApi, Mt5AccountData, Mt5Position } from '@/api/copytrade';
 import { getToken } from '@/api/client';
@@ -39,6 +39,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const [accountInput, setAccountInput] = useState('');
   const [password, setPassword] = useState('');
   const [server, setServer] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // copy toggle
@@ -229,6 +230,24 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     return () => stopDataPolling();
   }, [slot?.status, stopDataPolling]);
 
+  // Buka form connect; bila ada kredensial tersimpan di server ("Ingat Saya"),
+  // pre-fill account + server (password selalu dikosongkan — diisi ulang user).
+  const openForm = async () => {
+    setShowForm(true);
+    try {
+      const res = await copytradeApi.getCredentials();
+      const d = res.data;
+      if (d) {
+        setAccountInput(d.account ?? '');
+        setServer(d.mt5_server ?? '');
+        setPassword('');
+        setRememberMe(!!d.remember);
+      }
+    } catch (e) {
+      // abaikan — form tetap tampil (mungkin kosong)
+    }
+  };
+
   const handleSubscribe = async () => {
     if (!accountInput.trim() || !password.trim() || !server.trim()) {
       alert.showAlert({ title: 'Error', message: 'Semua field wajib diisi', type: 'error' });
@@ -236,7 +255,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     }
     setSubmitting(true);
     try {
-      const res = await copytradeApi.subscribe(accountInput.trim(), password.trim(), server.trim(), 1.0);
+      const res = await copytradeApi.subscribe(accountInput.trim(), password.trim(), server.trim(), 1.0, rememberMe);
       const status = res.data?.status ?? 'queued';
       setShowForm(false);
       alert.showAlert({
@@ -274,7 +293,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const handleUnsubscribe = async (opts?: { quiet?: boolean }) => {
     const quiet = opts?.quiet ?? false;
     try {
-      await copytradeApi.unsubscribe();
+      await copytradeApi.unsubscribe(rememberMe);
       if (!quiet) alert.showAlert({ title: 'Selesai', message: 'Copy trading dihentikan', type: 'success' });
     } catch (e: any) {
       // Bila release gagal (mis. slot sudah error/lepas), tetap bersihkan state lokal
@@ -366,7 +385,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 <AppButton
                   title="Coba Lagi"
                   variant="primary"
-                  onPress={async () => { await handleUnsubscribe({ quiet: true }); setShowForm(true); }}
+                  onPress={async () => { await handleUnsubscribe({ quiet: true }); openForm(); }}
                   style={{ marginTop: 12, alignSelf: 'stretch' }}
                 />
               </GlassCard>
@@ -541,6 +560,21 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 autoCapitalize="none"
               />
             </View>
+            <TouchableOpacity
+              onPress={() => setRememberMe((v) => !v)}
+              style={styles.rememberRow}
+              activeOpacity={0.7}
+            >
+              {rememberMe
+                ? <CheckSquare size={20} color={c.accent.purple} />
+                : <Square size={20} color={c.text.muted} />}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rememberLabel, { color: c.text.primary }]}>Ingat Saya</Text>
+                <Text style={[styles.rememberSub, { color: c.text.secondary }]}>
+                  Simpan kredensial di server untuk koneksi berikutnya
+                </Text>
+              </View>
+            </TouchableOpacity>
             <AppButton
               title="Connect"
               loading={submitting}
@@ -558,7 +592,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
             <Text style={[styles.emptySub, { color: c.text.secondary }]}>
               Hubungkan akun MT5 Anda untuk otomatis menyalin posisi dari trader.
             </Text>
-            <AppButton title="Connect MT5 Account" onPress={() => setShowForm(true)} style={{ alignSelf: 'stretch' }} />
+            <AppButton title="Connect MT5 Account" onPress={openForm} style={{ alignSelf: 'stretch' }} />
           </GlassCard>
         )}
       </ScrollView>
@@ -628,6 +662,9 @@ const styles = StyleSheet.create({
   formLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6, fontFamily: 'DMSans-Bold' },
   inputBox: { height: 48, borderRadius: 14, paddingHorizontal: 16, borderWidth: 1, marginBottom: 14, justifyContent: 'center' },
   input: { flex: 1, fontSize: 15, fontFamily: 'DMSans' },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12, paddingVertical: 4 },
+  rememberLabel: { fontSize: 14, fontWeight: '700', fontFamily: 'DMSans-Bold' },
+  rememberSub: { fontSize: 11, fontFamily: 'DMSans', marginTop: 2 },
   cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 8 },
   cancelText: { fontSize: 13, fontWeight: '600', fontFamily: 'DMSans-Bold' },
 });

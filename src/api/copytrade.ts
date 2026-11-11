@@ -85,11 +85,17 @@ async function requestWithTimeout<T>(
 }
 
 export const copytradeApi = {
-  subscribe: (account: string, password: string, mt5Server: string, volumeRatio = 1.0) =>
+  subscribe: (account: string, password: string, mt5Server: string, volumeRatio = 1.0, remember = false) =>
     requestWithTimeout<ApiResponse<{ slot_id: string; status: string }>>(
       '/copytrades/subscribe',
       'POST',
-      { account, password, mt5_server: mt5Server, volume_ratio: volumeRatio }
+      { account, password, mt5_server: mt5Server, volume_ratio: volumeRatio, remember }
+    ),
+
+  getCredentials: () =>
+    requestWithTimeout<ApiResponse<{ account: string; mt5_server: string; remember: boolean } | null>>(
+      '/copytrades/credentials',
+      'GET'
     ),
 
   activate: () =>
@@ -117,6 +123,6 @@ export const copytradeApi = {
       'GET'
     ),
 
-  unsubscribe: () =>
-    requestWithTimeout<ApiResponse<any>>('/copytrades/unsubscribe', 'POST'),
+  unsubscribe: (remember = false) =>
+    requestWithTimeout<ApiResponse<any>>('/copytrades/unsubscribe', 'POST', { remember }),
 };
