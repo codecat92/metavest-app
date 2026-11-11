@@ -51,15 +51,21 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const isCopying = !!slot && ['active', 'ready'].includes(slot.status);
   const copyEnabled = !!slot?.copy_enabled;
 
-  // read-only (password investor) atau Algo Trading off → blokir copy
-  const isReadOnly = slot?.can_trade === false;
+  // "Read-Only" HANYA bila backend bilang error_code === 'read_only' (password investor).
+  // PENTING: JANGAN turunkan read-only dari can_trade===false — worker crash / Algo OFF
+  // juga menghasilkan can_trade=0 (default DB) sehingga label "Read-Only" jadi menyesatkan.
+  const errorCode = (slot?.error_code as string | undefined) || undefined;
+  const isReadOnly = errorCode === 'read_only';
+  const workerCrashed = errorCode === 'worker_crash';
   const algoOff = slot?.algo_trading === false;
   const slotError = slot?.error;
-  const hasBlockingIssue = slot?.status === 'error' || isReadOnly || algoOff;
+  // Blokir copy bila ada masalah nyata. can_trade===false tanpa error_code TIDAK dianggap
+  // "Read-Only"; tetap ditandai sebagai sesi belum siap (lihat errorInfo fallback).
+  const hasBlockingIssue = slot?.status === 'error' || isReadOnly || workerCrashed || algoOff;
 
   // Petakan kode error → judul + aksi ramah user (dari backend error_code).
   const errorInfo = (() => {
-    const code = slot?.error_code as string | undefined;
+    const code = errorCode;
     switch (code) {
       case 'algo_off':
         return { title: 'Algo Trading Nonaktif', message: 'Aktifkan tombol Algo Trading di terminal MT5, lalu tekan Coba Lagi.' };
@@ -83,9 +89,17 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       case 'bridge_unreachable':
         return { title: 'Layanan Sibuk', message: 'Layanan copy trading sedang sibuk. Coba lagi sebentar.' };
       default:
-        // Fallback berdasarkan flag/status.
-        if (isReadOnly) return { title: 'Akun Read-Only', message: 'Akun ini hanya bisa melihat. Gunakan password trading (bukan investor).' };
+        // Fallback berdasarkan flag/status — TIDAK memakai can_trade untuk "Read-Only".
+        if (slot?.status === 'error' && slot?.error) {
+          // Slot error tanpa error_code yang dikenali: pakai pesan mentah (mis. worker crash).
+          return { title: 'Sesi Terhenti', message: 'Sesi copy trading terhenti. Tekan Coba Lagi untuk memulai ulang.' };
+        }
         if (algoOff) return { title: 'Algo Trading Nonaktif', message: 'Aktifkan Algo Trading di terminal MT5, lalu Coba Lagi.' };
+        if (slot?.can_trade === false) {
+          // can_trade=0 tapi tanpa error_code & tanpa algo_off: kemungkinan terminal belum
+          // selesai login / Algo belum aktif. Tampilkan netral, BUKAN "Read-Only".
+          return { title: 'Sesi Belum Siap', message: 'Akun belum siap untuk trading. Pastikan Algo Trading aktif di terminal, lalu tekan Coba Lagi.' };
+        }
         return { title: 'Koneksi Gagal', message: slotError || 'Tidak dapat terhubung ke akun MT5. Periksa akun, password, dan server.' };
     }
   })();
@@ -323,7 +337,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
   const statusLabel = slot?.status === 'queued' ? 'Menunggu giliran'
     : slot?.status === 'waiting_credentials' ? 'Menyiapkan terminal...'
     : slot?.status === 'releasing' ? 'Melepas...'
-    : slot?.status === 'error' ? 'Error'
+    : slot?.status === 'error' ? (workerCrashed ? 'Terhenti' : 'Error')
     : isReadOnly ? 'Read-Only'
     : algoOff ? 'Algo Off'
     : isCopying ? 'Aktif'
@@ -378,9 +392,9 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                 <Text style={[styles.errorMsg, { color: c.text.secondary }]}>
                   {errorInfo.message}
                 </Text>
-                {/* Baris debug: kode + slot + error mentah (memudahkan pelacakan) */}
+                {/* Baris debug: kode + slot + flag + error mentah (memudahkan pelacakan) */}
                 <Text style={{ fontSize: 10, color: c.text.muted, marginTop: 8, fontFamily: 'DMSans' }} numberOfLines={3}>
-                  {`Kode: ${slot?.error_code || '-'} · Slot: ${slot?.slot_id || '-'}${slotError ? ` · ${slotError}` : ''}`}
+                  {`Kode: ${slot?.error_code || '-'} · Slot: ${slot?.slot_id || '-'} · can_trade: ${slot?.can_trade == null ? '-' : slot.can_trade} · algo: ${slot?.algo_trading == null ? '-' : slot.algo_trading}${slotError ? ` · ${slotError}` : ''}`}
                 </Text>
                 <AppButton
                   title="Coba Lagi"
