@@ -1,4 +1,28 @@
-import { api, ApiResponse } from './client';
+import { api, ApiResponse, BASE_URL } from './client';
+
+// Host file statis (uploads) = BASE_URL tanpa "/api". Dipakai untuk membangun
+// URL gambar agar TIDAK bergantung pada APP_URL backend (yang bisa salah di
+// staging/IP sementara). Pola sama dengan ProfileScreen (STORAGE_HOST).
+const STORAGE_HOST = BASE_URL.replace(/\/api\/?$/, '');
+
+/**
+ * Bangun URL gambar final dari icon_path (relatif) dengan host API.
+ * Fallback: bila hanya tersedia icon_url absolut (mis. ber-host localhost yang
+ * tidak reachable), ganti origin-nya dengan STORAGE_HOST.
+ */
+export function resolveAssetUrl(iconPath?: string | null, iconUrl?: string | null): string | null {
+  if (iconPath) {
+    return `${STORAGE_HOST}/${String(iconPath).replace(/^\/+/, '')}`;
+  }
+  if (iconUrl) {
+    // Ambil path-nya saja, lalu tempel ke STORAGE_HOST yang benar.
+    const m = String(iconUrl).match(/^https?:\/\/[^/]+(\/.*)$/);
+    if (m) return `${STORAGE_HOST}${m[1]}`;
+    if (iconUrl.startsWith('/')) return `${STORAGE_HOST}${iconUrl}`;
+    return iconUrl;
+  }
+  return null;
+}
 
 // ── Types (selaras dengan backend PAYMENT_QRIS.md) ──
 
@@ -16,6 +40,7 @@ export interface SubscriptionProduct {
   name: string;
   description: string | null;
   meta?: any;
+  icon_path?: string | null;
   icon_url?: string | null;
   starting_price_idr?: number | null;
   is_subscribed?: boolean;
@@ -29,6 +54,7 @@ export interface MySubscription {
   product_id: string;
   product_name: string | null;
   product_code: string | null;
+  icon_path: string | null;
   icon_url: string | null;
   ends_at: string | null;
   is_active: boolean;

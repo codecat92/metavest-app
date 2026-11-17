@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { Bot, Calendar, ChevronRight, CheckCircle2, XCircle } from 'lucide-react-native';
-import { subscriptionApi, MySubscription } from '@/api/subscription';
+import { subscriptionApi, MySubscription, resolveAssetUrl } from '@/api/subscription';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton } from '@/components';
 import { useAuth } from '@/context/AuthContext';
@@ -86,8 +86,8 @@ export default function MySubscriptionsScreen({ navigation }: Props) {
             <GlassCard key={s.id} elevation={2} style={{ marginBottom: space.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={[styles.iconWrap, { backgroundColor: active ? 'rgba(34,197,94,0.12)' : 'rgba(139,92,246,0.12)' }]}>
-                  {s.icon_url ? (
-                    <ExpoImage source={{ uri: s.icon_url }} style={styles.iconImg} contentFit="cover" />
+                  {resolveAssetUrl(s.icon_path, s.icon_url) ? (
+                    <ExpoImage source={{ uri: resolveAssetUrl(s.icon_path, s.icon_url)! }} style={styles.iconImg} contentFit="cover" />
                   ) : (
                     <Bot size={26} color={active ? c.semantic.positive : c.accent.purple} strokeWidth={1.6} />
                   )}

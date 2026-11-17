@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QrCode, CheckCircle2, Clock, Bot, CheckCircle } from 'lucide-react-native';
-import { subscriptionApi, SubscriptionProduct, SubscriptionPlan, Payment } from '@/api/subscription';
+import { subscriptionApi, SubscriptionProduct, SubscriptionPlan, Payment, resolveAssetUrl } from '@/api/subscription';
 import { useColors, space, radius, typography } from '@/theme';
 import { GlassCard, AppButton, Badge } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
@@ -274,9 +274,9 @@ export default function SubscriptionScreen({ navigation }: Props) {
                       ]}
                     >
                       <View style={styles.iconWrap}>
-                        {p.icon_url ? (
+                        {resolveAssetUrl(p.icon_path, p.icon_url) ? (
                           <ExpoImage
-                            source={{ uri: p.icon_url }}
+                            source={{ uri: resolveAssetUrl(p.icon_path, p.icon_url)! }}
                             style={styles.iconImg}
                             contentFit="cover"
                           />
