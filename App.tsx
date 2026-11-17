@@ -31,6 +31,7 @@ import RegisterScreen from '@/screens/RegisterScreen';
 import SignalDetailScreen from '@/screens/SignalDetailScreen';
 import ForumScreen from '@/screens/ForumScreen';
 import CopyTradeScreen from '@/screens/CopyTradeScreen';
+import SubscriptionScreen from '@/screens/SubscriptionScreen';
 import MarketScreen from '@/screens/MarketScreen';
 import AcademyScreen from '@/screens/AcademyScreen';
 import ForgotPasswordScreen from '@/screens/ForgotPasswordScreen';
@@ -142,6 +143,7 @@ function RootNavigator() {
         <Stack.Screen name="SignalDetail" component={SignalDetailScreen} />
         <Stack.Screen name="Forum" component={ForumScreen} />
         <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
+        <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         <Stack.Screen name="Market" component={MarketScreen} />
         <Stack.Screen name="Academy" component={AcademyScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />

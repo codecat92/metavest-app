@@ -9,5 +9,6 @@ export { followApi } from './follow';
 export { pammApi } from './pamm';
 export { forumApi } from './forum';
 export { copytradeApi } from './copytrade';
+export { subscriptionApi } from './subscription';
 export { academyApi } from './academy';
 export { notificationApi } from './notifications';

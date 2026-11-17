@@ -15,6 +15,7 @@ export type RootStackParamList = {
   SignalDetail: { signalId: number };
   Forum: { scrollToPostId?: number } | undefined;
   CopyTrade: undefined;
+  Subscription: undefined;
   Market: undefined;
   Academy: undefined;
   EditProfile: undefined;

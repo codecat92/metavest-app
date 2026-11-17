@@ -222,7 +222,7 @@ function QuickActions({ onNavigate, chatUnread = 0 }: { onNavigate: (s: string) 
 }
 
 // KOMPONEN: FeatureCards — Kartu fitur (My MT5 selalu; PAMM hanya jika user di-enable admin)
-function FeatureCards({ onNavigate, showPamm }: { onNavigate: (s: string) => void; showPamm: boolean }) {
+function FeatureCards({ onNavigate, showPamm, showSubscription }: { onNavigate: (s: string) => void; showPamm: boolean; showSubscription: boolean }) {
   const c = useColors();
   const features = [
     {
@@ -231,6 +231,12 @@ function FeatureCards({ onNavigate, showPamm }: { onNavigate: (s: string) => voi
       screen: 'copytrade',
       Icon: Monitor,
     },
+    ...(showSubscription ? [{
+      label: 'Langganan',
+      desc: 'Subscribe to trading bots',
+      screen: 'subscription',
+      Icon: Gem,
+    }] : []),
     ...(showPamm ? [{
       label: 'PAMM',
       desc: 'Explore available brokers',
@@ -609,7 +615,7 @@ export default function HomeScreen() {
     const map: Record<string, string> = {
       signals: 'Signals', traders: 'Traders',
       profile: 'Profile', pamm: 'PAMM', forum: 'Forum', copytrade: 'CopyTrade', market: 'Market', academy: 'Academy',
-      chat: 'ChatGroups',
+      chat: 'ChatGroups', subscription: 'Subscription',
     };
     if (map[screen]) navigation.navigate(map[screen]);
   };
@@ -649,6 +655,8 @@ export default function HomeScreen() {
   // PAMM entry point: hidden by default; only shown when an admin enabled it for
   // this regular user (pamm_enabled). Traders never see it.
   const showPamm = userType === 'user' && user?.pamm_enabled === 1;
+  // Subscription (QRIS bots) — regular users only; traders never see it.
+  const showSubscription = userType === 'user';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg.primary }]}>
@@ -749,7 +757,7 @@ export default function HomeScreen() {
         <EconomicCalendarCard onPress={() => navigation.navigate('EconomicsCalendar')} />
 
         {/* ── FEATURE CARDS: Kartu My MT5 (+ PAMM jika diaktifkan admin) ── */}
-        <FeatureCards onNavigate={onNavigate} showPamm={showPamm} />
+        <FeatureCards onNavigate={onNavigate} showPamm={showPamm} showSubscription={showSubscription} />
 
         {/* ── SECTION HEADER: Latest News + Ikon Panah Kanan ── */}
         <View style={styles.sectionHeader}>
