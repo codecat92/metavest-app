@@ -1,13 +1,14 @@
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image, Alert,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { QrCode, CheckCircle2, Clock } from 'lucide-react-native';
+import { QrCode, CheckCircle2, Clock, Bot, CheckCircle } from 'lucide-react-native';
 import { subscriptionApi, SubscriptionProduct, SubscriptionPlan, Payment } from '@/api/subscription';
 import { useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton } from '@/components';
+import { GlassCard, AppButton, Badge } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatMP } from '@/utils/format';
@@ -85,7 +86,7 @@ export default function SubscriptionScreen({ navigation }: Props) {
     }, POLL_MS);
   };
 
-  const handleCheckout = async (plan: SubscriptionPlan) => {
+  const doCheckout = async (plan: SubscriptionPlan) => {
     if (checkingOut) return;
     setCheckingOut(true);
     try {
@@ -99,6 +100,24 @@ export default function SubscriptionScreen({ navigation }: Props) {
     } finally {
       setCheckingOut(false);
     }
+  };
+
+  // Poin 4: bila produk sudah aktif, konfirmasi bahwa pembayaran = PERPANJANG masa,
+  // bukan langganan baru/duplikat.
+  const handleCheckout = (plan: SubscriptionPlan, product: SubscriptionProduct | null) => {
+    if (product?.is_subscribed) {
+      const days = product.days_remaining ?? 0;
+      Alert.alert(
+        'Perpanjang Langganan',
+        `Anda sudah berlangganan ${product.name} (aktif ${days} hari lagi). Pembayaran ini akan MENAMBAH masa langganan, bukan menggandakan. Lanjutkan?`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          { text: 'Perpanjang', onPress: () => doCheckout(plan) },
+        ],
+      );
+      return;
+    }
+    doCheckout(plan);
   };
 
   const selectedProduct = products.find((p) => p.id === selectedProductId) ?? null;
@@ -187,7 +206,7 @@ export default function SubscriptionScreen({ navigation }: Props) {
     );
   }
 
-  // ── Phase 1: katalog + pilih plan ──
+  // ── Phase 1: etalase (grid kartu) + pilih plan ──
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: c.bg.primary }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -195,13 +214,18 @@ export default function SubscriptionScreen({ navigation }: Props) {
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={[typography.body, { color: c.accent.purple, fontFamily: 'DMSans-SemiBold' }]}>‹ Kembali</Text>
           </TouchableOpacity>
+          {!isTrader && (
+            <TouchableOpacity onPress={() => navigation.navigate('MySubscriptions')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={[typography.body, { color: c.accent.gold, fontFamily: 'DMSans-SemiBold' }]}>Langganan Saya</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={[typography.h2, { color: c.text.primary, fontFamily: 'Manrope-ExtraBold', marginBottom: space.sm }]}>
-          Langganan Bot
+          Etalase Bot
         </Text>
         <Text style={[typography.caption, { color: c.text.secondary, marginBottom: space.xl }]}>
-          Pilih produk dan durasi langganan. Pembayaran via QRIS.
+          Pilih bot dan durasi langganan. Pembayaran via QRIS.
         </Text>
 
         {isTrader && (
@@ -228,36 +252,67 @@ export default function SubscriptionScreen({ navigation }: Props) {
 
         {!isTrader && !loading && products.length > 0 && (
           <>
-            {/* Tab produk */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm, paddingBottom: space.lg }}>
+            {/* Grid 2 kolom kartu bot */}
+            <View style={styles.grid}>
               {products.map((p) => {
                 const active = p.id === selectedProductId;
                 return (
                   <TouchableOpacity
                     key={p.id}
                     onPress={() => setSelectedProductId(p.id)}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.productTab,
-                      {
-                        backgroundColor: active ? c.accent.purple : c.glass.g1,
-                        borderColor: active ? c.accent.purple : c.glass.border,
-                      },
-                    ]}
+                    activeOpacity={0.85}
+                    style={styles.gridItem}
                   >
-                    <Text style={[typography.body, { fontFamily: 'DMSans-SemiBold', color: active ? c.text.primary : c.text.secondary }]}>
-                      {p.name}
-                    </Text>
+                    <View
+                      style={[
+                        styles.productCard,
+                        {
+                          backgroundColor: c.glass.g2,
+                          borderColor: active ? c.accent.purple : c.glass.border,
+                          borderWidth: active ? 2 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={styles.iconWrap}>
+                        {p.icon_url ? (
+                          <ExpoImage
+                            source={{ uri: p.icon_url }}
+                            style={styles.iconImg}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <Bot size={30} color={c.accent.purple} strokeWidth={1.6} />
+                        )}
+                      </View>
+                      <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-Bold', marginTop: space.sm }]} numberOfLines={1}>
+                        {p.name}
+                      </Text>
+                      {p.is_subscribed && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                          <CheckCircle size={12} color={c.semantic.positive} />
+                          <Text style={{ fontSize: 11, color: c.semantic.positive, fontFamily: 'DMSans-SemiBold' }}>
+                            Aktif · {p.days_remaining ?? 0} hari
+                          </Text>
+                        </View>
+                      )}
+                      {p.starting_price_idr != null && (
+                        <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]} numberOfLines={1}>
+                          Mulai dari <Text style={{ color: c.accent.gold, fontFamily: 'DMSans-Bold' }}>Rp {formatMP(p.starting_price_idr)}</Text>
+                        </Text>
+                      )}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
 
             {selectedProduct?.description ? (
-              <Text style={[typography.caption, { color: c.text.secondary, marginBottom: space.lg }]}>
+              <Text style={[typography.caption, { color: c.text.secondary, marginTop: space.lg, marginBottom: space.lg }]}>
                 {selectedProduct.description}
               </Text>
-            ) : null}
+            ) : (
+              <View style={{ height: space.lg }} />
+            )}
 
             {selectedProduct?.plans.map((plan) => (
               <GlassCard key={plan.id} elevation={2} style={{ marginBottom: space.md }}>
@@ -276,10 +331,10 @@ export default function SubscriptionScreen({ navigation }: Props) {
                 </View>
                 <View style={{ marginTop: space.md }}>
                   <AppButton
-                    title={checkingOut ? 'Memproses…' : 'Pilih & Bayar'}
-                    variant="primary"
+                    title={checkingOut ? 'Memproses…' : (selectedProduct?.is_subscribed ? 'Perpanjang' : 'Pilih & Bayar')}
+                    variant={selectedProduct?.is_subscribed ? 'secondary' : 'primary'}
                     loading={checkingOut}
-                    onPress={() => handleCheckout(plan)}
+                    onPress={() => handleCheckout(plan, selectedProduct)}
                   />
                 </View>
               </GlassCard>
@@ -328,13 +383,34 @@ function Countdown({ expiresAt, now, color }: { expiresAt: string | null; now: n
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { paddingHorizontal: space['2xl'], paddingBottom: space['4xl'] },
-  headerRow: { paddingVertical: space.lg },
-  productTab: {
-    paddingHorizontal: space.xl,
-    paddingVertical: space.md,
-    borderRadius: radius.full ?? 999,
-    borderWidth: 1,
+  headerRow: { paddingVertical: space.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: space.sm,
   },
+  gridItem: {
+    width: '48%',
+    marginBottom: space.md,
+  },
+  productCard: {
+    borderRadius: radius.lg,
+    padding: space.lg,
+    alignItems: 'center',
+    minHeight: 150,
+    justifyContent: 'center',
+  },
+  iconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(139,92,246,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  iconImg: { width: 56, height: 56 },
   qrWrap: {
     borderRadius: radius.md,
     padding: space.lg,

@@ -16,7 +16,23 @@ export interface SubscriptionProduct {
   name: string;
   description: string | null;
   meta?: any;
+  icon_url?: string | null;
+  starting_price_idr?: number | null;
+  is_subscribed?: boolean;
+  current_ends_at?: string | null;
+  days_remaining?: number | null;
   plans: SubscriptionPlan[];
+}
+
+export interface MySubscription {
+  id: string;
+  product_id: string;
+  product_name: string | null;
+  product_code: string | null;
+  icon_url: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+  days_remaining: number;
 }
 
 export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'failed';
@@ -49,8 +65,13 @@ export const checkout = (planId: string) =>
 export const getPayment = (id: string) =>
   api.get<ApiResponse<Payment>>(`/payments/${id}`);
 
+/** GET /subscriptions/my — daftar langganan user (dashboard "Langganan Saya"). */
+export const getMySubscriptions = () =>
+  api.get<ApiResponse<MySubscription[]>>('/subscriptions/my');
+
 export const subscriptionApi = {
   getPlans,
   checkout,
   getPayment,
+  getMySubscriptions,
 };

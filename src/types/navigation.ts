@@ -16,6 +16,7 @@ export type RootStackParamList = {
   Forum: { scrollToPostId?: number } | undefined;
   CopyTrade: undefined;
   Subscription: undefined;
+  MySubscriptions: undefined;
   Market: undefined;
   Academy: undefined;
   EditProfile: undefined;
