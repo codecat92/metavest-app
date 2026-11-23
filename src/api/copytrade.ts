@@ -41,6 +41,13 @@ export interface Mt5Position {
   master_ticket?: number | null;
 }
 
+export interface CopyTradeLive {
+  slot_id?: string;
+  age_sec?: number;
+  account?: Mt5AccountData;
+  positions?: Mt5Position[];
+}
+
 const TIMEOUT_MS = 45000;
 
 /**
@@ -122,6 +129,10 @@ export const copytradeApi = {
       '/copytrades/positions',
       'GET'
     ),
+
+  // Account + positions sekaligus (1 call) untuk polling cepat (~0.5 dtk).
+  getLive: () =>
+    requestWithTimeout<ApiResponse<CopyTradeLive | null>>('/copytrades/live', 'GET'),
 
   unsubscribe: (remember = false) =>
     requestWithTimeout<ApiResponse<any>>('/copytrades/unsubscribe', 'POST', { remember }),

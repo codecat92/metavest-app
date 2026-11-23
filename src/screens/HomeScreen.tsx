@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Animated, Easing, RefreshControl, Modal, Image
+  TouchableOpacity, Animated, Easing, RefreshControl, Modal, Image, AppState
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -561,12 +561,10 @@ export default function HomeScreen() {
 
   const loadMt5Data = useCallback(async (slot?: any) => {
     try {
-      const [accRes, posRes] = await Promise.all([
-        copytradeApi.getAccount(),
-        copytradeApi.getPositions(),
-      ]);
-      const acc = accRes.data ?? {};
-      const positions = posRes.data?.positions ?? [];
+      const liveRes = await copytradeApi.getLive();
+      const d = liveRes.data;
+      const acc = d?.account ?? {};
+      const positions = d?.positions ?? [];
       setMt5Data({
         ...acc,
         server: slot?.slot?.server,
@@ -603,13 +601,44 @@ export default function HomeScreen() {
     }, [loadMt5Data])
   );
 
-  // Polling data kartu MT5 (angka bergerak real-time) tiap 2 detik saat terhubung.
+  // Polling data kartu MT5 tiap 0.5 detik via /live (1 call) agar angka hampir
+  // 1:1 dengan terminal. HEMAT BATERAI: hanya saat kartu terhubung, layar aktif
+  // (fokus), dan app di foreground. Berhenti saat blur/background.
+  const [homeFocused, setHomeFocused] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setHomeFocused(true);
+      return () => setHomeFocused(false);
+    }, [])
+  );
+
   useEffect(() => {
-    if (!mt5Connected) return;
-    const fetchData = () => loadMt5Data();
-    const id = setInterval(fetchData, 2000);
-    return () => clearInterval(id);
-  }, [mt5Connected, loadMt5Data]);
+    if (!mt5Connected || !homeFocused) return;
+    let inFlight = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const fetchData = async () => {
+      if (inFlight) return; // cegah request menumpuk
+      inFlight = true;
+      try { await loadMt5Data(); } finally { inFlight = false; }
+    };
+    const start = () => {
+      if (timer) return;
+      fetchData();
+      timer = setInterval(fetchData, 500);
+    };
+    const stop = () => {
+      if (timer) { clearInterval(timer); timer = null; }
+    };
+    start();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') start();
+      else stop();
+    });
+    return () => {
+      sub.remove();
+      stop();
+    };
+  }, [mt5Connected, homeFocused, loadMt5Data]);
 
   const onNavigate = (screen: string) => {
     const map: Record<string, string> = {

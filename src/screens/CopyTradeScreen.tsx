@@ -1,6 +1,7 @@
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator,
+  TouchableOpacity, TextInput, ActivityIndicator, AppState,
+  type ViewStyle,
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -14,7 +15,7 @@ import { copytradeApi, Mt5AccountData, Mt5Position } from '@/api/copytrade';
 import { getToken } from '@/api/client';
 import { useCustomAlert } from '@/context/AlertContext';
 import { colors, useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton } from '@/components';
+import { GlassCard, AppButton, BlippingNumber, FlashOverlay, diffFlash } from '@/components';
 import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -22,6 +23,41 @@ type CopyTradeProps = NativeStackScreenProps<RootStackParamList, 'CopyTrade'>;
 
 function formatCurrency(val: number): string {
   return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Pill PnL: teks ber-blip + overlay warna pekat sesaat.
+ * Arah gerak + counter flash disimpan di state agar overlay re-render & animasi diputar.
+ */
+function PnlPill({ profit, pillStyle, textStyle, pillRadius = 8 }: {
+  profit: number;
+  pillStyle: ViewStyle | ViewStyle[];
+  textStyle: object;
+  pillRadius?: number;
+}) {
+  const prevRef = useRef<number | undefined>(undefined);
+  const [flash, setFlash] = useState<{ dir: 'positive' | 'negative'; key: number } | null>(null);
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = profit;
+    if (prev === undefined || prev === profit) return;
+    const dir = diffFlash(prev, profit);
+    if (!dir) return;
+    setFlash((f) => ({ dir, key: (f?.key ?? 0) + 1 }));
+  }, [profit]);
+
+  const color = flash?.dir === 'positive' ? '#00C853' : '#FF3B30';
+
+  return (
+    <View style={[styles.posBadge, pillStyle]}>
+      <TrendingUp size={11} color={(textStyle as { color?: string }).color} />
+      <BlippingNumber value={profit}>
+        <Text style={[styles.posPnl, textStyle]}>${profit.toFixed(2)}</Text>
+      </BlippingNumber>
+      {flash && <FlashOverlay flashKey={flash.key} color={color} borderRadius={pillRadius} />}
+    </View>
+  );
 }
 
 type SlotStatus = 'active' | 'ready' | 'queued' | 'waiting_credentials' | 'releasing' | 'error';
@@ -133,12 +169,10 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       // Jika masih antre/menunggu, jangan ambil account dulu.
       if (data.status === 'active' || data.status === 'ready') {
         try {
-          const [accRes, posRes] = await Promise.all([
-            copytradeApi.getAccount(),
-            copytradeApi.getPositions(),
-          ]);
-          setAccount(accRes.data ?? null);
-          setPositions(posRes.data?.positions ?? []);
+          const liveRes = await copytradeApi.getLive();
+          const d = liveRes.data;
+          setAccount(d?.account ?? null);
+          setPositions(d?.positions ?? []);
         } catch (e) {
           // account/positions belum tersedia — biarkan kosong
         }
@@ -221,27 +255,51 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     return () => stopPolling();
   }, [slot?.status, stopPolling, loadSlot, alert]);
 
-  // Polling data akun + posisi (angka bergerak mendekati real-time) tiap 2 detik,
-  // hanya saat slot aktif. Dihentikan saat keluar layar / status berubah.
+  // Polling data akun + posisi tiap 0.5 detik via /copytrades/live (1 call),
+  // HANYA saat slot aktif & app di foreground (hemat baterai). Dihentikan saat
+  // keluar layar / app background. Angka mendekati terminal MT5 (~sub-detik).
   useEffect(() => {
     if (!slot || !['active', 'ready'].includes(slot.status)) {
       stopDataPolling();
       return;
     }
+    let inFlight = false;
     const fetchData = async () => {
+      if (inFlight) return; // cegah request menumpuk bila jaringan lambat
+      inFlight = true;
       try {
-        const [accRes, posRes] = await Promise.all([
-          copytradeApi.getAccount(),
-          copytradeApi.getPositions(),
-        ]);
-        setAccount(accRes.data ?? null);
-        setPositions(posRes.data?.positions ?? []);
+        const res = await copytradeApi.getLive();
+        const d = res.data;
+        if (d) {
+          if (d.account) setAccount(d.account);
+          if (d.positions) setPositions(d.positions);
+        }
       } catch (e) {
         // abaikan transient error saat polling data
+      } finally {
+        inFlight = false;
       }
     };
-    dataPollRef.current = setInterval(fetchData, 2000);
-    return () => stopDataPolling();
+    // refresh segera lalu interval 0.5 dtk
+    fetchData();
+    dataPollRef.current = setInterval(fetchData, 500);
+
+    // Hemat baterai: hentikan saat app background, lanjutkan saat kembali aktif.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        if (!dataPollRef.current) {
+          fetchData();
+          dataPollRef.current = setInterval(fetchData, 500);
+        }
+      } else {
+        stopDataPolling();
+      }
+    });
+
+    return () => {
+      sub.remove();
+      stopDataPolling();
+    };
   }, [slot?.status, stopDataPolling]);
 
   // Buka form connect; bila ada kredensial tersimpan di server ("Ingat Saya"),
@@ -488,25 +546,28 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
                               <Text style={[styles.posTypeText, { color: isBuy ? c.semantic.positive : c.semantic.negative }]}>{pos.side}</Text>
                             </View>
                           </View>
-                          <View style={[
-                            styles.posBadge,
-                            isPositive
-                              ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
-                              : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' },
-                          ]}>
-                            <TrendingUp size={11} color={isPositive ? c.semantic.positive : c.semantic.negative} />
-                            <Text style={[styles.posPnl, { color: isPositive ? c.semantic.positive : c.semantic.negative }]}>
-                              ${Number(pos.profit ?? 0).toFixed(2)}
-                            </Text>
-                          </View>
+                          <PnlPill
+                            profit={Number(pos.profit ?? 0)}
+                            pillStyle={
+                              isPositive
+                                ? { backgroundColor: c.semantic.positive + '20', borderColor: c.semantic.positive + '4D' }
+                                : { backgroundColor: c.semantic.negative + '20', borderColor: c.semantic.negative + '4D' }
+                            }
+                            textStyle={{ color: isPositive ? c.semantic.positive : c.semantic.negative }}
+                          />
                         </View>
                         <View style={styles.posRow}>
                           <Text style={[styles.posDetail, { color: c.text.secondary }]}>
                             Vol: {pos.volume ?? '-'}
                           </Text>
-                          <Text style={[styles.posDetail, { color: c.text.secondary }]}>
-                            Open: {pos.price_open != null ? Number(pos.price_open).toFixed(5) : '--'}
-                          </Text>
+                          <View style={styles.posDetailRow}>
+                            <Text style={[styles.posDetail, { color: c.text.secondary }]}>Now: </Text>
+                            <BlippingNumber value={Number(pos.price_current ?? 0)}>
+                              <Text style={[styles.posDetail, { color: c.text.primary, fontFamily: 'DMSans-Bold' }]}>
+                                {pos.price_current != null ? Number(pos.price_current).toFixed(5) : '--'}
+                              </Text>
+                            </BlippingNumber>
+                          </View>
                         </View>
                         {(pos.sl != null || pos.tp != null) ? (
                           <View style={styles.posRow}>
@@ -660,6 +721,7 @@ const styles = StyleSheet.create({
   posType: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
   posTypeText: { fontSize: 10, fontWeight: '700', fontFamily: 'DMSans-Bold', textTransform: 'uppercase' },
   posRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  posDetailRow: { flexDirection: 'row', alignItems: 'center' },
   posDetail: { fontSize: 12, fontFamily: 'DMSans' },
   emptyPositions: { alignItems: 'center', paddingVertical: 24 },
   emptyPosText: { fontSize: 13, fontFamily: 'DMSans', marginTop: 8 },
