@@ -154,6 +154,26 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
     }
   }, []);
 
+  // Ambil account + positions: coba /live dulu (1 call), jika gagal (belum siap/gagal)
+  // fallback ke /account + /positions lama yang terbukti jalan. Mencegah data hilang
+  // hanya karena satu endpoint baru belum siap (deploy bertahap).
+  const fetchLiveData = useCallback(async (): Promise<{ account: Mt5AccountData | null; positions: Mt5Position[] }> => {
+    try {
+      const liveRes = await copytradeApi.getLive();
+      const d = liveRes.data;
+      // /live valid hanya bila account terisi. Backend bisa balas 200 dgn account:null
+      // (bridge /live belum siap) → anggap gagal & fallback.
+      if (d && d.account) return { account: d.account, positions: d.positions ?? [] };
+    } catch (e) {
+      // /live gagal → fallback
+    }
+    const [accRes, posRes] = await Promise.all([
+      copytradeApi.getAccount(),
+      copytradeApi.getPositions(),
+    ]);
+    return { account: accRes.data ?? null, positions: posRes.data?.positions ?? [] };
+  }, []);
+
   const loadSlot = useCallback(async () => {
     try {
       const res = await copytradeApi.getStatus();
@@ -169,10 +189,9 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       // Jika masih antre/menunggu, jangan ambil account dulu.
       if (data.status === 'active' || data.status === 'ready') {
         try {
-          const liveRes = await copytradeApi.getLive();
-          const d = liveRes.data;
-          setAccount(d?.account ?? null);
-          setPositions(d?.positions ?? []);
+          const { account: acc, positions: pos } = await fetchLiveData();
+          setAccount(acc);
+          setPositions(pos);
         } catch (e) {
           // account/positions belum tersedia — biarkan kosong
         }
@@ -268,12 +287,9 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       if (inFlight) return; // cegah request menumpuk bila jaringan lambat
       inFlight = true;
       try {
-        const res = await copytradeApi.getLive();
-        const d = res.data;
-        if (d) {
-          if (d.account) setAccount(d.account);
-          if (d.positions) setPositions(d.positions);
-        }
+        const { account: acc, positions: pos } = await fetchLiveData();
+        if (acc !== undefined) setAccount(acc);
+        setPositions(pos);
       } catch (e) {
         // abaikan transient error saat polling data
       } finally {
@@ -300,7 +316,7 @@ export default function CopyTradeScreen({ navigation }: CopyTradeProps) {
       sub.remove();
       stopDataPolling();
     };
-  }, [slot?.status, stopDataPolling]);
+  }, [slot?.status, stopDataPolling, fetchLiveData]);
 
   // Buka form connect; bila ada kredensial tersimpan di server ("Ingat Saya"),
   // pre-fill account + server (password selalu dikosongkan — diisi ulang user).

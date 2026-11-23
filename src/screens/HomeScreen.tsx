@@ -561,10 +561,32 @@ export default function HomeScreen() {
 
   const loadMt5Data = useCallback(async (slot?: any) => {
     try {
-      const liveRes = await copytradeApi.getLive();
-      const d = liveRes.data;
-      const acc = d?.account ?? {};
-      const positions = d?.positions ?? [];
+      // Coba endpoint gabungan /live dulu (1 call).
+      let acc: any = null;
+      let positions: any[] = [];
+      let haveData = false;
+      try {
+        const liveRes = await copytradeApi.getLive();
+        const d = liveRes.data;
+        // /live valid hanya bila account terisi. Backend bisa balas 200 dgn account:null
+        // (bridge /live belum siap) → anggap gagal & fallback ke endpoint lama.
+        if (d && d.account) {
+          acc = d.account;
+          positions = d.positions ?? [];
+          haveData = true;
+        }
+      } catch (e) {
+        // /live belum siap/gagal → fallback ke endpoint lama (terbukti jalan).
+      }
+      if (!haveData) {
+        const [accRes, posRes] = await Promise.all([
+          copytradeApi.getAccount(),
+          copytradeApi.getPositions(),
+        ]);
+        acc = accRes.data ?? {};
+        positions = posRes.data?.positions ?? [];
+      }
+      acc = acc ?? {};
       setMt5Data({
         ...acc,
         server: slot?.slot?.server,
