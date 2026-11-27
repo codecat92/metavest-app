@@ -1,4 +1,4 @@
-import { api, ApiResponse, BASE_URL } from './client';
+import { api, ApiResponse, BASE_URL, getToken } from './client';
 
 // Host file statis (uploads) = BASE_URL tanpa "/api". Dipakai untuk membangun
 // URL gambar agar TIDAK bergantung pada APP_URL backend (yang bisa salah di
@@ -61,19 +61,17 @@ export interface MySubscription {
   days_remaining: number;
 }
 
-export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'failed';
+export type PaymentStatus = 'pending' | 'awaiting_verification' | 'paid' | 'failed' | 'expired';
 
 export interface Payment {
   id: string;
   order_id: string;
   plan_id: string;
-  gateway: string;
   amount_idr: number;
   status: PaymentStatus;
-  qr_string: string | null;
-  qr_image_url: string | null;
-  payment_url: string | null;
-  expires_at: string | null;
+  qris_image_url: string | null;
+  proof_uploaded: boolean;
+  reject_reason: string | null;
   paid_at: string | null;
 }
 
@@ -83,13 +81,49 @@ export interface Payment {
 export const getPlans = () =>
   api.get<ApiResponse<SubscriptionProduct[]>>('/plans');
 
-/** POST /subscriptions/checkout — buat payment + dapatkan data QRIS. */
+/** POST /subscriptions/checkout — buat payment + dapatkan QRIS statis Metavest. */
 export const checkout = (planId: string) =>
   api.post<ApiResponse<Payment>>('/subscriptions/checkout', { plan_id: planId });
 
-/** GET /payments/{id} — status payment (untuk polling). */
+/** GET /payments/{id} — status payment (refresh manual). */
 export const getPayment = (id: string) =>
   api.get<ApiResponse<Payment>>(`/payments/${id}`);
+
+/**
+ * POST /payments/{id}/proof — unggah bukti transfer (multipart field `proof`).
+ * Hasil: status menjadi 'awaiting_verification'.
+ * Pakai fetch langsung (FormData) — pola sama dengan wallet.submitTopup.
+ */
+export const uploadProof = async (
+  paymentId: string,
+  file: { uri: string; name: string; type: string },
+): Promise<ApiResponse<Payment>> => {
+  const formData = new FormData();
+  formData.append('proof', file as any);
+
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/payments/${paymentId}/proof`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+    body: formData,
+  });
+
+  const text = await res.text();
+  let json: any;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Server returned invalid response (${res.status})`);
+  }
+  if (!res.ok) throw new Error(json.message || `Request failed (${res.status})`);
+  return json;
+};
+
+/** URL gambar bukti transfer (untuk dipratinjau oleh pemilik payment). */
+export const getProofUrl = (paymentId: string) => `${BASE_URL}/payments/${paymentId}/proof`;
 
 /** GET /subscriptions/my — daftar langganan user (dashboard "Langganan Saya"). */
 export const getMySubscriptions = () =>
@@ -99,5 +133,7 @@ export const subscriptionApi = {
   getPlans,
   checkout,
   getPayment,
+  uploadProof,
+  getProofUrl,
   getMySubscriptions,
 };

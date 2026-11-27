@@ -2,13 +2,14 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Image, Alert,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { QrCode, CheckCircle2, Clock, Bot, CheckCircle } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { QrCode, CheckCircle2, Clock, Bot, Upload, ShieldCheck, XCircle } from 'lucide-react-native';
 import { subscriptionApi, SubscriptionProduct, SubscriptionPlan, Payment, resolveAssetUrl } from '@/api/subscription';
 import { useColors, space, radius, typography } from '@/theme';
-import { GlassCard, AppButton, Badge } from '@/components';
+import { GlassCard, AppButton } from '@/components';
 import { useCustomAlert } from '@/context/AlertContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatMP } from '@/utils/format';
@@ -16,8 +17,6 @@ import type { RootStackParamList } from '@/types/navigation';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Subscription'>;
-
-const POLL_MS = 4000;
 
 export default function SubscriptionScreen({ navigation }: Props) {
   const c = useColors();
@@ -29,8 +28,9 @@ export default function SubscriptionScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [payment, setPayment] = useState<Payment | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [proofUri, setProofUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const isTrader = userType === 'trader';
 
@@ -52,49 +52,18 @@ export default function SubscriptionScreen({ navigation }: Props) {
 
   useFocusEffect(useCallback(() => {
     // Reset ke katalog tiap kali layar difokuskan.
-    stopPolling();
     setPayment(null);
+    setProofUri(null);
     load();
-    return () => stopPolling();
   }, [load]));
-
-  // Ticker untuk hitung mundur masa berlaku QR.
-  useEffect(() => {
-    if (!payment || payment.status !== 'pending') return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [payment]);
-
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  };
-
-  const startPolling = (paymentId: string) => {
-    stopPolling();
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await subscriptionApi.getPayment(paymentId);
-        const p = res.data;
-        setPayment(p);
-        if (p.status !== 'pending') stopPolling();
-      } catch {
-        // diam saja — coba lagi di tick berikutnya
-      }
-    }, POLL_MS);
-  };
 
   const doCheckout = async (plan: SubscriptionPlan) => {
     if (checkingOut) return;
     setCheckingOut(true);
     try {
       const res = await subscriptionApi.checkout(plan.id);
-      const p = res.data;
-      setPayment(p);
-      setNow(Date.now());
-      if (p.status === 'pending') startPolling(p.id);
+      setPayment(res.data);
+      setProofUri(null);
     } catch (e: any) {
       alert.showAlert({ title: 'Checkout gagal', message: e?.message ?? 'Tidak dapat membuat pembayaran.', type: 'error' });
     } finally {
@@ -102,8 +71,6 @@ export default function SubscriptionScreen({ navigation }: Props) {
     }
   };
 
-  // Poin 4: bila produk sudah aktif, konfirmasi bahwa pembayaran = PERPANJANG masa,
-  // bukan langganan baru/duplikat.
   const handleCheckout = (plan: SubscriptionPlan, product: SubscriptionProduct | null) => {
     if (product?.is_subscribed) {
       const days = product.days_remaining ?? 0;
@@ -120,15 +87,63 @@ export default function SubscriptionScreen({ navigation }: Props) {
     doCheckout(plan);
   };
 
+  const refreshStatus = async () => {
+    if (!payment) return;
+    setRefreshing(true);
+    try {
+      const res = await subscriptionApi.getPayment(payment.id);
+      setPayment(res.data);
+    } catch { /* diam */ } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const pickProof = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert.showAlert({ title: 'Izin ditolak', message: 'Izinkan akses galeri foto.', type: 'error' });
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setProofUri(result.assets[0].uri);
+    }
+  };
+
+  const submitProof = async () => {
+    if (!payment || !proofUri || uploading) return;
+    setUploading(true);
+    try {
+      const res = await subscriptionApi.uploadProof(payment.id, {
+        uri: proofUri,
+        name: 'proof.jpg',
+        type: 'image/jpeg',
+      });
+      setPayment(res.data);
+      setProofUri(null);
+      alert.showAlert({ title: 'Terkirim', message: 'Bukti transfer diunggah. Menunggu verifikasi admin.', type: 'success' });
+    } catch (e: any) {
+      alert.showAlert({ title: 'Upload gagal', message: e?.message ?? 'Tidak dapat mengunggah bukti.', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const selectedProduct = products.find((p) => p.id === selectedProductId) ?? null;
 
-  // ── Phase 2: pembayaran (QR + polling) ──
+  // ── Phase 2: pembayaran (QRIS statis + upload bukti) ──
   if (payment) {
+    const canUpload = payment.status === 'pending' || payment.status === 'failed';
+
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: c.bg.primary }]} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => { stopPolling(); setPayment(null); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={() => { setPayment(null); setProofUri(null); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[typography.body, { color: c.accent.purple, fontFamily: 'DMSans-SemiBold' }]}>‹ Kembali</Text>
             </TouchableOpacity>
           </View>
@@ -146,14 +161,26 @@ export default function SubscriptionScreen({ navigation }: Props) {
               Rp {formatMP(payment.amount_idr)}
             </Text>
 
-            {payment.status === 'pending' && (
+            {(payment.status === 'pending' || payment.status === 'awaiting_verification') && (
               <>
-                <QrBox payment={payment} />
-                <Countdown expiresAt={payment.expires_at} now={now} color={c.text.secondary} />
-                <Text style={[typography.caption, { color: c.text.muted ?? c.text.secondary, textAlign: 'center', marginTop: space.md }]}>
-                  Scan QR di aplikasi pembayaran Anda. Status akan diperbarui otomatis.
-                </Text>
+                <QrBox qrImageUrl={payment.qris_image_url} />
+                {payment.status === 'pending' && (
+                  <Text style={[typography.caption, { color: c.text.muted ?? c.text.secondary, textAlign: 'center', marginTop: space.md }]}>
+                    Scan/transfer ke QRIS di atas (a/n PT Metavest), lalu unggah bukti transfer di bawah.
+                  </Text>
+                )}
+                {payment.status === 'awaiting_verification' && (
+                  <Text style={[typography.caption, { color: c.semantic.warning, textAlign: 'center', marginTop: space.md }]}>
+                    Bukti transfer sudah diunggah. Menunggu verifikasi admin.
+                  </Text>
+                )}
               </>
+            )}
+
+            {payment.status === 'awaiting_verification' && (
+              <View style={{ alignItems: 'center', marginTop: space.md }}>
+                <Clock size={40} color={c.semantic.warning} strokeWidth={1.5} />
+              </View>
             )}
 
             {payment.status === 'paid' && (
@@ -168,37 +195,78 @@ export default function SubscriptionScreen({ navigation }: Props) {
               </View>
             )}
 
-            {payment.status === 'expired' && (
-              <View style={{ alignItems: 'center', paddingVertical: space.lg }}>
-                <Clock size={56} color={c.semantic.warning} strokeWidth={1.5} />
-                <Text style={[typography.h3, { color: c.semantic.warning, marginTop: space.md, fontFamily: 'Manrope-Bold' }]}>
-                  Kadaluwarsa
-                </Text>
-                <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
-                  Waktu pembayaran habis. Silakan buat ulang.
-                </Text>
-              </View>
-            )}
-
             {payment.status === 'failed' && (
-              <View style={{ alignItems: 'center', paddingVertical: space.lg }}>
-                <Text style={[typography.h3, { color: c.semantic.negative, fontFamily: 'Manrope-Bold' }]}>Gagal</Text>
+              <View style={{ alignItems: 'center', paddingVertical: space.md }}>
+                <XCircle size={56} color={c.semantic.negative} strokeWidth={1.5} />
+                <Text style={[typography.h3, { color: c.semantic.negative, marginTop: space.md, fontFamily: 'Manrope-Bold' }]}>
+                  Pembayaran Ditolak
+                </Text>
+                {!!payment.reject_reason && (
+                  <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
+                    Alasan: {payment.reject_reason}
+                  </Text>
+                )}
                 <Text style={[typography.caption, { color: c.text.secondary, textAlign: 'center', marginTop: space.xs }]}>
-                  Pembayaran gagal. Silakan coba lagi.
+                  Silakan unggah ulang bukti transfer yang benar.
                 </Text>
               </View>
             )}
           </GlassCard>
 
-          {payment.status === 'pending' && (
+          {/* Upload bukti transfer */}
+          {canUpload && (
+            <GlassCard elevation={2} style={{ marginTop: space.lg }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: space.sm }}>
+                <Upload size={18} color={c.accent.purple} />
+                <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-Bold' }]}>
+                  Unggah Bukti Transfer
+                </Text>
+              </View>
+
+              {proofUri ? (
+                <Image source={{ uri: proofUri }} style={styles.proofPreview} resizeMode="contain" />
+              ) : (
+                <Text style={[typography.caption, { color: c.text.secondary, marginBottom: space.md }]}>
+                  Pilih screenshot/foto bukti transfer dari galeri.
+                </Text>
+              )}
+
+              <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.md }}>
+                <View style={{ flex: 1 }}>
+                  <AppButton title={proofUri ? 'Ganti Foto' : 'Pilih Foto'} variant="secondary" onPress={pickProof} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppButton
+                    title={uploading ? 'Mengunggah…' : 'Kirim Bukti'}
+                    variant="primary"
+                    loading={uploading}
+                    disabled={!proofUri || uploading}
+                    onPress={submitProof}
+                  />
+                </View>
+              </View>
+            </GlassCard>
+          )}
+
+          {payment.status === 'awaiting_verification' && (
             <View style={{ marginTop: space.lg }}>
-              <AppButton title="Cek Status" variant="ghost" onPress={() => subscriptionApi.getPayment(payment.id).then((r) => { setPayment(r.data); if (r.data.status !== 'pending') stopPolling(); }).catch(() => {})} />
+              <AppButton title={refreshing ? 'Memeriksa…' : 'Cek Status'} variant="ghost" loading={refreshing} onPress={refreshStatus} />
+              <View style={{ height: space.sm }} />
+              <AppButton title="Kembali ke Katalog" variant="secondary" onPress={() => { setPayment(null); setProofUri(null); }} />
             </View>
           )}
 
-          {(payment.status === 'expired' || payment.status === 'failed' || payment.status === 'paid') && (
+          {payment.status === 'paid' && (
             <View style={{ marginTop: space.lg }}>
-              <AppButton title="Kembali ke Katalog" variant="primary" onPress={() => { stopPolling(); setPayment(null); }} />
+              <AppButton title="Kembali ke Katalog" variant="primary" onPress={() => { setPayment(null); setProofUri(null); }} />
+              <View style={{ height: space.sm }} />
+              <AppButton title="Langganan Saya" variant="secondary" onPress={() => navigation.navigate('MySubscriptions')} />
+            </View>
+          )}
+
+          {payment.status === 'failed' && (
+            <View style={{ marginTop: space.lg }}>
+              <AppButton title="Kembali ke Katalog" variant="secondary" onPress={() => { setPayment(null); setProofUri(null); }} />
             </View>
           )}
         </ScrollView>
@@ -287,14 +355,17 @@ export default function SubscriptionScreen({ navigation }: Props) {
                       <Text style={[typography.bodyBold, { color: c.text.primary, fontFamily: 'DMSans-Bold', marginTop: space.sm }]} numberOfLines={1}>
                         {p.name}
                       </Text>
-                      {p.is_subscribed && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
-                          <CheckCircle size={12} color={c.semantic.positive} />
-                          <Text style={{ fontSize: 11, color: c.semantic.positive, fontFamily: 'DMSans-SemiBold' }}>
-                            Aktif · {p.days_remaining ?? 0} hari
-                          </Text>
-                        </View>
-                      )}
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'DMSans-SemiBold',
+                          marginTop: 2,
+                          color: p.is_subscribed ? c.semantic.positive : c.text.secondary,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {p.is_subscribed ? `Aktif · ${p.days_remaining ?? 0} hari` : 'Belum aktif'}
+                      </Text>
                       {p.starting_price_idr != null && (
                         <Text style={[typography.caption, { color: c.text.secondary, marginTop: 2 }]} numberOfLines={1}>
                           Mulai dari <Text style={{ color: c.accent.gold, fontFamily: 'DMSans-Bold' }}>Rp {formatMP(p.starting_price_idr)}</Text>
@@ -346,37 +417,28 @@ export default function SubscriptionScreen({ navigation }: Props) {
   );
 }
 
-// Kotak QR: render QR image bila tersedia (gateway asli); selain itu tampilkan
-// placeholder bergaya untuk qr_string mentah (FakeGateway di dev/tes).
-function QrBox({ payment }: { payment: Payment }) {
+// Kotak QR: render QRIS statis Metavest (dari config). Bila belum dikonfigurasi,
+// tampilkan placeholder agar user tetap tahu nominal & instruksi transfer.
+function QrBox({ qrImageUrl }: { qrImageUrl: string | null }) {
   const c = useColors();
-  if (payment.qr_image_url) {
+  if (qrImageUrl) {
     return (
       <View style={styles.qrWrap}>
-        <Image source={{ uri: payment.qr_image_url }} style={styles.qrImage} resizeMode="contain" />
+        <Image source={{ uri: qrImageUrl }} style={styles.qrImage} resizeMode="contain" />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: space.sm }}>
+          <ShieldCheck size={14} color={c.semantic.positive} />
+          <Text style={[typography.caption, { color: c.text.secondary }]}>QRIS resmi Metavest</Text>
+        </View>
       </View>
     );
   }
   return (
-    <View style={[styles.qrWrap, { backgroundColor: '#fff' }]}>
+    <View style={[styles.qrWrap, { backgroundColor: '#fff', minHeight: 180 }]}>
       <QrCode size={140} color={c.bg.primary} strokeWidth={1.2} />
-      <Text style={{ fontSize: 9, color: c.bg.primary, marginTop: space.sm, textAlign: 'center', paddingHorizontal: 8 }} numberOfLines={2}>
-        {payment.qr_string ?? 'QR tidak tersedia'}
+      <Text style={{ fontSize: 10, color: c.bg.primary, marginTop: space.sm, textAlign: 'center', paddingHorizontal: 8 }} numberOfLines={3}>
+        QRIS belum tersedia.{'\n'}Silakan hubungi admin Metavest.
       </Text>
     </View>
-  );
-}
-
-function Countdown({ expiresAt, now, color }: { expiresAt: string | null; now: number; color: string }) {
-  if (!expiresAt) return null;
-  const end = new Date(expiresAt).getTime();
-  const remain = Math.max(0, Math.floor((end - now) / 1000));
-  const mm = Math.floor(remain / 60);
-  const ss = remain % 60;
-  return (
-    <Text style={[typography.caption, { color, marginTop: space.md }]}>
-      Berlaku {mm}:{ss.toString().padStart(2, '0')}
-    </Text>
   );
 }
 
@@ -419,5 +481,6 @@ const styles = StyleSheet.create({
     minWidth: 180,
     minHeight: 180,
   },
-  qrImage: { width: 180, height: 180 },
+  qrImage: { width: 200, height: 200 },
+  proofPreview: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: space.sm },
 });
