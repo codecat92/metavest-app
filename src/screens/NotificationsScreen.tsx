@@ -27,6 +27,8 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
     Wallet: 'Wallet',
     Forum: 'Forum',
   };
+  // Catatan: 'Subscription' & 'MySubscriptions' ditangani eksplisit di handlePress
+  // (stack screen, bukan tab) — lihat cabang else-if di bawah.
 
   const loadData = useCallback(async () => {
     if (!getToken()) { setLoading(false); return; }
@@ -121,6 +123,11 @@ export default function NotificationsScreen({ navigation }: NotifProps) {
                   navigation.navigate('PAMM');
                 } else if (n.target_screen === 'ChatRoom' || n.target_screen === 'ChatGroups') {
                   navigation.navigate('ChatGroups');
+                } else if (n.target_screen === 'Subscription') {
+                  // Notif pembayaran (verify/reject) → buka layar langganan.
+                  navigation.navigate('Subscription');
+                } else if (n.target_screen === 'MySubscriptions') {
+                  navigation.navigate('MySubscriptions');
                 } else if (target) {
                   navigation.navigate('Tabs', { screen: target });
                 }
