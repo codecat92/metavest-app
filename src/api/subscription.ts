@@ -69,6 +69,11 @@ export interface Payment {
   plan_id: string;
   amount_idr: number;
   status: PaymentStatus;
+  /**
+   * Path RELATIF QRIS statis Metavest (mis. "uploads/payment/metavest-qris.jpeg").
+   * Bangun URL final dengan resolveAssetUrl() — memakai host API (EXPO_PUBLIC_API_URL),
+   * BUKAN host/port backend mentah (port 8081 diblokir → Tailscale saat dev).
+   */
   qris_image_url: string | null;
   proof_uploaded: boolean;
   reject_reason: string | null;

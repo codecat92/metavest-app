@@ -163,7 +163,7 @@ export default function SubscriptionScreen({ navigation }: Props) {
 
             {(payment.status === 'pending' || payment.status === 'awaiting_verification') && (
               <>
-                <QrBox qrImageUrl={payment.qris_image_url} />
+                <QrBox qrisPath={payment.qris_image_url} />
                 {payment.status === 'pending' && (
                   <Text style={[typography.caption, { color: c.text.muted ?? c.text.secondary, textAlign: 'center', marginTop: space.md }]}>
                     Scan/transfer ke QRIS di atas (a/n PT Metavest), lalu unggah bukti transfer di bawah.
@@ -417,14 +417,17 @@ export default function SubscriptionScreen({ navigation }: Props) {
   );
 }
 
-// Kotak QR: render QRIS statis Metavest (dari config). Bila belum dikonfigurasi,
-// tampilkan placeholder agar user tetap tahu nominal & instruksi transfer.
-function QrBox({ qrImageUrl }: { qrImageUrl: string | null }) {
+// Kotak QR: render QRIS statis Metavest. `qrisPath` adalah PATH RELATIF dari server
+// (mis. "uploads/payment/metavest-qris.jpeg"); URL final dibangun lewat
+// resolveAssetUrl() agar memakai host API (EXPO_PUBLIC_API_URL / Tailscale saat dev),
+// BUKAN host/port backend mentah yang diblokir.
+function QrBox({ qrisPath }: { qrisPath: string | null }) {
   const c = useColors();
-  if (qrImageUrl) {
+  const uri = resolveAssetUrl(qrisPath);
+  if (uri) {
     return (
       <View style={styles.qrWrap}>
-        <Image source={{ uri: qrImageUrl }} style={styles.qrImage} resizeMode="contain" />
+        <Image source={{ uri }} style={styles.qrImage} resizeMode="contain" />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: space.sm }}>
           <ShieldCheck size={14} color={c.semantic.positive} />
           <Text style={[typography.caption, { color: c.text.secondary }]}>QRIS resmi Metavest</Text>
